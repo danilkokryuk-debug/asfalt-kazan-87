@@ -28,16 +28,22 @@ body { -webkit-user-select: none; -webkit-touch-callout: none; -webkit-text-size
 button, .btn, .item, #map { touch-action: manipulation; }
 input { -webkit-user-select: text; user-select: text; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--paper); font-family: var(--font); }
-body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
-  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom); user-select: none; }
+/* На весь экран iPhone: фон идёт под часы и полоску «домой», отступы — только у содержимого */
+html { height: 100%; background: var(--bg); }
+body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; padding: 0; user-select: none; }
 body::after { content: ""; position: fixed; inset: 0; pointer-events: none; opacity: .07;
   background: repeating-linear-gradient(0deg, #000 0 1px, transparent 1px 3px); }
 
 #top { display: flex; gap: 10px; justify-content: space-between; align-items: center; padding: 8px 12px;
+  padding-top: calc(8px + env(safe-area-inset-top)); padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right));
   background: var(--panel); border-bottom: 2px solid var(--line); font-size: 12px; flex-wrap: wrap; }
 #top b { color: var(--gold); font-weight: normal; }
 #main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; position: relative; }
-#nav { display: flex; background: var(--panel); border-top: 2px solid var(--line); }
+#nav { display: flex; background: var(--panel); border-top: 2px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
+/* когда верхней/нижней панели нет — отступ под вырез и «домой» даёт сам экран */
+body:has(#top.hidden) #main > .scene, body:has(#top.hidden) #main > .preview { padding-top: calc(16px + env(safe-area-inset-top)); }
+body:has(#nav.hidden) #main { padding-bottom: env(safe-area-inset-bottom); }
+body:has(#nav.hidden) #main:has(> .menu) { padding-bottom: 0; }
 #nav button { flex: 1; padding: 12px 0; background: none; border: 0; color: var(--dim); font: 13px var(--font); }
 #nav button.on { color: var(--paper); box-shadow: inset 0 3px 0 var(--accent); }
 
@@ -240,7 +246,8 @@ label { font-size: 13px; color: var(--dim); }
 .wallet .wrow { display: flex; justify-content: space-between; font-size: 18px; color: var(--gold); margin-bottom: 4px; }
 
 /* Главный экран */
-.menu { position: relative; min-height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 16px; padding-bottom: 24px; }
+.menu { position: relative; min-height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 16px;
+  padding-top: calc(16px + env(safe-area-inset-top)); padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
 .menu { background: linear-gradient(#0a0c24 0, #2a2040 40%, #0c1424 62%, #0a0806 100%); }
 .menuart { position: absolute; left: 0; top: 16%; width: 100%; height: auto; aspect-ratio: 16 / 10; image-rendering: pixelated; z-index: 0; }
 .menu::before { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 45%, rgba(10, 8, 6, .9) 75%); z-index: 1; }
@@ -327,6 +334,25 @@ label { font-size: 13px; color: var(--dim); }
 .bg-pl_kino { background: radial-gradient(ellipse at 50% 20%, #a8c8f0 0, #3a4a6a 30%, #0a0a14 60%); animation: disco 4s infinite alternate; }
 .btn.place { border-style: dashed; }
 .pli { display: inline-block; width: 10px; height: 10px; margin-right: 8px; border: 1px solid #000; vertical-align: -1px; }
+
+/* Фоны-картинки из Google Flow (перекрывают нарисованные градиенты выше) */
+.bg-pl_barber, .bg-pl_resto, .bg-pl_bar, .bg-pl_sto, .bg-pl_bank, .bg-pl_hosp, .bg-pl_kino, .bg-dk, .bg-otdel, .bg-rynok,
+.bg-kuhnya, .bg-dvor, .bg-korobka, .bg-pustyr { background-size: cover !important; background-position: center 62% !important;
+  image-rendering: pixelated; animation: none !important; background-blend-mode: normal !important; }
+.bg-pl_barber::before, .bg-pl_resto::before, .bg-pl_bar::before, .bg-pl_sto::before, .bg-pl_bank::before, .bg-pl_hosp::before,
+.bg-dk::before, .bg-otdel::before, .bg-kuhnya::before, .bg-dvor::before, .bg-korobka::before, .bg-pustyr::before { display: none; }
+.bg-pl_barber { background: url(../img/pl_barber.jpg); } .bg-pl_resto { background: url(../img/pl_resto.jpg); }
+.bg-pl_bar { background: url(../img/pl_bar.jpg); } .bg-pl_sto { background: url(../img/pl_sto.jpg); }
+.bg-pl_bank { background: url(../img/pl_bank.jpg); } .bg-pl_hosp { background: url(../img/pl_hosp.jpg); }
+.bg-pl_kino { background: url(../img/pl_video.jpg); } .bg-dk { background: url(../img/pl_dk.jpg); }
+.bg-otdel { background: url(../img/pl_police.jpg); } .bg-rynok { background: url(../img/pl_rynok.jpg); }
+.bg-kuhnya { background: url(../img/kuhnya.jpg); } .bg-dvor { background: url(../img/dvor.jpg); }
+.bg-korobka { background: url(../img/korobka.jpg); } .bg-pustyr { background: url(../img/pustyr.jpg); }
+.bg-kuhnya, .bg-dvor, .bg-korobka, .bg-pustyr { background-position: center 70% !important; }
+/* лёгкое затемнение снизу, чтобы персонажи читались на картинке */
+.stage::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 45%; pointer-events: none;
+  background: linear-gradient(transparent, rgba(0, 0, 0, .35)); z-index: 0; }
+.stage .sprite { z-index: 2; }
 
 /* Гардероб: примерка */
 .ward-top { position: sticky; top: 0; z-index: 3; display: flex; gap: 14px; align-items: center; background: var(--bg); padding: 6px 0 10px; margin: -16px 0 8px; padding-top: 16px; }
