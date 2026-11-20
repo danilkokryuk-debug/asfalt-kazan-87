@@ -34,6 +34,12 @@ html { height: 100%; background: var(--bg); }
    и снизу оставалась полоса. Закрепляем игру по всем краям экрана. */
 body { display: flex; flex-direction: column; position: fixed; inset: 0; width: 100%; height: auto; min-height: -webkit-fill-available;
   overflow: hidden; padding: 0; user-select: none; }
+/* Установленное приложение iPhone с прозрачной полосой часов: окно короче экрана на высоту зоны часов —
+   добавляем её, чтобы игра доходила до самого низа. В обычном Safari не действует. */
+@media (display-mode: standalone) {
+  html { height: calc(100vh + env(safe-area-inset-top)); }
+  body { bottom: auto; height: calc(100vh + env(safe-area-inset-top)); }
+}
 body::after { content: ""; position: fixed; inset: 0; pointer-events: none; opacity: .07;
   background: repeating-linear-gradient(0deg, #000 0 1px, transparent 1px 3px); }
 

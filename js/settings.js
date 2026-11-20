@@ -30,7 +30,15 @@ function settingsScreen(back) {
     <label>Подсказки для новичка</label>${seg('tutorial', { true: 'Показывать', false: 'Выключить' })}
     <div class="choices"><button class="btn" id="tr">Сбросить обучение (показать заново)</button>
     <button class="btn main" id="bk">Готово</button></div>
-    <p class="note">Настройки общие для всех сохранений.</p></div>`;
+    <p class="note">Настройки общие для всех сохранений.</p>
+    <p class="note" id="scrinfo"></p></div>`;
+  // строка для диагностики экрана iPhone (полосы сверху/снизу)
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);visibility:hidden';
+  document.body.appendChild(probe); const ps = getComputedStyle(probe);
+  $('#scrinfo').textContent = `Экран ${screen.width}×${screen.height} · окно ${innerWidth}×${innerHeight} · игра ${Math.round(document.body.getBoundingClientRect().height)} · `
+    + `вырез ${parseInt(ps.paddingTop)}/${parseInt(ps.paddingBottom)} · ${matchMedia('(display-mode: standalone)').matches || navigator.standalone ? 'приложение' : 'браузер'} · v0.8.2`;
+  probe.remove();
   document.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
     const v = b.dataset.v; SET[b.dataset.k] = v === 'true' ? true : v === 'false' ? false : v;
     AUDIO.click(); saveSet(); settingsScreen(back);
