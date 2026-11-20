@@ -19,15 +19,22 @@ body::after { content: ""; position: fixed; inset: 0; pointer-events: none; opac
 #nav button.on { color: var(--paper); box-shadow: inset 0 3px 0 var(--accent); }
 
 /* Карта */
-#mapwrap { padding: 8px; }
-#map { width: 100%; max-width: 480px; max-height: 58dvh; display: block; margin: 0 auto; touch-action: manipulation; }
-#map .water { fill: #2b3a44; }
-#map .land { stroke: none; opacity: .92; }
-#map .land.sel { opacity: 1; filter: brightness(1.45); }
-#map .border { stroke: #1b1814; stroke-width: 1.6; fill: none; pointer-events: none; }
-#map .label { fill: #f3ead3; font: 7.5px var(--font); text-anchor: middle; dominant-baseline: middle;
-  paint-order: stroke; stroke: #1b1814; stroke-width: 2.5px; pointer-events: none; }
+#mapwrap { position: relative; padding: 0; overflow: hidden; touch-action: none; background: #1d2a36;
+  border-bottom: 3px solid #000; height: min(58dvh, 150vw); }
+#map { width: 100%; height: 100%; display: block; transform-origin: 50% 50%; transition: transform .08s; shape-rendering: crispEdges; }
+#map .label { fill: #f3ead3; font: 7px var(--font); dominant-baseline: middle; pointer-events: none; }
 #map .label.home { fill: var(--gold); }
+#map .chip { pointer-events: none; }
+#map .selpulse { animation: selp 1.4s ease-in-out infinite; pointer-events: none; }
+#map .youpulse { animation: youp 1.2s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes selp { 50% { opacity: .35; } }
+@keyframes youp { from { transform: scale(.6); opacity: .8; } to { transform: scale(2.2); opacity: 0; } }
+.zoom { position: absolute; right: 8px; bottom: 8px; display: flex; flex-direction: column; gap: 6px; }
+.zoom button { width: 38px; height: 38px; background: rgba(18, 14, 11, .85); color: var(--paper); border: 2px solid var(--line); font: 18px var(--font); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 10px; padding: 8px 12px; font-size: 11px; color: var(--dim); background: var(--panel); }
+.legend .lg { display: inline-flex; align-items: center; gap: 4px; }
+.legend .lg i { width: 9px; height: 9px; display: inline-block; border: 1px solid #000; }
+.legend .lg.mine { color: var(--gold); }
 .sheet { background: var(--panel); border-top: 2px solid var(--line); padding: 12px; }
 .sheet h3 { margin: 0 0 4px; font-size: 16px; }
 .sheet .sub { color: var(--dim); font-size: 12px; margin-bottom: 10px; }
@@ -197,6 +204,17 @@ label { font-size: 13px; color: var(--dim); }
 .item.locked { opacity: .45; }
 .ch.mg { color: #7ac0e0; }
 .sprite.mini-spr { width: 30px; height: 60px; background: none; }
+
+/* Дневник, фотоальбом, кошелёк */
+.log.diary p { font-style: italic; color: var(--paper); }
+.album { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.photo { background: #f0e8d8; padding: 6px 6px 10px; box-shadow: 3px 3px 0 #000; transform: rotate(-1deg); }
+.photo:nth-child(2n) { transform: rotate(1.2deg); }
+.photo .stage { height: 120px; margin: 0; border: 0; filter: sepia(.35) contrast(1.05); }
+.photo .stage .sprite { width: 50px; height: 100px; bottom: 4px; }
+.photo .pcap { color: var(--ink); font-size: 11px; text-align: center; margin-top: 6px; }
+.wallet { background: var(--panel); border: 1px solid var(--line); padding: 10px; margin-bottom: 10px; }
+.wallet .wrow { display: flex; justify-content: space-between; font-size: 18px; color: var(--gold); margin-bottom: 4px; }
 
 .btn.mode { flex-direction: column; align-items: flex-start; gap: 4px; }
 .btn.mode b { font-weight: normal; color: var(--gold); }

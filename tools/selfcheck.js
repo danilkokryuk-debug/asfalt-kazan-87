@@ -6,11 +6,12 @@ const el = () => new Proxy({ classList: { add() {}, remove() {}, toggle() {} }, 
 const store = {};
 const ctx = {
   console, Math, JSON, Object, Date, Set, setInterval() {}, clearInterval() {}, setTimeout() {}, clearTimeout() {}, confirm: () => true, __TEST: true,
-  document: { querySelector: el, querySelectorAll: () => [], createElementNS: el },
+  document: { querySelector: el, querySelectorAll: () => [], createElementNS: el, createElement: el, getElementById: el, body: el() },
+  navigator: {}, location: { href: '' }, prompt: () => null,
   localStorage: { getItem: k => store[k] ?? null, setItem: (k, v) => store[k] = v },
 };
 vm.createContext(ctx);
-const src = ['js/map.js', 'js/sprite.js', 'js/audio.js', 'js/game.js', 'js/story.js', 'js/career.js', 'js/mini.js', 'js/world.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
+const src = ['js/map.js', 'js/sprite.js', 'js/audio.js', 'js/game.js', 'js/story.js', 'js/career.js', 'js/mini.js', 'js/world.js', 'js/economy.js', 'js/mechanics.js', 'js/atmos.js', 'js/story2.js', 'js/street.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
 vm.runInContext(src + `
 ;globalThis.EV = EV; globalThis.DISTRICTS = DISTRICTS; save = () => {};
 function __run(seedHome, steps) {

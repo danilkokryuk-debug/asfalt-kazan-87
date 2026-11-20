@@ -1,6 +1,6 @@
 // Офлайн-кэш. При изменении файлов игры увеличивай VERSION, иначе телефон покажет старую версию.
-const VERSION = 'asfalt-v0.4.0';
-const FILES = ['./', 'index.html', 'css/style.css', 'js/map.js', 'js/sprite.js', 'js/audio.js', 'js/game.js', 'js/story.js', 'js/career.js', 'js/mini.js', 'js/world.js',
+const VERSION = 'asfalt-v0.5.0';
+const FILES = ['./', 'index.html', 'css/style.css', 'js/map.js', 'js/sprite.js', 'js/audio.js', 'js/game.js', 'js/story.js', 'js/career.js', 'js/mini.js', 'js/world.js', 'js/economy.js', 'js/mechanics.js', 'js/atmos.js', 'js/story2.js', 'js/street.js',
   'manifest.webmanifest', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', e => e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES)).then(() => self.skipWaiting())));

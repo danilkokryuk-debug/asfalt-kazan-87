@@ -472,7 +472,7 @@ def('c3_video', {
   ],
   choices: [
     { t: 'Объяснить по-хорошему', chk: ['yaz', 6],
-      ok: { txt: '«Ладно… Двадцать в неделю. Только чтоб никто больше не лез». Сделка.', fx: s => { s.flags.income = (s.flags.income || 0) + 10; return { avt: 8, mil: 5 }; } },
+      ok: { txt: '«Ладно… Плачу. Только чтоб никто больше не лез». Сделка.', fx: s => { addPoint('Видеосалон Тофика', 10); return { avt: 8, mil: 5 }; } },
       no: { txt: '«Я уже плачу. Другим». Придётся по-другому.', go: 'f_video' } },
     { t: 'Разнести салон', go: 'f_video' },
     { t: 'Соврать Седому, что Тофик закрылся', chk: ['um', 6],
@@ -484,7 +484,7 @@ def('f_video', {
   title: 'Охрана салона', bg: 'otdel',
   text: 'Из-за занавески выходят двое крепких — охрана Тофика.',
   fight: { name: 'Охрана', npc: 'starsh', hp: 4, pow: 6, call: false,
-    win: { txt: 'Кассеты на полу, телевизор цел. Тофик платит. Двадцать в неделю.', fx: s => { s.flags.income = (s.flags.income || 0) + 10; return { avt: 10, mil: 12, sovest: -8 }; } },
+    win: { txt: 'Кассеты на полу, телевизор цел. Тофик платит.', fx: s => { addPoint('Видеосалон Тофика', 10); return { avt: 10, mil: 12, sovest: -8 }; } },
     lose: { txt: 'Вышвырнули на улицу. Седой будет недоволен.', fx: { uvazh: -8, zdor: -10 } } },
 });
 
@@ -610,9 +610,10 @@ def('g_arrest', {
     ['garipov', 'Подпишешь показания на своих — получишь условно.'],
     ['garipov', 'Не подпишешь — поедешь в колонию. Выбирай.'],
   ],
-  choices: [
+  // в Карьере колония — глава на год, а не конец забега
+  choices: S => [
     { t: 'Подписать', fx: { end: 'stukach' } },
-    { t: 'Не подписывать', fx: { end: 'kolonia' } },
+    S.mode === 'career' ? { t: 'Не подписывать', go: 'm_zona1' } : { t: 'Не подписывать', fx: { end: 'kolonia' } },
   ],
 });
 
@@ -639,7 +640,7 @@ const ENDINGS = {
 // random: (S, район) → подходит ли; weight — частота
 
 def('r_patrol', {
-  random: (S, d) => S.ctrl[d] && S.ctrl[d] !== S.gang && d !== S.home, weight: 4,
+  random: (S, d) => S.ctrl[d] && S.ctrl[d] !== S.gang && d !== S.home && repOf(S, S.ctrl[d]) < 30, weight: 4,
   title: 'Ты откуда?', bg: 'dvor',
   lines: S => [
     'В подворотне тебя окружают местные.',
@@ -680,7 +681,7 @@ def('r_chushpan', {
 
 def('r_militia', {
   random: (S, d) => d === 'center' || S.st.mil > 20, weight: 2,
-  title: 'Патруль', bg: 'noch',
+  title: 'Патруль', bg: 'noch', sfx: 'whistle',
   lines: () => [['militsioner', V('Молодой человек! Документики.', 'Стоять. Куда идём, откуда?', 'Ну-ка подойди. Что в карманах?')]],
   choices: [
     { t: '«Из библиотеки иду»', chk: ['um', 4],
@@ -780,12 +781,19 @@ function locActions(S, d) {
   if (d === 'center') {
     a.push({ t: 'Видеосалон: «Рэмбо» (1 р.)', req: { dengi: 1 }, fx: S => S.flags.rambo ? { dengi: -1, zdor: 3 } : { dengi: -1, lovk: 1, flag: 'rambo' },
       txt: 'Подвал, «Электроника», гнусавый переводчик. Выходишь Сталлоне.' });
-    a.push({ t: 'Подработать грузчиком на рынке', fx: { dengi: 4, zdor: -8 }, txt: 'Ящики с яблоками до вечера. Платят честно.' });
+    if (S.flags.gruz !== S.day) a.push({ t: 'Подработать грузчиком (раз в день)', fx: s => { s.flags.gruz = s.day; return { dengi: 4, zdor: -8 }; }, txt: 'Ящики с яблоками до вечера. Платят честно, но спина отваливается.' });
+    a.push({ t: 'Травмпункт (5 р.)', if: () => S.st.zdor < 80, req: { dengi: 5 }, fx: { dengi: -5, zdor: 30 }, txt: 'Зелёнка, бинт, укол от столбняка. Тётя-врач ругается, но лечит.' });
+    a.push({ t: 'Занести участковому (15 р.)', if: () => S.st.mil >= 10, req: { dengi: 15 }, fx: { dengi: -15, mil: -20 }, txt: 'Конверт исчезает в ящике стола. «Я тебя не видел».' });
+    a.push({ t: `Купить у Жоры $5 (${RATE_BUY * 5} р.)`, req: { dengi: RATE_BUY * 5 }, fx: { dengi: -RATE_BUY * 5 }, chk: ['um', 4],
+      ok: { txt: 'Пять зелёных бумажек. Жора озирается: «Спрячь. Это статья».', fx: { dol: 5, mil: 3 } },
+      no: { txt: 'Подстава! Жора исчез, деньги тоже. А тебя взяли на заметку.', fx: { mil: 10 } } });
+    if (S.st.dol > 0) a.push({ t: `Сдать доллары Жоре ($${S.st.dol} → ${S.st.dol * RATE_SELL} р.)`, fx: s => ({ dengi: s.st.dol * RATE_SELL, dol: -s.st.dol }), txt: 'Жора пересчитывает дважды. Спокойнее без них.' });
+    if (S.flags.met_natasha) a.push({ t: 'Цветы для Наташи (3 р.)', req: { dengi: 3 }, fx: s => { s.flags.gift = Math.floor(s.day / 7); return { dengi: -3, lyub: 6, natasha: 5 }; }, txt: 'Три гвоздики, завёрнутые в «Вечернюю Казань». Она краснеет.' });
     a.push({ t: 'Напёрстки у рынка (ставка 3 р.)', req: { dengi: 3 }, fx: { dengi: -3 }, chk: ['um', 5], mini: 'naperstki',
       ok: { txt: '«Ну ты глазастый…» Напёрсточник отдаёт выигрыш сквозь зубы.', fx: s => { s.cnt.naperstki = (s.cnt.naperstki || 0) + 1; return { dengi: 7 }; } },
       no: { txt: '«Не повезло, братишка. Ещё разок?» Его подельники в толпе ухмыляются.' } });
     if (S.flags.met_natasha) a.push({ t: 'Позвать Наташу в кино', req: { dengi: 1 }, chk: ['yaz', 4],
-      ok: { txt: '«Курьер» в «Родине». На последнем ряду она берёт тебя за руку.', fx: { dengi: -1, lyub: 10, natasha: 10 } },
+      ok: { txt: '«Курьер» в «Родине». На последнем ряду она берёт тебя за руку.', fx: s => { s.flags.gift = Math.floor(s.day / 7); return { dengi: -1, lyub: 10, natasha: 10 }; } },
       no: { txt: '«Я занята». Может быть, правда.', fx: { natasha: -2 } } });
   }
   a.push({ t: danger ? 'Прогуляться (чужой асфальт!)' : 'Прогуляться', go: S => pickRandom(S, d) });
@@ -794,7 +802,7 @@ function locActions(S, d) {
 
 // Новый день: раз в неделю — карманные деньги
 function onNewDay(S) {
-  if (S.day % 7 === 0) { S.st.dengi += S.fam === 'full' ? 5 : 2; S.squad.forEach(m => m.loyal = Math.max(0, m.loyal - 4)); }
+  if (S.day % 7 === 0) { economyWeek(S); S.squad.forEach(m => m.loyal = Math.max(0, m.loyal - 4)); }
   if (S.mode === 'career') careerDay(S);
   if (S.mode === 'surv') survDay(S);
 }

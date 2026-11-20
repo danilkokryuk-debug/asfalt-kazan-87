@@ -3,7 +3,7 @@ const RANKS = ['Чушпан', 'Скорлупа', 'Супер', 'Молодой
 const STATS = { sila: 'Сила', lovk: 'Ловкость', um: 'Смекалка', yaz: 'Язык' };
 const METERS = { zdor: 'Здоровье', uvazh: 'Уважение своих', mil: 'Внимание милиции', sovest: 'Совесть', semya: 'Семья', lyub: 'Любовь' };
 const RELS = { ildar: 'Ильдар (друг)', natasha: 'Наташа', bacha: 'Бача (старший)' };
-const NAMES = { ...STATS, ...METERS, ...RELS, dengi: 'Деньги', avt: 'Авторитет' };
+const NAMES = { ...STATS, ...METERS, ...RELS, dengi: 'Деньги', dol: 'Доллары', avt: 'Авторитет' };
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 const AP_PER_DAY = 3;
 
@@ -27,7 +27,8 @@ function newState(o) {
     v: 2, mode: 'campaign', name: o.name, app: o.app, home: o.home, fam: o.fam, gang: null, rank: 0, nick: null,
     wear: o.wear, owned: ITEMS.filter(i => i.start).map(i => i.id),
     day: 1, ap: AP_PER_DAY, at: o.home,
-    st: { sila: 3, lovk: 3, um: 3, yaz: 3, zdor: 100, dengi: o.dengi, avt: 0,
+    points: [], torn: [],
+    st: { sila: 3, lovk: 3, um: 3, yaz: 3, zdor: 100, dengi: o.dengi, dol: 0, avt: 0,
           uvazh: 0, mil: 0, sovest: 70, semya: o.semya, lyub: 0 },
     rel: { ildar: 50, natasha: 0, bacha: 0 },
     flags: {}, done: {}, ctrl, log: [], cur: null, fight: null, res: null,
@@ -36,7 +37,7 @@ function newState(o) {
 }
 
 // --- Проверки ---------------------------------------------------------------
-function gear(k) { return wornIds(S.wear).reduce((a, id) => a + (ITEM[id]?.bonus?.[k] || 0), 0); }
+function gear(k) { return wornIds(S.wear).filter(id => !(S.torn || []).includes(id)).reduce((a, id) => a + (ITEM[id]?.bonus?.[k] || 0), 0); }
 function stat(k) { return (S.st[k] ?? S.rel[k] ?? 0) + (k in STATS ? gear(k) + ((comp() || {}).perk?.b[k] || 0) : 0); }
 function chance(chk) {
   const [k, d] = chk;
@@ -61,12 +62,13 @@ function applyFx(fx) {
     else if (k === 'nick') { S.nick = v; log(`Теперь тебя зовут «${v}».`); out.push(`Погоняло: «${v}»`); }
     else if (k === 'ctrl') for (const [d, o] of Object.entries(v)) { S.ctrl[d] = o; out.push(`${DIST[d].name} теперь под «${DIST[o].gang}»`); }
     else if (k === 'ap') S.ap = Math.max(0, S.ap + v);
+    else if (k === 'unpoint') { const p = S.points.splice(v, 1)[0]; if (p) { log(`Потеряна точка: ${p.name}.`); out.push(`Потеряна точка: ${p.name}`); } }
     else if (k === 'day') skipDays(v);
     else if (k === 'log') log(v);
     else if (k === 'end') S.ending = v;
     else if (k in S.rel) { S.rel[k] = clamp(S.rel[k] + v, 0, 100); out.push(delta(k, v)); }
     else if (k in S.st) {
-      const max = k in STATS ? 10 : k === 'dengi' || k === 'avt' ? 1e6 : 100;
+      const max = k in STATS ? 10 : k === 'dengi' || k === 'avt' || k === 'dol' ? 1e6 : 100;
       S.st[k] = clamp(S.st[k] + v, 0, max); out.push(delta(k, v));
     }
   }
@@ -85,6 +87,9 @@ function play(id) {
   if (ev.fight) S.fight = { id, ehp: T(ev.fight.hp), php: 3 };
   if (ev.fx) applyFx(ev.fx);
   if (ev.log) log(T(ev.log));
+  photo(id);
+  if (ev.sfx) AUDIO.sfx && AUDIO.sfx(T(ev.sfx));
+  if (ev.fight) AUDIO.sfx && AUDIO.sfx('crowd');
   save('auto');
   if (ev.card) return card(T(ev.card), render, 2600);
   render();
@@ -276,6 +281,7 @@ function fightRound(ev, c, forced) {
   if (c.mini && forced === undefined) return MINI.run(c.mini, chance(c.chk), ok => fightRound(ev, c, ok));
   const f = ev.fight, st = S.fight;
   const ok = forced ?? Math.random() < chance(c.chk);
+  if (!c.flee && !c.call) AUDIO.sfx && AUDIO.sfx('swish');
   st.ok = ok;
   if (c.call) { if (ok) return fightEnd(ev, 'win', 'Свистнул — из подъезда вылетели свои. Чужие сразу сдулись.'); }
   if (c.flee) {
@@ -298,20 +304,23 @@ function fightEnd(ev, how, msg) {
   const base = how === 'win' ? { avt: 3 } : how === 'lose' ? { uvazh: -3 } : {};
   S.cnt[how] = (S.cnt[how] || 0) + 1; if (how === 'win') S.cnt.wins = (S.cnt.wins || 0) + 1;
   if (comp()) comp().loyal = clamp(comp().loyal + (how === 'win' ? 5 : how === 'flee' ? -10 : -3), 0, 100);
+  afterFight(how, ev);
   const fxs = [...applyFx(base), ...applyFx(out.fx)];
   S.fight = null;
-  S.res = { txt: msg + (out.txt ? '\n\n' + T(out.txt) : ''), ok: how === 'win', fxs, go: T(out.go) };
+  S.res = { txt: msg + (out.txt ? '\n\n' + T(out.txt) : '') + wearAndTear(), ok: how === 'win', fxs, go: T(out.go) };
   save('auto'); render();
 }
 
 // --- День и карта ---------------------------------------------------------------
 function sleep() {
   skipDays(1);
-  const heal = 8 + (S.st.semya > 50 ? 4 : 0);
+  const heal = 6 + (S.st.semya > 50 ? 3 : 0);   // само заживает медленно — травмпункт платный
   S.st.zdor = clamp(S.st.zdor + heal, 0, 100);
   S.st.mil = clamp(S.st.mil - 3, 0, 100);
   S.at = S.home;
   if (typeof onNewDay === 'function') onNewDay(S);
+  diaryWrite(S.dayStart || { zdor: S.st.zdor, dengi: S.st.dengi });
+  S.dayStart = { zdor: S.st.zdor, dengi: S.st.dengi };
   if (S.over) return endCareer(S.over.win, S.over.reason);
   save('auto'); save('day');
   card(['Утро', dateStr()], toMap, 1300);
@@ -333,9 +342,14 @@ function toMap() {
 function renderMap() {
   const d = DIST[selDist || S.at];
   const owner = S.ctrl[d.id] ? DIST[S.ctrl[d.id]] : null;
-  const rel = !owner ? 'ничья земля' : S.gang === owner.id ? 'твои' : S.home === d.id ? 'твой район' : 'чужие';
-  const acts = (S.ap > 0 ? locActions(S, d.id) : []).filter(a => !a.if || a.if(S));
-  $('#main').innerHTML = `<div id="mapwrap"><svg id="map"></svg></div>
+  const rel = !owner ? 'ничья земля' : S.gang === owner.id ? 'твои' : S.home === d.id ? 'твой район' : 'к тебе: ' + repWord(repOf(S, owner.id));
+  const acts = (S.ap > 0 ? [...locActions(S, d.id), ...mechActions(S, d.id)] : []).filter(a => !a.if || a.if(S));
+  const land = {}; DISTRICTS.forEach(x => { const o = S.ctrl[x.id]; if (o) land[o] = (land[o] || 0) + 1; });
+  const legend = Object.entries(land).sort((a, b) => b[1] - a[1]).map(([g, n]) =>
+    `<span class="lg${g === S.gang ? ' mine' : ''}"><i style="background:${DIST[g].color}"></i>${DIST[g].gang} ${n}</span>`).join('');
+  $('#main').innerHTML = `<div id="mapwrap"><svg id="map"></svg>
+      <div class="zoom"><button data-z="1.4">+</button><button data-z="0.7">−</button><button data-z="0">⟲</button></div></div>
+    <div class="legend">${legend}</div>
     <div class="sheet"><h3>${d.name}${S.at === d.id ? ' · ты здесь' : ''}</h3>
     <div class="sub">${owner ? 'Моталка «' + owner.gang + '»' : 'Центр'} — ${rel}. ${d.desc}</div>
     <div class="choices">
@@ -347,7 +361,8 @@ function renderMap() {
   $('#sleep').onclick = () => { AUDIO.click(); sleep(); };
 }
 function renderMap_(sel) {
-  drawMapSvg($('#map'), S.ctrl, S.home, sel, id => { selDist = id; AUDIO.click(); renderMap(); });
+  drawMapSvg($('#map'), S.ctrl, S.home, sel, id => { selDist = id; AUDIO.click(); renderMap(); }, S.at);
+  document.querySelectorAll('.zoom button').forEach(b => b.onclick = e => { e.stopPropagation(); zoomBy(+b.dataset.z); });
 }
 
 // --- Экраны героя, журнала, меню -----------------------------------------------
@@ -357,9 +372,9 @@ function renderHero() {
   $('#main').innerHTML = `<div class="scene"><div class="herohead"><canvas class="sprite" id="spr"></canvas><div>
     <h2>${S.name}${S.nick ? ' «' + S.nick + '»' : ''}</h2>
     <div class="sub">${lookText(S.app)}.<br>Район: ${DIST[S.home].name}.<br>Моталка: ${g}.<br>Ранг: <b>${RANKS[S.rank]}</b></div></div></div>
+    ${walletHtml()}
     <div class="grid">
       ${Object.keys(STATS).map(k => `<div class="stat">${NAMES[k]}<span class="v">${S.st[k]}${gear(k) ? ' +' + gear(k) : ''}</span>${bar(S.st[k], 10)}</div>`).join('')}
-      <div class="stat">Деньги<span class="v">${S.st.dengi} р.</span></div>
       <div class="stat">Авторитет<span class="v">${S.st.avt}</span></div>
       ${Object.keys(METERS).map(k => `<div class="stat">${NAMES[k]}<span class="v">${S.st[k]}</span>${bar(S.st[k])}</div>`).join('')}
       ${Object.keys(RELS).filter(k => S.flags['met_' + k]).map(k => `<div class="stat">${NAMES[k]}<span class="v">${S.rel[k]}</span>${bar(S.rel[k])}</div>`).join('')}
@@ -369,7 +384,20 @@ function renderHero() {
       <div class="sub">Верность ${m.loyal}</div>${bar(m.loyal)}</div>
       <button class="btn" data-w="${i}">${S.withMe === i ? 'С тобой' : 'Взять'}</button></div>`).join('')}</div>
       <p class="note">Кого берёшь с собой — его бонус работает во всех проверках. Верность растёт от побед и угощений, падает, если бросаешь своих.</p>` : ''}
+    <h2 style="margin-top:18px">Моталки о тебе</h2>
+    <div class="legend" style="background:none;padding:0">${DISTRICTS.filter(x => x.gang && x.id !== S.gang).map(x => { const v = repOf(S, x.id);
+      return `<span class="lg"><i style="background:${x.color}"></i>${x.gang}: <b style="color:${v >= 30 ? 'var(--good)' : v <= -30 ? 'var(--bad)' : 'var(--dim)'}">${repWord(v)}</b></span>`; }).join('')}</div>
+    ${(S.tapes || []).length ? `<h2 style="margin-top:18px">Кассеты</h2><div class="choices">${S.tapes.map(id => `<button class="btn" data-tp="${id}"><span>${TAPE[id].name}</span><span class="ch ${S.tape === id ? 'hi' : ''}">${S.tape === id ? '▶ играет' : 'включить'}</span></button>`).join('')}
+      ${S.tape ? '<button class="btn" data-tp="">Выключить магнитофон</button>' : ''}</div>` : ''}
+    <div class="choices" style="margin-top:14px">
+      <button class="btn" id="alb"><span>Фотоальбом</span><span class="ch">${(S.album || []).length} фото</span></button>
+      <div class="btn"><span>Вкладыши от жвачки</span><span class="ch">${(S.cards || []).length}/${CARDS.length}</span></div>
+      ${S.seed ? `<button class="btn" id="shc"><span>Код судьбы: ${fateCode(S.seed)}</span><span class="ch">поделиться</span></button>` : ''}
+    </div>
     <p class="note">Сила, ловкость, смекалка и язык растут от поступков: качалка, школа, драки, разговоры. «+1» — бонус от одежды и напарника.</p></div>`;
+  $('#alb').onclick = () => { AUDIO.click(); albumScreen(); };
+  if ($('#shc')) $('#shc').onclick = () => share(`Асфальт. Казань-87 — сыграй мою судьбу: ${fateCode(S.seed)}\n${location.href}`);
+  document.querySelectorAll('[data-tp]').forEach(b => b.onclick = () => { S.tape = b.dataset.tp || null; AUDIO.click(); save('auto'); render(); });
   drawHero($('#spr'), S.app, S.wear);
   document.querySelectorAll('[data-sq]').forEach(c => { const m = S.squad[+c.dataset.sq]; drawHero(c, m.app, m.wear); });
   document.querySelectorAll('[data-w]').forEach(b => b.onclick = () => { AUDIO.click(); S.withMe = S.withMe === +b.dataset.w ? null : +b.dataset.w; save('auto'); renderHero(); });
@@ -382,30 +410,38 @@ function renderWardrobe() {
   const worn = id => wardSlot === 'acc' ? S.wear.acc.includes(id) : S.wear[wardSlot] === id;
   const bon = i => i.bonus ? Object.entries(i.bonus).map(([k, v]) => `${NAMES[k]} +${v}`).join(', ') : '';
   $('#main').innerHTML = `<div class="scene"><div class="herohead"><canvas class="sprite" id="spr"></canvas><div>
-    <h2>Гардероб</h2><div class="sub">Барахолка у фарцовщика Жоры. Денег: <b>${S.st.dengi} р.</b><br>Некоторые вещи продают только тем, кто в авторитете.</div></div></div>
+    <h2>Гардероб</h2><div class="sub">Барахолка у фарцовщика Жоры. У тебя: <b>${S.st.dengi} р.</b> и <b>$${S.st.dol || 0}</b><br>Импорт — только за доллары (менять у Жоры в Центре). Некоторое продают только тем, кто в авторитете.</div></div></div>
     <div class="tabs">${Object.entries(SLOTS).map(([k, v]) => `<button class="${k === wardSlot ? 'on' : ''}" data-s="${k}">${v}</button>`).join('')}</div>
     <div class="choices">${list.map((i, n) => {
-      const own = S.owned.includes(i.id), lockR = (i.rank || 0) > S.rank;
-      const act = own ? (worn(i.id) ? (wardSlot === 'acc' ? 'Снять' : 'Надето') : 'Надеть')
-        : lockR ? `с ранга «${RANKS[i.rank]}»` : `Купить ${i.price} р.`;
-      const dis = (!own && (lockR || S.st.dengi < i.price)) || (own && worn(i.id) && wardSlot !== 'acc');
-      return `<div class="item${worn(i.id) ? ' worn' : ''}"><div><b>${i.name}</b>${bon(i) ? ` <span class="ch hi">${bon(i)}</span>` : ''}
+      const own = S.owned.includes(i.id), lockR = (i.rank || 0) > S.rank, torn = (S.torn || []).includes(i.id);
+      const rc = repairCost(i), rcOk = (i.cur === '$' ? S.st.dol : S.st.dengi) >= rc;
+      const act = own && torn ? `Починить ${i.cur === '$' ? '$' + rc : rc + ' р.'}`
+        : own ? (worn(i.id) ? (wardSlot === 'acc' ? 'Снять' : 'Надето') : 'Надеть')
+        : lockR ? `с ранга «${RANKS[i.rank]}»` : `Купить ${priceTxt(i)}`;
+      const dis = own && torn ? !rcOk : (!own && (lockR || !canAfford(i))) || (own && worn(i.id) && wardSlot !== 'acc');
+      return `<div class="item${worn(i.id) ? ' worn' : ''}"><div><b>${i.name}</b>${i.cur === '$' ? ' <span class="ch mid">импорт, $</span>' : ''}${torn ? ' <span class="ch lo">порвано</span>' : ''}${bon(i) ? ` <span class="ch hi">${bon(i)}</span>` : ''}
         <div class="sub">${i.desc}</div></div><button class="btn" data-i="${n}" ${dis ? 'disabled' : ''}>${act}</button></div>`;
     }).join('')}</div></div>`;
   drawHero($('#spr'), S.app, S.wear);
   document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { AUDIO.click(); wardSlot = b.dataset.s; renderWardrobe(); });
   document.querySelectorAll('.item .btn').forEach(b => b.onclick = () => {
     const i = list[+b.dataset.i];
-    if (!S.owned.includes(i.id)) { S.st.dengi -= i.price; S.owned.push(i.id); log(`Купил: ${i.name}.`); AUDIO.ok(); }
+    if ((S.torn || []).includes(i.id)) { repair(i); AUDIO.ok(); save('auto'); renderTop(); return renderWardrobe(); }
+    if (!S.owned.includes(i.id)) { payFor(i); S.owned.push(i.id); log(`Купил: ${i.name}.`); AUDIO.sfx ? AUDIO.sfx('coin') : AUDIO.ok(); }
     else AUDIO.click();
     if (wardSlot === 'acc') S.wear.acc = worn(i.id) ? S.wear.acc.filter(x => x !== i.id) : [...S.wear.acc, i.id];
     else S.wear[wardSlot] = i.id;
     save('auto'); renderTop(); renderWardrobe();
   });
 }
+let logTab = 'diary';
 function renderLog() {
-  $('#main').innerHTML = `<div class="scene"><h2>Журнал</h2><div class="log">
-    ${S.log.map(l => `<p><span class="d">${l.d}</span><br>${l.t}</p>`).join('') || '<p>Пока пусто.</p>'}</div></div>`;
+  const list = logTab === 'diary' ? (S.diary || []) : S.log;
+  $('#main').innerHTML = `<div class="scene"><h2>${logTab === 'diary' ? 'Дневник' : 'Журнал событий'}</h2>
+    <div class="tabs"><button data-l="diary" class="${logTab === 'diary' ? 'on' : ''}">Дневник</button><button data-l="log" class="${logTab === 'log' ? 'on' : ''}">События</button></div>
+    <div class="log ${logTab === 'diary' ? 'diary' : ''}">
+    ${list.map(l => `<p><span class="d">${l.d}</span><br>${l.t}</p>`).join('') || '<p>Пока пусто. Записи появятся в конце дня.</p>'}</div></div>`;
+  document.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { logTab = b.dataset.l; AUDIO.click(); renderLog(); });
 }
 function renderMenu() {
   const slot = loadRaw('slot1');
@@ -427,7 +463,7 @@ function renderMenu() {
 function renderTop() {
   const ap = '●'.repeat(S.ap) + '○'.repeat(Math.max(0, AP_PER_DAY - S.ap));
   $('#top').innerHTML = `<span>${dateStr()}</span><span><b>${RANKS[S.rank]}</b></span>
-    <span>${S.st.dengi} р.</span><span>♥ ${S.st.zdor}</span><span>${ap}</span>`;
+    <span>${S.st.dengi} р.${S.st.dol ? ' · $' + S.st.dol : ''}</span><span>♥ ${S.st.zdor}</span><span>${ap}</span>`;
 }
 
 function render() {
@@ -441,7 +477,9 @@ function render() {
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.v === view));
   const BG_TRACK = { kuhnya: 'dom', shkola: 'dom', dk: 'disco', otdel: 'trevoga', pustyr: 'trevoga', noch: 'noch', ostanovka: 'noch' };
   const ev = S.cur && EV[S.cur];
-  AUDIO.track(ev && ev.fight && S.fight ? 'fight' : ev ? BG_TRACK[T(ev.bg)] || 'dvor' : view === 'ward' ? 'disco' : 'dvor');
+  const tape = !ev && view === 'map' && S.tape && TAPE[S.tape];
+  AUDIO.track(ev && ev.fight && S.fight ? 'fight' : ev ? BG_TRACK[T(ev.bg)] || 'dvor' : tape ? tape.track : view === 'ward' ? 'disco' : season() === 'winter' ? 'zima' : 'dvor');
+  if (AUDIO.ambience) AUDIO.ambience(ev ? T(ev.bg) || 'dvor' : view === 'map' ? (season() === 'winter' ? 'pustyr' : 'dvor') : null);
   if (inScene) renderScene();
   else ({ map: renderMap, hero: renderHero, ward: renderWardrobe, log: renderLog, tasks: renderTasks, menu: renderMenu })[view]();
   $('#main').scrollTop = 0;
@@ -489,6 +527,10 @@ function dropSave(slot, mode) { try { localStorage.removeItem(key(slot, mode)); 
 // Старые сохранения (до гардероба) получают внешность и одежду по умолчанию
 function migrate(s) {
   if (s && !s.cnt) { s.cnt = {}; s.squad = []; s.withMe = null; }
+  if (s && !s.points) {
+    s.points = s.flags.income ? [{ name: 'Старые точки', amt: s.flags.income }] : []; delete s.flags.income;
+    s.torn = []; s.st.dol = s.st.dol || 0;
+  }
   if (s && !s.app) {
     s.app = { ...DEFAULT_APP }; s.wear = { ...DEFAULT_WEAR, acc: [...DEFAULT_WEAR.acc] };
     s.owned = ITEMS.filter(i => i.start).map(i => i.id); s.mode = 'campaign';

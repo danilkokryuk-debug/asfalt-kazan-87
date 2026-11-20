@@ -47,7 +47,7 @@ function rollFate() {
 function careerNew(mode = 'career') {
   if (typeof mode !== 'string') mode = 'career';
   const surv = mode === 'surv';
-  let f = rollFate(), rerolls = 3;
+  let f = rollFateSeeded((Math.random() * 2 ** 31) >>> 0), rerolls = 3, daily = null;
   const fams = { mother: 'Мать одна', full: 'Полная семья', drunk: 'Отец пьёт' };
   const draw = () => {
     const tr = TRAITS.find(t => t.id === f.trait);
@@ -59,14 +59,19 @@ function careerNew(mode = 'career') {
       <div class="result">Черта: <b>${tr.name}</b> — ${tr.desc}</div>
       <div class="result ok">Цель: <b>${surv ? 'Дожить до Нового года, не пришиваясь ни к кому' : goalOf(f).text}</b></div>
       <p class="note">${surv ? 'Каждый день трясут всё чаще. Пришьёшься — проиграл. Смерть или тюрьма — конец.' : 'Смерть или тюрьма — конец забега. Задания берёшь у старших на вкладке «Задания».'}</p>
+      <div class="result">Код судьбы: <b>${fateCode(f.seed)}</b>${daily ? ' · <b>вызов дня</b> — у всех сегодня эта судьба' : ''}</div>
       <div class="choices">
-        <button class="btn" id="rr" ${rerolls ? '' : 'disabled'}>Другая судьба (осталось ${rerolls})</button>
         <button class="btn main" id="go">Начать жизнь</button>
+        <button class="btn" id="rr" ${rerolls ? '' : 'disabled'}>Другая судьба (осталось ${rerolls})</button>
+        <button class="btn" id="dl">Вызов дня: одна судьба на всех</button>
+        <button class="btn" id="cd">Ввести код друга</button>
         <button class="btn" id="back">Назад</button></div></div>`;
     drawHero($('#spr'), f.app, f.wear);
-    $('#rr').onclick = () => { rerolls--; f = rollFate(); AUDIO.click(); draw(); };
+    $('#rr').onclick = () => { rerolls--; daily = null; f = rollFateSeeded((Math.random() * 2 ** 31) >>> 0); AUDIO.click(); draw(); };
+    $('#dl').onclick = () => { daily = new Date().toLocaleDateString('ru-RU'); f = rollFateSeeded(todaySeed() * (surv ? 7 : 3)); AUDIO.click(); draw(); };
+    $('#cd').onclick = () => { const c = prompt('Код судьбы (например КЗН-1A2B3C):'); const s = c && codeSeed(c); if (s) { daily = null; f = rollFateSeeded(s); AUDIO.ok(); draw(); } };
     $('#back').onclick = titleScreen;
-    $('#go').onclick = () => surv ? startSurv(f) : startCareer(f);
+    $('#go').onclick = () => { surv ? startSurv(f) : startCareer(f); S.seed = f.seed; S.daily = daily; save('auto'); };
   };
   draw();
 }
@@ -129,8 +134,8 @@ const TASKS = [
     title: () => 'Вернуть долг',
     text: p => `${p.who[0].toUpperCase() + p.who.slice(1)} задолжал старшим и не торопится отдавать.`,
     choices: (S, p) => [
-      { t: 'Поговорить убедительно', chk: ['yaz', 5 + S.rank], ok: { txt: 'Отдал всё, ещё и чаю налил.', fx: { dengi: 10 * S.rank, avt: 4, mil: 4 } }, no: { txt: 'Послал тебя. Вежливо, но послал.', fx: { uvazh: -3 } } },
-      { t: 'Надавить силой', chk: ['sila', 4 + S.rank], ok: { txt: 'Деньги в кармане. Человек в синяках.', fx: { dengi: 12 * S.rank, avt: 5, mil: 10, sovest: -6 } }, no: { txt: 'Он вызвал милицию.', fx: { mil: 14, zdor: -8 } } },
+      { t: 'Поговорить убедительно', chk: ['yaz', 5 + S.rank], ok: { txt: 'Отдал всё, ещё и чаю налил. Большая часть ушла в общак.', fx: { dengi: pay(10 * S.rank), avt: 4, mil: 4 } }, no: { txt: 'Послал тебя. Вежливо, но послал.', fx: { uvazh: -3 } } },
+      { t: 'Надавить силой', chk: ['sila', 4 + S.rank], ok: { txt: 'Деньги в общак, твоя доля в кармане. Человек в синяках.', fx: { dengi: pay(12 * S.rank), avt: 5, mil: 10, sovest: -6 } }, no: { txt: 'Он вызвал милицию.', fx: { mil: 14, zdor: -8 } } },
       { t: 'Отказаться', fx: { uvazh: -5 }, txt: 'Старшие запомнили.' },
     ] },
   { id: 'nabeg', min: 2, gen: S => { const t = targets(S); return t.length ? { d: pick(t) } : null; },
@@ -154,7 +159,7 @@ const TASKS = [
     title: () => 'Рынок',
     text: () => 'Ряды на Колхозном рынке платят то одним, то другим. Пора сделать так, чтобы платили нам.',
     choices: S => [
-      { t: 'Договориться с торгашами', chk: ['yaz', 5 + S.rank], ok: { txt: 'Каждую неделю — конверт.', fx: s => { s.flags.income = (s.flags.income || 0) + 5 * s.rank; return { avt: 6, mil: 5 }; } },
+      { t: 'Договориться с торгашами', chk: ['yaz', 5 + S.rank], ok: { txt: 'Каждую неделю — конверт. Пока не отожмут.', fx: s => { addPoint('Ряды на рынке', 5 * s.rank); return { avt: 6, mil: 5 }; } },
         no: { txt: 'Торгаши позвали своих.', fx: fight('Рыночные', 4, 5 + S.rank, { fx: { avt: 6 } }, { fx: { zdor: -10 } }), go: 'k_fight' } },
     ] },
   { id: 'mir', min: 3, gen: S => { const t = targets(S); return t.length ? { g: S.ctrl[pick(t)] } : null; },
@@ -163,6 +168,14 @@ const TASKS = [
     choices: (S, p) => [
       { t: 'Договориться о мире', chk: ['yaz', 6 + S.rank], ok: { txt: 'Мир на полгода. Набегов от них не будет.', fx: s => { s.flags['peace_' + p.g] = s.day + 180; return { avt: 6 }; } }, no: { txt: 'Не договорились. Разошлись злые.', fx: { uvazh: -3 } } },
       { t: 'Наехать по-жёсткому', fx: fight(gangOf(p.g), 4, 5 + S.rank, { fx: { avt: 10, uvazh: 6, mil: 8 } }, { fx: { uvazh: -6, zdor: -10 } }), go: 'k_fight' },
+    ] },
+  { id: 'farca', min: 1, gen: () => ({ who: pick(['финны у гостиницы «Татарстан»', 'немцы-туристы у Кремля', 'моряк из загранки', 'студенты-арабы из общаги']) }),
+    title: () => 'Валютная сделка',
+    text: p => `${p.who[0].toUpperCase() + p.who.slice(1)} меняют доллары и джинсы. Можно взять — но ОБХСС не дремлет.`,
+    choices: S => [
+      { t: 'Провернуть сделку', chk: ['yaz', 4 + S.rank], ok: { txt: 'Зелёные в кармане. Сердце колотится.', fx: { dol: 3 + S.rank * 2, mil: 5, avt: 2 } },
+        no: { txt: 'Подстава. Из-за угла выходит дружинник с повязкой.', fx: { mil: 18 }, go: 'r_militia' } },
+      { t: 'Не связываться', txt: 'Валюта — это статья. Ну её.' },
     ] },
   { id: 'skorl', min: 3, gen: () => ({}),
     title: () => 'Натаскать скорлупу',
@@ -175,7 +188,7 @@ const TASKS = [
     title: p => `Крыша: ${p.what}`,
     text: p => `Новый ${p.what} открылся на твоей земле. Кооператоры. Деньги у них есть, а защиты нет.`,
     choices: (S, p) => [
-      { t: 'Предложить защиту', chk: ['yaz', 6 + S.rank], ok: { txt: 'Каждый месяц — конверт. Кооперация, однако.', fx: s => { s.flags.income = (s.flags.income || 0) + 15; return { avt: 8, mil: 8, dengi: 30 }; } }, no: { txt: 'Они уже платят другим.', fx: { uvazh: -3 } } },
+      { t: 'Предложить защиту', chk: ['yaz', 6 + S.rank], ok: { txt: 'Каждую неделю — конверт. Кооперация, однако.', fx: s => { addPoint(p.what[0].toUpperCase() + p.what.slice(1), 15); return { avt: 8, mil: 8, dengi: pay(30) }; } }, no: { txt: 'Они уже платят другим.', fx: { uvazh: -3 } } },
       { t: 'Не трогать', fx: { sovest: 3 }, txt: 'Пусть работают.' },
     ] },
 ];
@@ -212,7 +225,8 @@ function renderTasks() {
   $('#main').innerHTML = `<div class="scene"><h2>Задания</h2>
     <div class="result ok">Цель: <b>${g.text}</b><br>Срок: ${dateStr(g.until)}</div>
     <div class="result">Ранг: <b>${RANKS[S.rank]}</b>${need ? ` · до «${RANKS[S.rank + 1]}»: авторитет ${S.st.avt}/${need.avt}, уважение ${S.st.uvazh}/${need.uvazh}${need.land ? `, районов ${myLand(S).length}/${need.land}` : ''}` : ' · вершина'}
-    ${S.flags.income ? `<br>Доход с крыши: ${S.flags.income} р. в неделю` : ''}</div>
+    ${(S.points || []).length ? `<br>Доход с точек: ${pointsSum()} р. в неделю (потолок ранга ${CAP[S.rank]})` : ''}
+    <br>Твоя доля с заданий: ${Math.round(SHARE[S.rank] * 100)}%, остальное — в общак</div>
     <p class="sub">Старшие раздают задания. Новые — раз в три дня. Каждое отнимает одно действие.</p>
     <div class="choices">${S.board.map((t, i) => `<div class="item"><div><b>${TPL[t.id].title(t.p)}</b>
       <div class="sub">${TPL[t.id].text(t.p).split('\n')[0]}</div></div>
@@ -258,11 +272,10 @@ function careerDay(S) {
   if (g.ok(S)) return (S.over = { win: true, reason: 'Цель выполнена: ' + g.text.toLowerCase() });
   if (S.day > g.until) return (S.over = { win: false, reason: 'Не успел: ' + g.text.toLowerCase() });
   if (S.day % 7) return;
-  if (S.flags.income) S.st.dengi += S.flags.income;
   // соседи нападают на наши районы (кроме родного)
   if (S.gang && Math.random() < 0.5) {
     const mine = myLand(S).filter(d => d !== S.home);
-    const opts = mine.flatMap(d => [...NEIGHBORS[d]].filter(n => S.ctrl[n] && S.ctrl[n] !== S.gang && !((S.flags['peace_' + S.ctrl[n]] || 0) > S.day)).map(n => ({ d, g: S.ctrl[n] })));
+    const opts = mine.flatMap(d => [...NEIGHBORS[d]].filter(n => S.ctrl[n] && S.ctrl[n] !== S.gang && !((S.flags['peace_' + S.ctrl[n]] || 0) > S.day) && repOf(S, S.ctrl[n]) < 60).map(n => ({ d, g: S.ctrl[n] })));
     if (opts.length) S.flags.raid = pick(opts);
   }
   // чужие моталки воюют между собой
@@ -286,7 +299,7 @@ function endCareer(win, reason) {
     const pool = SHOP.filter(i => !i.start && !m.unlocked.includes(i.id));
     if (pool.length) { unlock = pick(pool); m.unlocked.push(unlock.id); }
   }
-  m.runs.unshift({ name: S.name, nick: S.nick, home: S.home, rank: S.rank, days: S.day, reason, win, slava, date: dateStr(), mode: S.mode });
+  m.runs.unshift({ name: S.name, nick: S.nick, home: S.home, rank: S.rank, days: S.day, reason, win, slava, date: dateStr(), mode: S.mode, daily: S.daily, code: S.seed && fateCode(S.seed) });
   m.runs = m.runs.slice(0, 30);
   try { localStorage.setItem('asfalt_meta', JSON.stringify(m)); } catch (e) {}
   noteEnding(reason);
@@ -299,8 +312,11 @@ function endCareer(win, reason) {
     <div class="result ${win ? 'ok' : 'no'}">${reason}</div>
     <div class="result">Слава: <b>${slava}</b> · Авторитет ${S.st.avt} · Районов ${myLand(S).length}</div>
     ${unlock ? `<div class="result ok">Открыта вещь для следующих судеб: <b>${unlock.name}</b></div>` : ''}
-    <div class="choices"><button class="btn main" id="nf">Новая судьба</button><button class="btn" id="tm">В главное меню</button></div></div>`;
+    <div class="choices"><button class="btn main" id="nf">Новая судьба</button><button class="btn" id="shr">Поделиться результатом</button><button class="btn" id="tm">В главное меню</button></div>
+    <h2 style="margin-top:18px">Рекорды: ${S.mode === 'surv' ? 'выживание' : 'карьера'}</h2>${recordsHtml(S.mode)}</div>`;
   drawHero($('#spr'), S.app, S.wear);
+  const shareTxt = `Асфальт. Казань-87${S.daily ? ' · вызов дня ' + S.daily : ''}: ${S.name}${S.nick ? ' «' + S.nick + '»' : ''}, ${RANKS[S.rank].toLowerCase()}, ${S.day} дн., слава ${slava}. ${reason}.${S.seed ? '\nСыграй мою судьбу: ' + fateCode(S.seed) : ''}\n${location.href}`;
+  $('#shr').onclick = () => share(shareTxt);
   const md = S.mode; $('#nf').onclick = () => careerNew(md); $('#tm').onclick = titleScreen;
 }
 

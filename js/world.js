@@ -69,7 +69,7 @@ const ERA_NEWS = {
   1991: ['Путч в Москве. По телевизору «Лебединое озеро»', 'Цены отпущены? Пока слухи', 'Союз доживает последние месяцы'],
 };
 def('g_gazeta', {
-  mode: 'any', repeat: true, title: '«Вечерняя Казань»', bg: 'gazeta',
+  mode: 'any', repeat: true, title: '«Вечерняя Казань»', bg: 'gazeta', sfx: 'page',
   trigger: S => S.day >= 9 && S.day % 10 === 9 && S.flags.gaz !== S.day,
   fx: S => { S.flags.gaz = S.day; },
   lines: S => {
@@ -162,6 +162,12 @@ const ACH = [
   { id: 'squad4', name: 'Своя скорлупа', d: 'Набрать четверых в скорлупу', c: S => S.squad.length >= 4 },
   { id: 'winter', name: 'Первый снег', d: 'Дожить до зимы', c: S => season() === 'winter' },
   { id: 'chapter3', name: 'Супер-сюжет', d: 'Дойти до главы 3', c: S => !!S.flags.ch3 },
+  { id: 'tapes5', name: 'Меломан', d: 'Собрать 5 кассет', c: S => (S.tapes || []).length >= 5 },
+  { id: 'cards10', name: 'Вкладыши', d: 'Собрать 10 вкладышей', c: S => (S.cards || []).length >= 10 },
+  { id: 'album5', name: 'Фотограф', d: '5 фото в альбоме', c: S => (S.album || []).length >= 5 },
+  { id: 'ally', name: 'Дипломат', d: 'Союз с чужой моталкой', c: S => Object.values(S.rep || {}).some(v => v >= 60) },
+  { id: 'dollar', name: 'Валютчик', d: 'Иметь $50', c: S => (S.st.dol || 0) >= 50 },
+  { id: 'zona', name: 'Отсидевший', d: 'Выйти с зоны', c: S => !!S.done.m_zona3 },
 ];
 function metaGet() { const m = meta(); m.ach = m.ach || []; m.ends = m.ends || []; return m; }
 function metaPut(m) { try { localStorage.setItem('asfalt_meta', JSON.stringify(m)); } catch (e) {} }
@@ -175,7 +181,7 @@ function noteEnding(name) { const m = metaGet(); if (!m.ends.includes(name)) { m
 function toast(t) {
   if (typeof __TEST !== 'undefined') return;
   const el = document.createElement('div'); el.className = 'toast'; el.textContent = '★ ' + t;
-  document.body.appendChild(el); AUDIO.ok(); setTimeout(() => el.remove(), 3200);
+  document.body.appendChild(el); AUDIO.sfx ? AUDIO.sfx('achievement') : AUDIO.ok(); setTimeout(() => el.remove(), 3200);
 }
 const ALL_ENDS = ['Ничей', 'Колония', 'Крыса', 'Сломался', 'Погиб на асфальте', 'Цель выполнена', 'Не успел', 'Дожил до Нового года'];
 function achScreen(back) {

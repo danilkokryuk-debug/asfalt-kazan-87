@@ -1,96 +1,193 @@
-// Стилизованная карта Казани: сетка клеток, каждая клетка суши принадлежит ближайшему району.
+// Стилизованная карта Казани: мелкая сетка, неровные границы районов, кварталы, улицы, вода, мосты, значки.
 // shortcut: география условная (не по спутнику), уточнять центры районов при желании.
-const W = 20, H = 30, CELL = 16;
+const W = 40, H = 60, CELL = 8;   // 320×480 в координатах SVG
 
-// id, название района, группировка, центр (x,y в клетках), цвет, описание
+// id, название района, группировка, центр (x,y в старых клетках 20×30), цвет, описание, значок
 const DISTRICTS = [
-  { id: 'socgorod', name: 'Соцгород',    gang: 'Соцгород',     x: 11, y: 2,  color: '#7a5c3a', desc: 'Авиастроительный. Заводские пацаны, держатся особняком.' },
-  { id: 'zhilka',   name: 'Жилка',       gang: 'Жилка',        x: 5,  y: 4,  color: '#6b3d3d', desc: 'Жилплощадка. Старые бараки, злые и многочисленные.' },
-  { id: 'kinoplenka', name: 'Кинопленка', gang: 'Кинопленка',  x: 5,  y: 8,  color: '#3d5a6b', desc: 'Московский район, у фабрики кинопленки.' },
-  { id: 'savinovo', name: 'Савиново',    gang: 'Савиново',     x: 15, y: 7,  color: '#4f6b3d', desc: 'Новостройки за Казанкой. Молодая, дерзкая моталка.' },
-  { id: 'center',   name: 'Центр',       gang: null,           x: 7,  y: 13, color: '#55524a', desc: 'Кремль, Баумана, ДК. Ничья земля — здесь милиция.' },
-  { id: 'borisk',   name: 'Борисково',   gang: 'Борисково',    x: 17, y: 13, color: '#6b5a2e', desc: 'Окраина, частный сектор. Своих не сдают.' },
-  { id: 'novotat',  name: 'Новотатарка', gang: 'Новотатарская', x: 3, y: 16, color: '#5a3d6b', desc: 'Старая слобода у Кабана. Здесь всё решают по-старому.' },
-  { id: 'tyap',     name: 'Теплоконтроль', gang: 'Тяп-Ляп',    x: 10, y: 16, color: '#8a2e2e', desc: 'Тяп-Ляп. Самая известная моталка города.' },
-  { id: 'universam', name: 'Универсам',  gang: 'Универсам',    x: 15, y: 18, color: '#2e5a8a', desc: 'Дворы вокруг универсама. Дружные, своих не бросают.' },
-  { id: 'taktash',  name: 'Хади Такташ', gang: 'Хади Такташ',  x: 7,  y: 21, color: '#8a5a2e', desc: 'Улица Хади Такташа. Старые враги Тяп-Ляпа.' },
-  { id: 'pavluha',  name: 'Павлюха',     gang: 'Павлюхина',    x: 11, y: 22, color: '#2e6b5a', desc: 'Улица Павлюхина. Хитрые, держат рынок.' },
-  { id: 'perv',     name: 'Перваки',     gang: 'Перваки',      x: 16, y: 24, color: '#6b2e5a', desc: 'Первые Горки. Спортсмены, качалки в каждом подвале.' },
-  { id: 'gryaz',    name: 'Грязь',       gang: 'Грязь',        x: 4,  y: 25, color: '#4a4a2e', desc: 'Низина у озера. Название говорит само за себя.' },
-  { id: 'mirny',    name: 'Мирный',      gang: 'Мирный',       x: 11, y: 28, color: '#3d3d6b', desc: 'Посёлок на юге. Далеко, но если придут — придут все.' },
+  { id: 'socgorod', name: 'Соцгород',    gang: 'Соцгород',     x: 11, y: 2,  color: '#8a6438', desc: 'Авиастроительный. Заводские пацаны, держатся особняком.', icon: 'zavod' },
+  { id: 'zhilka',   name: 'Жилка',       gang: 'Жилка',        x: 5,  y: 4,  color: '#7a3e3e', desc: 'Жилплощадка. Старые бараки, злые и многочисленные.' },
+  { id: 'kinoplenka', name: 'Кинопленка', gang: 'Кинопленка',  x: 5,  y: 8,  color: '#3d607a', desc: 'Московский район, у фабрики кинопленки.', icon: 'zavod' },
+  { id: 'savinovo', name: 'Савиново',    gang: 'Савиново',     x: 15, y: 7,  color: '#557a3d', desc: 'Новостройки за Казанкой. Молодая, дерзкая моталка.' },
+  { id: 'center',   name: 'Центр',       gang: null,           x: 7,  y: 13, color: '#6a665c', desc: 'Кремль, Баумана, ДК, рынок. Ничья земля — здесь милиция.', icon: 'kreml' },
+  { id: 'borisk',   name: 'Борисково',   gang: 'Борисково',    x: 17, y: 13, color: '#7a6630', desc: 'Окраина, частный сектор. Своих не сдают.' },
+  { id: 'novotat',  name: 'Новотатарка', gang: 'Новотатарская', x: 3, y: 16, color: '#653f7a', desc: 'Старая слобода у Кабана. Здесь всё решают по-старому.', icon: 'mechet' },
+  { id: 'tyap',     name: 'Теплоконтроль', gang: 'Тяп-Ляп',    x: 10, y: 16, color: '#9a3030', desc: 'Тяп-Ляп. Самая известная моталка города.', icon: 'zavod' },
+  { id: 'universam', name: 'Универсам',  gang: 'Универсам',    x: 15, y: 18, color: '#2e5f96', desc: 'Дворы вокруг универсама. Дружные, своих не бросают.', icon: 'magazin' },
+  { id: 'taktash',  name: 'Хади Такташ', gang: 'Хади Такташ',  x: 7,  y: 21, color: '#9a6230', desc: 'Улица Хади Такташа. Старые враги Тяп-Ляпа.' },
+  { id: 'pavluha',  name: 'Павлюха',     gang: 'Павлюхина',    x: 11, y: 22, color: '#2e7a66', desc: 'Улица Павлюхина. Хитрые, держат рынок.', icon: 'rynok' },
+  { id: 'perv',     name: 'Перваки',     gang: 'Перваки',      x: 16, y: 24, color: '#7a2e66', desc: 'Первые Горки. Спортсмены, качалки в каждом подвале.' },
+  { id: 'gryaz',    name: 'Грязь',       gang: 'Грязь',        x: 4,  y: 25, color: '#5a5a30', desc: 'Низина у озера. Название говорит само за себя.' },
+  { id: 'mirny',    name: 'Мирный',      gang: 'Мирный',       x: 11, y: 28, color: '#45457a', desc: 'Посёлок на юге. Далеко, но если придут — придут все.' },
 ];
 const DIST = Object.fromEntries(DISTRICTS.map(d => [d.id, d]));
 
-function isWater(x, y) {
-  if (x <= 1 + (y > 18 ? 1 : 0) + (y > 25 ? 1 : 0)) return true;           // Волга
-  const ky = 10.5 + Math.sin(x * 0.6) * 0.9;                                  // Казанка
-  if (Math.abs(y - ky) < 0.9 && x < 19) return true;
-  if ((x - 6) ** 2 / 2 + (y - 18.5) ** 2 / 5 < 1) return true;               // озеро Кабан
+// детерминированный «шум» — чтобы карта была одинаковой каждый раз
+const hash = (x, y) => { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); };
+const kazankaY = gx => 21 + Math.sin(gx * 0.3) * 1.8;            // гх, гу — клетки 40×60
+function isWater(gx, gy) {
+  if (gx <= 3 + (gy > 36 ? 2 : 0) + (gy > 50 ? 2 : 0) + Math.round(Math.sin(gy * 0.4))) return true;   // Волга
+  if (Math.abs(gy - kazankaY(gx)) < 1.4 && gx < 38) return true;                                        // Казанка
+  if ((gx - 12) ** 2 / 4 + (gy - 37) ** 2 / 20 < 1) return true;                                         // озеро Кабан
   return false;
 }
+const BRIDGES = [11, 19, 28];   // столбцы мостов через Казанку
+const isBridge = (gx, gy) => BRIDGES.includes(gx) && Math.abs(gy - kazankaY(gx)) < 1.6;
 
-// Клетки: owner района (ближайший центр по ту же сторону Казанки)
+// Клетки → район: ближайший центр (с шумом для неровных границ) по ту же сторону Казанки
 const CELLS = [];
-for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-  if (isWater(x, y)) { CELLS.push(null); continue; }
-  const north = y < 10.5 + Math.sin(x * 0.6) * 0.9;
+for (let gy = 0; gy < H; gy++) for (let gx = 0; gx < W; gx++) {
+  if (isWater(gx, gy) && !isBridge(gx, gy)) { CELLS.push(null); continue; }
+  const north = gy < kazankaY(gx);
   let best = null, bd = 1e9;
   for (const d of DISTRICTS) {
     if ((d.y < 11) !== north) continue;
-    const dd = (d.x - x) ** 2 + (d.y - y) ** 2;
+    const dd = (d.x * 2 + 1 - gx) ** 2 + (d.y * 2 + 1 - gy) ** 2 + hash(gx, gy) * 9;
     if (dd < bd) { bd = dd; best = d.id; }
   }
   CELLS.push(best);
 }
 const cellAt = (x, y) => (x < 0 || y < 0 || x >= W || y >= H) ? undefined : CELLS[y * W + x];
 
-// Соседи районов (по общей границе клеток или через мост через Казанку)
 const NEIGHBORS = {};
 DISTRICTS.forEach(d => NEIGHBORS[d.id] = new Set());
 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
   const a = cellAt(x, y); if (!a) continue;
-  for (const [dx, dy] of [[1, 0], [0, 1]]) {
-    const b = cellAt(x + dx, y + dy);
-    if (b && b !== a) { NEIGHBORS[a].add(b); NEIGHBORS[b].add(a); }
-  }
+  for (const [dx, dy] of [[1, 0], [0, 1]]) { const b = cellAt(x + dx, y + dy); if (b && b !== a) { NEIGHBORS[a].add(b); NEIGHBORS[b].add(a); } }
 }
 [['kinoplenka', 'center'], ['savinovo', 'borisk'], ['zhilka', 'center']].forEach(([a, b]) => { NEIGHBORS[a].add(b); NEIGHBORS[b].add(a); });
 
-// Отрисовка SVG. control: {districtId: gangOwnerDistrictId}
-function drawMapSvg(svg, control, homeId, selectedId, onTap) {
-  const ns = 'http://www.w3.org/2000/svg';
+// Центр района по клеткам (для подписи)
+const CENTROID = {};
+for (const d of DISTRICTS) {
+  let sx = 0, sy = 0, n = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (cellAt(x, y) === d.id) { sx += x; sy += y; n++; }
+  CENTROID[d.id] = n ? [(sx / n + 0.5) * CELL, (sy / n + 0.5) * CELL] : [d.x * 16, d.y * 16];
+}
+
+// Пиксельные значки (5×5), рисуются поверх района
+const ICONS = {
+  kreml: ['..#..', '.###.', '#.#.#', '#####', '#####'],
+  zavod: ['#...#', '#...#', '##.##', '#####', '#####'],
+  rynok: ['#####', '#.#.#', '#####', '#...#', '#...#'],
+  magazin: ['#####', '#...#', '#.#.#', '#...#', '#####'],
+  mechet: ['..#..', '.###.', '.###.', '#####', '#.#.#'],
+};
+
+let mapView = { s: 1, x: 0, y: 0 };
+const ns = 'http://www.w3.org/2000/svg';
+const svgEl = (tag, attrs) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+const lighten = (hex, k) => '#' + [1, 3, 5].map(i => Math.max(0, Math.min(255, Math.round(parseInt(hex.substr(i, 2), 16) * k))).toString(16).padStart(2, '0')).join('');
+
+// control: {districtId: владелец}; home — твой район; sel — выбранный; at — где ты сейчас
+function drawMapSvg(svg, control, homeId, selectedId, onTap, atId) {
+  if (typeof __TEST !== 'undefined') return;   // самопроверка: карта не нужна, а рисовать её тысячи раз долго
   svg.setAttribute('viewBox', `0 0 ${W * CELL} ${H * CELL}`);
   svg.innerHTML = '';
-  const g = document.createElementNS(ns, 'g');
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const id = cellAt(x, y);
-    const r = document.createElementNS(ns, 'rect');
-    r.setAttribute('x', x * CELL); r.setAttribute('y', y * CELL);
-    r.setAttribute('width', CELL); r.setAttribute('height', CELL);
-    if (!id) { r.setAttribute('class', 'water'); g.appendChild(r); continue; }
+  const defs = svgEl('defs', {});
+  defs.innerHTML = `<pattern id="waves" width="12" height="6" patternUnits="userSpaceOnUse">
+      <rect width="12" height="6" fill="#26394a"/><path d="M0 4 q3 -2 6 0 t6 0" stroke="#3a5670" fill="none" stroke-width="1"/></pattern>
+    <filter id="glow"><feGaussianBlur stdDeviation="2.5"/></filter>`;
+  svg.appendChild(defs);
+  svg.appendChild(svgEl('rect', { x: 0, y: 0, width: W * CELL, height: H * CELL, fill: 'url(#waves)' }));
+
+  // Суша: один path на цвет (быстро даже на телефоне)
+  const paths = {};
+  const add = (c, x, y, w = CELL, h = CELL) => { (paths[c] = paths[c] || []).push(`M${x} ${y}h${w}v${h}h${-w}z`); };
+  for (let gy = 0; gy < H; gy++) for (let gx = 0; gx < W; gx++) {
+    const id = cellAt(gx, gy); if (!id) continue;
+    const X = gx * CELL, Y = gy * CELL;
+    if (isWater(gx, gy)) { add('#7a6a55', X, Y); add('#5a4a38', X, Y + 3, CELL, 2); continue; }   // мост
     const owner = DIST[control[id]] || DIST[id];
-    r.setAttribute('fill', id === 'center' ? DIST.center.color : owner.color);
-    r.setAttribute('class', 'land' + (id === selectedId ? ' sel' : ''));
-    r.dataset.id = id;
-    g.appendChild(r);
+    const base = id === 'center' ? DIST.center.color : owner.color;
+    const street = gx % 6 === 0 || gy % 7 === 0;
+    const park = hash(gx * 3, gy * 7) > 0.93 && !street;
+    add(street ? lighten(base, 0.62) : park ? '#3f5a34' : lighten(base, 0.86 + hash(gx, gy) * 0.18), X, Y);
+    if (!street && !park) add(lighten(base, 1.25), X + 2, Y + 2, 4, 3);          // крыша дома
+    if (park) add('#557a44', X + 2, Y + 2, 3, 3);
   }
-  // Границы районов
-  let path = '';
+  for (const c in paths) svg.appendChild(svgEl('path', { d: paths[c].join(''), fill: c }));
+
+  // Границы: толстые — между разными владельцами, тонкие — между районами одной моталки
+  let thick = '', thin = '';
+  const own = id => control[id] || id;
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const a = cellAt(x, y); if (!a) continue;
-    if (cellAt(x + 1, y) !== a) path += `M${(x + 1) * CELL} ${y * CELL}v${CELL}`;
-    if (cellAt(x, y + 1) !== a) path += `M${x * CELL} ${(y + 1) * CELL}h${CELL}`;
+    const r = cellAt(x + 1, y), b = cellAt(x, y + 1);
+    if (r && r !== a) (own(r) !== own(a) ? (thick += `M${(x + 1) * CELL} ${y * CELL}v${CELL}`) : (thin += `M${(x + 1) * CELL} ${y * CELL}v${CELL}`));
+    if (b && b !== a) (own(b) !== own(a) ? (thick += `M${x * CELL} ${(y + 1) * CELL}h${CELL}`) : (thin += `M${x * CELL} ${(y + 1) * CELL}h${CELL}`));
   }
-  const p = document.createElementNS(ns, 'path');
-  p.setAttribute('d', path); p.setAttribute('class', 'border');
-  g.appendChild(p);
+  svg.appendChild(svgEl('path', { d: thin, stroke: 'rgba(0,0,0,.35)', 'stroke-width': 1, 'stroke-dasharray': '2 2', fill: 'none' }));
+  svg.appendChild(svgEl('path', { d: thick, stroke: '#120e0b', 'stroke-width': 2.2, fill: 'none', 'stroke-linecap': 'square' }));
+
+  // Подсветка выбранного района
+  if (selectedId) {
+    let sel = '';
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (cellAt(x, y) === selectedId) sel += `M${x * CELL} ${y * CELL}h${CELL}v${CELL}h${-CELL}z`;
+    svg.appendChild(svgEl('path', { d: sel, fill: 'rgba(255,240,200,.18)', class: 'selpulse' }));
+  }
+
+  // Значки и подписи-плашки
   for (const d of DISTRICTS) {
-    const t = document.createElementNS(ns, 'text');
-    t.setAttribute('x', d.x * CELL + CELL / 2); t.setAttribute('y', d.y * CELL + CELL / 2);
-    t.setAttribute('class', 'label' + (d.id === homeId ? ' home' : ''));
-    t.textContent = (d.id === homeId ? '★ ' : '') + d.name;
-    g.appendChild(t);
+    const [cx, cy] = CENTROID[d.id];
+    if (d.icon) {
+      const g = svgEl('g', { transform: `translate(${cx - 7} ${cy - 22})`, opacity: 0.85 });
+      ICONS[d.icon].forEach((row, j) => [...row].forEach((ch, i) => { if (ch === '#') g.appendChild(svgEl('rect', { x: i * 3, y: j * 3, width: 3, height: 3, fill: '#1a1612' })); }));
+      svg.appendChild(g);
+    }
+    const owner = DIST[control[d.id]] || d;
+    const txt = (d.id === homeId ? '★ ' : '') + d.name;
+    const w = txt.length * 4.6 + 14;
+    const g = svgEl('g', { class: 'chip' + (d.id === homeId ? ' home' : '') + (d.id === selectedId ? ' sel' : '') });
+    g.appendChild(svgEl('rect', { x: cx - w / 2, y: cy - 6, width: w, height: 12, rx: 2, fill: 'rgba(18,14,11,.82)', stroke: d.id === selectedId ? '#f0e6c0' : 'none', 'stroke-width': 1 }));
+    g.appendChild(svgEl('rect', { x: cx - w / 2 + 3, y: cy - 3, width: 6, height: 6, fill: d.id === 'center' ? '#bbb' : owner.color }));
+    const t = svgEl('text', { x: cx - w / 2 + 12, y: cy + 0.5, class: 'label' + (d.id === homeId ? ' home' : '') });
+    t.textContent = txt; g.appendChild(t);
+    svg.appendChild(g);
   }
-  svg.appendChild(g);
-  svg.onclick = e => { const id = e.target.dataset && e.target.dataset.id; if (id) onTap(id); };
+
+  // Ты здесь
+  if (atId && CENTROID[atId]) {
+    const [cx, cy] = CENTROID[atId];
+    svg.appendChild(svgEl('circle', { cx, cy: cy + 13, r: 6, fill: '#f0c040', opacity: 0.5, class: 'youpulse' }));
+    svg.appendChild(svgEl('circle', { cx, cy: cy + 13, r: 3, fill: '#f0c040', stroke: '#000', 'stroke-width': 1 }));
+  }
+
+  // Тап по карте → район (координаты с учётом масштаба)
+  svg.onclick = e => {
+    if (svg._dragged) return;
+    const r = svg.getBoundingClientRect();
+    const gx = Math.floor((e.clientX - r.left) / r.width * W), gy = Math.floor((e.clientY - r.top) / r.height * H);
+    const id = cellAt(gx, gy); if (id) onTap(id);
+  };
+  enableZoom(svg);
 }
+
+// Масштаб двумя пальцами, перетаскивание одним, колёсико на компьютере
+function enableZoom(svg) {
+  const wrap = svg.parentElement; if (!wrap || !wrap.addEventListener || wrap._zoom) return applyView(svg);
+  wrap._zoom = true;
+  const pts = new Map(); let start = null;
+  const clampV = () => { mapView.s = Math.max(1, Math.min(3.5, mapView.s)); const m = (mapView.s - 1) * 160; mapView.x = Math.max(-m, Math.min(m, mapView.x)); mapView.y = Math.max(-m * 1.5, Math.min(m * 1.5, mapView.y)); };
+  wrap.addEventListener('pointerdown', e => { pts.set(e.pointerId, [e.clientX, e.clientY]); start = { ...mapView, pts: new Map(pts) }; svg._dragged = false; });
+  wrap.addEventListener('pointermove', e => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, [e.clientX, e.clientY]);
+    const cur = [...pts.values()], st = [...start.pts.values()];
+    if (cur.length === 1 && st.length === 1) {
+      const dx = cur[0][0] - st[0][0], dy = cur[0][1] - st[0][1];
+      if (Math.abs(dx) + Math.abs(dy) > 6) svg._dragged = true;
+      if (mapView.s > 1) { mapView.x = start.x + dx; mapView.y = start.y + dy; }
+    } else if (cur.length >= 2 && st.length >= 2) {
+      const d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+      mapView.s = start.s * d(cur[0], cur[1]) / d(st[0], st[1]); svg._dragged = true;
+    }
+    clampV(); applyView(svg);
+  });
+  const up = e => { pts.delete(e.pointerId); start = { ...mapView, pts: new Map(pts) }; setTimeout(() => svg._dragged = false, 50); };
+  wrap.addEventListener('pointerup', up); wrap.addEventListener('pointercancel', up);
+  wrap.addEventListener('wheel', e => { e.preventDefault(); mapView.s *= e.deltaY < 0 ? 1.15 : 0.87; clampV(); applyView(svg); }, { passive: false });
+  applyView(svg);
+}
+function applyView(svg) {
+  if (!svg.style) return; svg.style.transform = `translate(${mapView.x}px, ${mapView.y}px) scale(${mapView.s})`; }
+function zoomBy(k) { mapView.s *= k; if (k === 0) mapView = { s: 1, x: 0, y: 0 }; mapView.s = Math.max(1, Math.min(3.5, mapView.s || 1)); const svg = document.getElementById('map'); if (svg) applyView(svg); }
