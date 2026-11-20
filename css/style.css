@@ -30,7 +30,10 @@ input { -webkit-user-select: text; user-select: text; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--paper); font-family: var(--font); }
 /* На весь экран iPhone: фон идёт под часы и полоску «домой», отступы — только у содержимого */
 html { height: 100%; background: var(--bg); }
-body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; padding: 0; user-select: none; }
+/* position: fixed + inset: 0 — на iPhone (иконка на «Домой») 100vh/100dvh короче экрана на высоту зоны часов,
+   и снизу оставалась полоса. Закрепляем игру по всем краям экрана. */
+body { display: flex; flex-direction: column; position: fixed; inset: 0; width: 100%; height: auto; min-height: -webkit-fill-available;
+  overflow: hidden; padding: 0; user-select: none; }
 body::after { content: ""; position: fixed; inset: 0; pointer-events: none; opacity: .07;
   background: repeating-linear-gradient(0deg, #000 0 1px, transparent 1px 3px); }
 
