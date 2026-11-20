@@ -148,6 +148,16 @@ function mix(a, b, k) {
   return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * k).toString(16).padStart(2, '0')).join('');
 }
 
+// Картинки из Google Flow (img/*.jpg) — если есть, показываем их вместо нарисованной кодом сцены
+const SCENE_IMG = { kazan: 1, chase: 1, vokzal: 1, kuhnya: 1, pustyr: 1, korobka: 1, zona: 1, dvor: 1 };
+const sceneImg = name => SCENE_IMG[name] ? `img/${name}.jpg` : null;
+// HTML иллюстрации: картинка с медленным наездом камеры или анимированный холст
+function artHtml(name, cls) {
+  const src = sceneImg(name);
+  return src ? `<div class="${cls} photo-art" style="background-image:url('${src}')"></div>` : `<canvas class="${cls}" data-scene="${name}"></canvas>`;
+}
+function artStart(root) { root.querySelectorAll && root.querySelectorAll('canvas[data-scene]').forEach(c => animScene(c, c.dataset.scene)); }
+
 // Анимировать сцену на холсте, пока он в документе
 function animScene(cv, name) {
   if (typeof __TEST !== 'undefined' || !cv) return;

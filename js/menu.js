@@ -3,22 +3,26 @@
 // ===================== ГЛАВНЫЙ ЭКРАН ================================================================
 let splashDone = false;
 
-// Вступление на 5 секунд: погоня, мигалки, сирена → вспышка → меню
+// Вступление ~4 с, без текста: «кадры» как в боевике — погоня с мигалками, двор, ночная Казань → затемнение → меню
 function playIntro(done) {
   const el = document.createElement('div'); el.className = 'intro';
-  el.innerHTML = '<canvas id="icv"></canvas><div class="itx" id="itx"></div><div class="iskip">нажми, чтобы пропустить</div>';
-  document.body.appendChild(el);
-  animScene(el.querySelector('canvas'), 'chase');
+  const shots = ['chase', 'dvor', 'kazan'];
+  el.innerHTML = shots.map((s, i) => `<div class="shot s${i}">${artHtml(s, 'shotart')}</div>`).join('') +
+    '<div class="lights"></div><div class="vign"></div><div class="iskip">нажми, чтобы пропустить</div>';
+  document.body.appendChild(el); artStart(el);
   AUDIO.track('fight'); AUDIO.sfx && (AUDIO.sfx('siren'), AUDIO.sfx('steps'));
-  const say = (txt, at) => setTimeout(() => { const x = el.querySelector('#itx'); if (x) { x.textContent = txt; x.classList.remove('pop'); void x.offsetWidth; x.classList.add('pop'); } }, at);
-  say('Казань. 1987.', 600); say('Стоять!', 2200); say('Беги.', 3500);
+  const cut = (i, at) => setTimeout(() => {
+    el.querySelectorAll('.shot').forEach((s, k) => s.classList.toggle('on', k === i));
+    el.classList.toggle('police', i === 0); if (i) AUDIO.sfx && AUDIO.sfx('swish');
+  }, at);
+  cut(0, 30); cut(1, 1700); cut(2, 2600);
   let fin = false;
   const end = () => {
     if (fin) return; fin = true;
-    el.classList.add('flash'); AUDIO.sfx && AUDIO.sfx('slam');
-    setTimeout(() => { el.remove(); done(); }, 450);
+    el.classList.add('out'); AUDIO.sfx && AUDIO.sfx('slam');
+    setTimeout(() => { el.remove(); done(); }, 600);
   };
-  el.onclick = end; setTimeout(end, 5000);
+  el.onclick = end; setTimeout(end, 4000);
 }
 
 function titleScreen(epic) {
@@ -29,7 +33,7 @@ function titleScreen(epic) {
   const last = saves[0];
   const MODE = { campaign: 'Кампания', career: 'Карьера', surv: 'Выживание' };
   $('#main').innerHTML = `<div class="menu">
-    <canvas class="menuart" id="mart"></canvas>
+    ${artHtml('kazan', 'menuart')}<div class="snowfall"></div>
     <div class="logo${epic ? ' epic' : ''}"><h1>АСФАЛЬТ</h1><div class="s">КАЗАНЬ · 1987</div></div>
     ${!splashDone ? '<div class="tapstart" id="tap">нажми, чтобы начать</div>' : `<div class="choices menu-btns">
       ${last ? `<button class="btn main" id="cont"><span>Продолжить</span><span class="ch">${MODE[last.mode]}: ${last.name}, ${dateStr(last.day)}</span></button>` : ''}
@@ -39,7 +43,7 @@ function titleScreen(epic) {
       <button class="btn" id="chron">Летопись судеб</button>
       <button class="btn" id="set">Настройки</button></div>`}
     <p class="note">16+. Вымышленная история по мотивам событий 1980-х в Казани. Все персонажи вымышлены.</p></div>`;
-  animScene($('#mart'), 'kazan');
+  artStart($('#main'));
   // первый тап нужен iPhone, чтобы разрешить звук; дальше — вступление
   if (!splashDone) { $('#main').onclick = () => { $('#main').onclick = null; splashDone = true; AUDIO.start(); playIntro(() => titleScreen(true)); }; return; }
   AUDIO.track('theme');

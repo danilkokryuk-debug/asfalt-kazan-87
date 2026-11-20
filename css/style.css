@@ -244,7 +244,8 @@ label { font-size: 13px; color: var(--dim); }
 .menu { background: linear-gradient(#0a0c24 0, #2a2040 40%, #0c1424 62%, #0a0806 100%); }
 .menuart { position: absolute; left: 0; top: 16%; width: 100%; height: auto; aspect-ratio: 16 / 10; image-rendering: pixelated; z-index: 0; }
 .menu::before { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 45%, rgba(10, 8, 6, .9) 75%); z-index: 1; }
-.menu > *:not(canvas) { position: relative; z-index: 2; }
+.menu > .logo, .menu > .menu-btns, .menu > .tapstart, .menu > .note { position: relative; z-index: 2; }
+.menu > .menuart { z-index: 0; }
 .logo { text-align: center; margin-bottom: auto; padding-top: 12vh; }
 .logo h1 { font-size: 52px; letter-spacing: 8px; margin: 0; color: var(--accent);
   text-shadow: 3px 3px 0 #000, 0 0 18px rgba(255, 60, 60, .55); animation: neon 3s infinite; }
@@ -253,24 +254,51 @@ label { font-size: 13px; color: var(--dim); }
 .tapstart { text-align: center; color: var(--paper); letter-spacing: 3px; margin: 30vh 0 20px; animation: blink 1.6s infinite; text-shadow: 2px 2px 0 #000; }
 .menu-btns .btn { background: rgba(26, 22, 18, .82); backdrop-filter: blur(2px); }
 .menu .note { color: #b8ad98; }
-/* Вступление */
-.intro { position: fixed; inset: 0; z-index: 90; background: #000; overflow: hidden; }
-.intro canvas { position: absolute; top: 24%; left: -15%; width: 130%; height: auto; aspect-ratio: 16 / 10;
-  image-rendering: pixelated; animation: shakeI .25s infinite; }
-.intro .itx { position: absolute; left: 0; right: 0; bottom: 22vh; text-align: center; font-size: 30px; letter-spacing: 4px; color: #fff;
-  text-shadow: 3px 3px 0 #000, 0 0 12px #3c6cff; text-transform: uppercase; }
-.intro .itx.pop { animation: pop .4s ease-out; }
-.intro .iskip { position: absolute; bottom: calc(env(safe-area-inset-bottom) + 14px); left: 0; right: 0; text-align: center; font-size: 11px; color: #888; }
-.intro.flash::after { content: ""; position: absolute; inset: 0; background: #fff; animation: flash .45s forwards; }
+/* Вступление: «кадры» как в боевике, без текста */
+.photo-art { background-size: cover; background-position: center; image-rendering: pixelated; }
+.intro { position: fixed; inset: 0; z-index: 90; background: #000; overflow: hidden; transition: opacity .6s; }
+.intro.out { opacity: 0; }
+.intro .shot { position: absolute; inset: 0; opacity: 0; transition: opacity .22s; overflow: hidden; }
+.intro .shot.on { opacity: 1; }
+.intro .shotart { position: absolute; inset: 0; width: 100%; height: 100%; }
+.intro .s0.on .shotart { transform-origin: 45% 62%; animation: introPush 1.8s cubic-bezier(.3, 0, .7, 1) forwards; }
+.intro .s1.on .shotart { animation: introWhip 1s cubic-bezier(.2, .8, .3, 1) forwards; }
+.intro .s2.on .shotart { animation: introReveal 1.6s ease-out forwards; }
+@keyframes introPush { from { transform: scale(1.08); } to { transform: scale(1.38) translateY(-2%); } }
+@keyframes introWhip { from { transform: scale(1.3) translateX(6%); filter: blur(2px); } to { transform: scale(1.1); filter: none; } }
+@keyframes introReveal { from { transform: scale(1.22); filter: brightness(1.3); } to { transform: scale(1.04); filter: none; } }
+.intro .lights { position: absolute; inset: 0; opacity: 0; pointer-events: none; mix-blend-mode: screen; transition: opacity .3s; }
+.intro.police .lights { opacity: 1; animation: policeLights .5s steps(1) infinite; }
+@keyframes policeLights { 0% { background: radial-gradient(circle at 20% 60%, rgba(255, 50, 60, .28), transparent 55%); }
+  50% { background: radial-gradient(circle at 80% 60%, rgba(60, 110, 255, .28), transparent 55%); } }
+.intro.police .shot.on { animation: shakeI .2s infinite; }
 @keyframes shakeI { 50% { transform: translate(1px, -1px); } }
-@keyframes pop { from { transform: scale(1.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-.logo.epic h1 { animation: slamIn .7s cubic-bezier(.2, 1.6, .4, 1), neon 3s 1s infinite; }
+.intro .vign { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, .7)); }
+.intro .iskip { position: absolute; bottom: calc(env(safe-area-inset-bottom) + 14px); left: 0; right: 0; text-align: center; font-size: 11px; color: rgba(255, 255, 255, .45); }
+.logo.epic h1 { animation: slamIn .9s cubic-bezier(.2, .9, .3, 1) both; }
 .logo.epic .s { animation: fadeUp .8s .5s both; }
 .logo.epic ~ .menu-btns .btn { animation: fadeUp .5s both; }
 .logo.epic ~ .menu-btns .btn:nth-child(2) { animation-delay: .1s; } .logo.epic ~ .menu-btns .btn:nth-child(3) { animation-delay: .2s; }
 .logo.epic ~ .menu-btns .btn:nth-child(4) { animation-delay: .3s; } .logo.epic ~ .menu-btns .btn:nth-child(5) { animation-delay: .4s; }
 .logo.epic ~ .menu-btns .btn:nth-child(6) { animation-delay: .5s; }
-@keyframes slamIn { from { transform: scale(3); opacity: 0; filter: blur(6px); } to { transform: scale(1); opacity: 1; filter: none; } }
+@keyframes slamIn { from { transform: scale(1.35); opacity: 0; filter: blur(4px); letter-spacing: 18px; } to { transform: scale(1); opacity: 1; filter: none; } }
+/* Меню: картинка ночной Казани с медленной камерой, снег, мягкий логотип */
+.menu { background: #0a0c18; overflow: hidden; }
+.menuart.photo-art { position: absolute; inset: 0; top: 0; width: 100%; height: 100%; aspect-ratio: auto; animation: kenburns 26s ease-in-out infinite alternate; }
+@keyframes kenburns { from { transform: scale(1.04); } to { transform: scale(1.14) translate(-2%, 1%); } }
+.menu::before { background: linear-gradient(rgba(8, 8, 16, .25) 0%, transparent 30%, rgba(8, 7, 10, .55) 55%, rgba(8, 7, 10, .92) 78%); }
+.snowfall { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: .55;
+  background-image: radial-gradient(1.5px 1.5px at 30px 40px, #fff, transparent), radial-gradient(2px 2px at 120px 160px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 210px 80px, #fff, transparent), radial-gradient(2px 2px at 300px 220px, #fff, transparent),
+    radial-gradient(1px 1px at 360px 20px, #fff, transparent);
+  background-size: 380px 260px; animation: snow 12s linear infinite; }
+.logo h1 { animation: none; text-shadow: 0 3px 0 #000, 0 0 26px rgba(200, 60, 50, .35); }
+.logo .s { opacity: .9; }
+.tapstart { animation: softPulse 2.4s ease-in-out infinite; color: rgba(240, 232, 216, .85); font-size: 13px; }
+@keyframes softPulse { 50% { opacity: .35; } }
+.menu-btns .btn { background: rgba(18, 16, 20, .62); border-color: rgba(255, 255, 255, .12); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.menu-btns .btn.main { background: rgba(200, 64, 47, .85); border-color: transparent; }
+.cardart.photo-art { animation: artIn 1.2s forwards, kenburns 8s ease-out forwards; }
 /* Время и задания */
 #top .clock { color: var(--gold); } #top .clock.night { color: #8aa0ff; }
 #top .tp { background: none; border: 1px solid var(--line); color: var(--paper); font: 11px var(--font); padding: 2px 6px; }

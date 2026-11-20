@@ -197,9 +197,9 @@ function card(lines, then, ms = 2200, scene) {
   const el = document.createElement('div');
   scene = scene === undefined ? sceneFor([].concat(lines).join(' ')) : scene;
   el.className = 'card' + (scene ? ' art' : '');
-  el.innerHTML = (scene ? '<canvas class="cardart"></canvas>' : '') + [].concat(lines).map((l, i) => `<div class="${i ? 'c2' : 'c1'}">${l}</div>`).join('');
+  el.innerHTML = (scene ? artHtml(scene, 'cardart') : '') + [].concat(lines).map((l, i) => `<div class="${i ? 'c2' : 'c1'}">${l}</div>`).join('');
   document.body.appendChild(el);
-  if (scene) { animScene(el.querySelector('canvas'), scene); ms += 800; }
+  if (scene) { artStart(el); ms += 800; }
   let done = false;
   const end = () => { if (done) return; done = true; el.classList.add('out'); setTimeout(() => { el.remove(); then && then(); }, 400); };
   el.onclick = end; setTimeout(end, ms);
