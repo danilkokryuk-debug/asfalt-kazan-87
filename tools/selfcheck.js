@@ -11,7 +11,7 @@ const ctx = {
   localStorage: { getItem: k => store[k] ?? null, setItem: (k, v) => store[k] = v },
 };
 vm.createContext(ctx);
-const src = ['js/map.js', 'js/sprite.js', 'js/audio.js', 'js/game.js', 'js/story.js', 'js/career.js', 'js/mini.js', 'js/world.js', 'js/economy.js', 'js/mechanics.js', 'js/atmos.js', 'js/story2.js', 'js/street.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
+const src = ['js/map.js', 'js/sprite.js', 'js/audio.js', 'js/settings.js', 'js/game.js', 'js/story.js', 'js/career.js', 'js/mini.js', 'js/world.js', 'js/economy.js', 'js/mechanics.js', 'js/atmos.js', 'js/story2.js', 'js/street.js', 'js/scenes.js', 'js/menu.js', 'js/time.js', 'js/places.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
 vm.runInContext(src + `
 ;globalThis.EV = EV; globalThis.DISTRICTS = DISTRICTS; save = () => {};
 function __run(seedHome, steps) {
@@ -33,6 +33,11 @@ function __run(seedHome, steps) {
         .filter(c => !c.req || Object.entries(c.req).every(([k, v]) => k === 'dengi' ? S.st.dengi >= v : stat(k) >= v));
       if (!ch.length) throw new Error('нет доступных выборов в ' + S.cur);
       const c = ch[rnd(ch.length)]; T(c.t); T(ev.text); doChoice(c); continue;
+    }
+    if (S.ap > 0 && S.jobs.length && Math.random() < 0.3) { takeJob(S.jobs[0].uid); continue; }
+    if (S.ap > 0 && Math.random() < 0.15) {   // заходим в случайное заведение
+      const pl = pick(PLACES), acts = placeActions(S, pl).filter(a => !a.barber && (!a.if || a.if(S)) && (!a.req || Object.entries(a.req).every(([k, v]) => S.st[k] >= v)));
+      if (acts.length) { S.at = pl.d; doChoice({ ...pick(acts), cost: 0.5 }); continue; }
     }
     if (S.ap > 0 && Math.random() < 0.8) {
       const ds = [S.home, ...NEIGHBORS[S.home], 'center'];
@@ -60,8 +65,7 @@ function __career(steps, surv) {
       const c = Math.random() < 0.6 ? ch[0] : ch[rnd(ch.length)]; T(c.t); T(ev.text); T(ev.title); doChoice(c); continue;
     }
     if (S.ap > 0) {
-      if (S.mode === 'career') renderTasks(); else S.board = [];
-      if (S.board.length && Math.random() < 0.5) { S.kt = S.board.shift(); S.ap--; play('k_task'); continue; }
+      if (S.jobs.length && Math.random() < 0.6) { takeJob(S.jobs[0].uid); continue; }
       const acts = locActions(S, S.home).filter(a => !a.req || S.st.dengi >= (a.req.dengi || 0));
       S.at = S.home; doChoice({ ...acts[rnd(acts.length)], cost: 1 });
     } else sleep();

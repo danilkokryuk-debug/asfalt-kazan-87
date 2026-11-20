@@ -9,7 +9,7 @@ const MINI = (() => {
   };
 
   function run(kind, p, done) {
-    if (typeof __TEST !== 'undefined') return done(Math.random() < p);
+    if (typeof __TEST !== 'undefined' || (typeof SET !== 'undefined' && SET.skipMini)) return done(Math.random() < p);
     const el = document.createElement('div');
     el.className = 'mini';
     el.innerHTML = `<div class="mt">${NAMES[kind]}</div><div class="mhint">${HINT[kind]}</div>
@@ -17,10 +17,10 @@ const MINI = (() => {
       <button class="btn" id="mskip">Положиться на удачу (${Math.round(p * 100)}%)</button>`;
     document.body.appendChild(el);
     let over = false, raf = null;
-    const finish = ok => {
+    const finish = (ok, msg) => {
       if (over) return; over = true; cancelAnimationFrame(raf);
       ok ? AUDIO.ok() : AUDIO.no();
-      el.querySelector('#mr').textContent = ok ? '✔ Получилось' : '✘ Не вышло';
+      el.querySelector('#mr').textContent = msg || (ok ? '✔ Получилось' : '✘ Не вышло');
       el.querySelector('#mr').className = 'mres ' + (ok ? 'ok' : 'no');
       setTimeout(() => { el.remove(); done(ok); }, 900);
     };
@@ -59,19 +59,28 @@ const MINI = (() => {
       let pos = [0, 1, 2], ball = Math.floor(Math.random() * 3);   // pos[i] — место стаканчика i
       const place = () => cups.forEach((c, i) => c.style.left = (pos[i] * 33 + 4) + '%');
       place(); cups[ball].classList.add('show');
-      const swaps = 6 + Math.round((1 - p) * 6), speed = 260 + p * 260;
+      // Сложно: много быстрых перестановок, скорость растёт к концу, а напёрсточник иногда мухлюет
+      const swaps = 11 + Math.round((1 - p) * 7);
+      const cheat = Math.random() < 0.3 * (1 - p);   // шарик незаметно уходит в рукав
       let n = 0;
+      cups.forEach(c => c.style.transitionDuration = '0.16s');
       setTimeout(() => {
         cups[ball].classList.remove('show');
-        const iv = setInterval(() => {
+        const step = () => {
           const a = Math.floor(Math.random() * 3), b = (a + 1 + Math.floor(Math.random() * 2)) % 3;
           [pos[a], pos[b]] = [pos[b], pos[a]]; place(); AUDIO.click();
           if (++n >= swaps) {
-            clearInterval(iv);
-            cups.forEach((c, i) => c.onclick = () => { cups[ball].classList.add('show'); finish(i === ball); });
+            if (cheat) cups[ball].querySelector('.ball').remove();
+            cups.forEach((c, i) => c.onclick = () => {
+              cups.forEach(x => x.classList.add('show'));
+              cheat ? finish(false, '✘ Шарика нет нигде. Мухлюет!') : finish(i === ball);
+            });
+            return;
           }
-        }, speed);
-      }, 1100);
+          setTimeout(step, Math.max(110, (230 + p * 150) * (1 - n / swaps * 0.45)));
+        };
+        step();
+      }, 900);
     },
     pobeg(body, p, finish, loop) {
       body.innerHTML = `<div class="road"><div class="runner" id="rn"></div></div><div class="kreps" id="rl"></div>`;

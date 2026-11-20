@@ -208,7 +208,7 @@ def('k_task', {
   mode: 'career',
   title: S => TPL[S.kt.id].title(S.kt.p),
   bg: S => ({ dezhur: 'dk', rynok: 'rynok', menty: 'otdel', nabeg: 'pustyr', razv: 'dvor', mir: 'pustyr' })[S.kt.id] || 'korobka',
-  lines: S => [['starsh', TPL[S.kt.id].text(S.kt.p)]],
+  lines: S => [[TPL[S.kt.id].who || 'starsh', TPL[S.kt.id].text(S.kt.p)]],
   choices: S => TPL[S.kt.id].choices(S, S.kt.p),
 });
 def('k_fight', {

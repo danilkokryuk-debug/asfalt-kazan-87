@@ -26,7 +26,7 @@ function newState(o) {
   return {
     v: 2, mode: 'campaign', name: o.name, app: o.app, home: o.home, fam: o.fam, gang: null, rank: 0, nick: null,
     wear: o.wear, owned: ITEMS.filter(i => i.start).map(i => i.id),
-    day: 1, ap: AP_PER_DAY, at: o.home,
+    day: 1, ap: AP_PER_DAY, at: o.home, min: 7 * 60, jobs: [],
     points: [], torn: [],
     st: { sila: 3, lovk: 3, um: 3, yaz: 3, zdor: 100, dengi: o.dengi, dol: 0, avt: 0,
           uvazh: 0, mil: 0, sovest: 70, semya: o.semya, lyub: 0 },
@@ -38,7 +38,7 @@ function newState(o) {
 
 // --- Проверки ---------------------------------------------------------------
 function gear(k) { return wornIds(S.wear).filter(id => !(S.torn || []).includes(id)).reduce((a, id) => a + (ITEM[id]?.bonus?.[k] || 0), 0); }
-function stat(k) { return (S.st[k] ?? S.rel[k] ?? 0) + (k in STATS ? gear(k) + ((comp() || {}).perk?.b[k] || 0) : 0); }
+function stat(k) { return (S.st[k] ?? S.rel[k] ?? 0) + (k in STATS ? gear(k) + ((comp() || {}).perk?.b[k] || 0) + looksBonus(k) : 0); }
 function chance(chk) {
   const [k, d] = chk;
   return clamp(0.5 + (stat(k) - d) * 0.1, 0.05, 0.95);
@@ -104,14 +104,16 @@ function sceneHead(ev) {
 let typing = null;
 function typeInto(el, text, done) {
   stopTyping();
+  const k = SPEED[SET.speed] ?? 1;
+  if (!k) { el.textContent = text; done && done(); return; }
   let i = 0;
   typing = { el, text, done, timer: null };
   const step = () => {
     if (!typing) return;
-    if (i >= text.length) { typing = null; done && done(); return; }
+    if (i >= text.length) { typing = null; AUDIO.ret && AUDIO.ret(); done && done(); return; }
     const ch = text[i++]; el.textContent = text.slice(0, i);
     if (i % 3 === 0 && ch.trim()) AUDIO.type();
-    typing.timer = setTimeout(step, '.!?…'.includes(ch) ? 260 : ',—:'.includes(ch) ? 120 : 26);
+    typing.timer = setTimeout(step, k * ('.!?…'.includes(ch) ? 260 : ',—:'.includes(ch) ? 120 : 26));
   };
   step();
 }
@@ -189,13 +191,15 @@ function renderScene() {
 }
 
 // Полноэкранная карточка-переход: глава, дата, судьба
-function card(lines, then, ms = 2200) {
+function card(lines, then, ms = 2200, scene) {
   if (typeof __TEST !== 'undefined') return then && then();   // самопроверка: без анимаций
   stopTyping(); AUDIO.whoosh();
   const el = document.createElement('div');
-  el.className = 'card';
-  el.innerHTML = [].concat(lines).map((l, i) => `<div class="${i ? 'c2' : 'c1'}">${l}</div>`).join('');
+  scene = scene === undefined ? sceneFor([].concat(lines).join(' ')) : scene;
+  el.className = 'card' + (scene ? ' art' : '');
+  el.innerHTML = (scene ? '<canvas class="cardart"></canvas>' : '') + [].concat(lines).map((l, i) => `<div class="${i ? 'c2' : 'c1'}">${l}</div>`).join('');
   document.body.appendChild(el);
+  if (scene) { animScene(el.querySelector('canvas'), scene); ms += 800; }
   let done = false;
   const end = () => { if (done) return; done = true; el.classList.add('out'); setTimeout(() => { el.remove(); then && then(); }, 400); };
   el.onclick = end; setTimeout(end, ms);
@@ -216,7 +220,7 @@ function doChoice(c, forced) {
   let branch = c, ok = null;
   if (c.chk) { ok = forced ?? Math.random() < chance(c.chk); branch = ok ? c.ok : c.no; ok ? AUDIO.ok() : AUDIO.no(); }
   const fxs = [...applyFx(c.fx), ...(branch !== c ? applyFx(branch.fx) : [])];
-  if (c.cost) S.ap = Math.max(0, S.ap - c.cost);
+  if (c.cost) advanceTime(ACT_MIN * c.cost);   // действие занимает часы игрового времени
   const go = T(branch.go !== undefined ? branch.go : c.go);
   const txt = T(branch.txt);
   if (!txt && (go || !fxs.length)) return next(go);   // без текста — сразу дальше, эффекты видны в герое
@@ -314,6 +318,7 @@ function fightEnd(ev, how, msg) {
 // --- День и карта ---------------------------------------------------------------
 function sleep() {
   skipDays(1);
+  S.min = DAY_START; S.ap = apLeft(); jobsHour(); jobsHour();
   const heal = 6 + (S.st.semya > 50 ? 3 : 0);   // само заживает медленно — травмпункт платный
   S.st.zdor = clamp(S.st.zdor + heal, 0, 100);
   S.st.mil = clamp(S.st.mil - 3, 0, 100);
@@ -323,7 +328,7 @@ function sleep() {
   S.dayStart = { zdor: S.st.zdor, dengi: S.st.dengi };
   if (S.over) return endCareer(S.over.win, S.over.reason);
   save('auto'); save('day');
-  card(['Утро', dateStr()], toMap, 1300);
+  card(['Утро', dateStr()], toMap, 1300, null);
 }
 function checkStory() {
   for (const ev of Object.values(EV)) {
@@ -336,6 +341,7 @@ function checkStory() {
 function toMap() {
   S.cur = null; view = 'map';
   if (checkStory()) return;
+  if (S.min >= DAY_END) return sleep();   // 23:00 — домой, спать
   render();
 }
 
@@ -352,16 +358,22 @@ function renderMap() {
     <div class="legend">${legend}</div>
     <div class="sheet"><h3>${d.name}${S.at === d.id ? ' · ты здесь' : ''}</h3>
     <div class="sub">${owner ? 'Моталка «' + owner.gang + '»' : 'Центр'} — ${rel}. ${d.desc}</div>
+    ${S.mode === 'career' ? `<div class="result ok">Цель: ${goalOf(S).text} (до ${dateStr(goalOf(S).until)})</div>` : ''}
     <div class="choices">
-      ${S.ap > 0 ? acts.map((c, i) => choiceBtn(c, i)).join('') : '<div class="sub">Сил на сегодня больше нет. Пора домой.</div>'}
-      <button class="btn main" id="sleep">Домой, спать (новый день)</button>
+      ${S.ap > 0 ? jobsHtml(d.id) : ''}
+      ${placesIn(d.id).map(p => `<button class="btn place" data-pl="${p.id}"><span><i class="pli" style="background:${PLACE_COL[p.k]}"></i>${p.name}</span><span class="ch">войти</span></button>`).join('')}
+      ${S.ap > 0 ? acts.map((c, i) => choiceBtn(c, i)).join('') : '<div class="sub">Поздно. Скоро ночь — пора домой.</div>'}
+      <p class="sub">Каждое дело — около 4 часов. ${(S.jobs || []).length ? `❗ Заданий на карте: ${S.jobs.length}` : 'Заданий пока нет — появятся на карте.'}</p>
+      <button class="btn main" id="sleep">Домой, лечь спать</button>
     </div></div>`;
   renderMap_(d.id);
-  bindChoices(acts, c => { S.at = d.id; S.cur = null; doChoice({ ...c, cost: 1 }); });
+  bindChoices(acts, c => walkTo(S.at, d.id, () => { S.at = d.id; S.cur = null; doChoice({ ...c, cost: carSpeed() }); }));
+  document.querySelectorAll('[data-pl]').forEach(b => b.onclick = () => openPlace(b.dataset.pl));
   $('#sleep').onclick = () => { AUDIO.click(); sleep(); };
 }
 function renderMap_(sel) {
-  drawMapSvg($('#map'), S.ctrl, S.home, sel, id => { selDist = id; AUDIO.click(); renderMap(); }, S.at);
+  drawMapSvg($('#map'), S.ctrl, S.home, sel, id => { selDist = id; AUDIO.click(); renderMap(); }, S.at, S.jobs);
+  document.querySelectorAll('[data-job]').forEach(b => b.onclick = () => { AUDIO.click(); walkTo(S.at, b.closest('.sheet') ? (selDist || S.at) : S.at, () => takeJob(+b.dataset.job)); });
   document.querySelectorAll('.zoom button').forEach(b => b.onclick = e => { e.stopPropagation(); zoomBy(+b.dataset.z); });
 }
 
@@ -404,13 +416,19 @@ function renderHero() {
 }
 
 // --- Гардероб ------------------------------------------------------------------------
-let wardSlot = 'outer';
+let wardSlot = 'outer', tryOn = null;
 function renderWardrobe() {
-  const list = SHOP.filter(i => i.slot === wardSlot);
+  const list = SHOP.filter(i => i.slot === wardSlot).sort((a, b) => (a.rank || 0) - (b.rank || 0) || (a.cur === '$') - (b.cur === '$') || a.price - b.price);
   const worn = id => wardSlot === 'acc' ? S.wear.acc.includes(id) : S.wear[wardSlot] === id;
   const bon = i => i.bonus ? Object.entries(i.bonus).map(([k, v]) => `${NAMES[k]} +${v}`).join(', ') : '';
-  $('#main').innerHTML = `<div class="scene"><div class="herohead"><canvas class="sprite" id="spr"></canvas><div>
-    <h2>Гардероб</h2><div class="sub">Барахолка у фарцовщика Жоры. У тебя: <b>${S.st.dengi} р.</b> и <b>$${S.st.dol || 0}</b><br>Импорт — только за доллары (менять у Жоры в Центре). Некоторое продают только тем, кто в авторитете.</div></div></div>
+  // примерка: показать вещь на герое, даже если она ещё не куплена
+  const tr = tryOn && ITEM[tryOn], prev = JSON.parse(JSON.stringify(S.wear));
+  if (tr) { if (tr.slot === 'acc') { if (!prev.acc.includes(tr.id)) prev.acc.push(tr.id); } else prev[tr.slot] = tr.id; }
+  $('#main').innerHTML = `<div class="scene"><div class="ward-top"><canvas class="sprite big" id="spr"></canvas><div>
+    <h2>${tr ? 'Примерка' : 'Гардероб'}</h2>
+    ${tr ? `<div class="sub"><b>${tr.name}</b><br>${S.owned.includes(tr.id) ? 'Уже твоё' : (tr.rank || 0) > S.rank ? '🔒 Продадут с ранга «' + RANKS[tr.rank] + '»' : 'Цена: ' + priceTxt(tr)}${bon(tr) ? '<br>' + bon(tr) : ''}</div>
+      <button class="btn" id="tryoff" style="margin-top:8px">Снять примерку</button>`
+      : `<div class="sub">Барахолка у фарцовщика Жоры. У тебя: <b>${S.st.dengi} р.</b> и <b>$${S.st.dol || 0}</b><br>Нажми на вещь — примеришь. Импорт — за доллары, некоторое — только с ранга.</div>`}</div></div>
     <div class="tabs">${Object.entries(SLOTS).map(([k, v]) => `<button class="${k === wardSlot ? 'on' : ''}" data-s="${k}">${v}</button>`).join('')}</div>
     <div class="choices">${list.map((i, n) => {
       const own = S.owned.includes(i.id), lockR = (i.rank || 0) > S.rank, torn = (S.torn || []).includes(i.id);
@@ -419,13 +437,23 @@ function renderWardrobe() {
         : own ? (worn(i.id) ? (wardSlot === 'acc' ? 'Снять' : 'Надето') : 'Надеть')
         : lockR ? `с ранга «${RANKS[i.rank]}»` : `Купить ${priceTxt(i)}`;
       const dis = own && torn ? !rcOk : (!own && (lockR || !canAfford(i))) || (own && worn(i.id) && wardSlot !== 'acc');
-      return `<div class="item${worn(i.id) ? ' worn' : ''}"><div><b>${i.name}</b>${i.cur === '$' ? ' <span class="ch mid">импорт, $</span>' : ''}${torn ? ' <span class="ch lo">порвано</span>' : ''}${bon(i) ? ` <span class="ch hi">${bon(i)}</span>` : ''}
+      return `<div class="item${worn(i.id) ? ' worn' : ''}${tryOn === i.id ? ' trying' : ''}${lockR && !own ? ' lockedi' : ''}" data-try="${i.id}">
+        <canvas class="sprite mini-spr" data-ic="${i.id}"></canvas>
+        <div style="flex:1"><b>${lockR && !own ? '🔒 ' : ''}${i.name}</b>${i.cur === '$' ? ' <span class="ch mid">импорт, $</span>' : ''}${torn ? ' <span class="ch lo">порвано</span>' : ''}${bon(i) ? ` <span class="ch hi">${bon(i)}</span>` : ''}
         <div class="sub">${i.desc}</div></div><button class="btn" data-i="${n}" ${dis ? 'disabled' : ''}>${act}</button></div>`;
     }).join('')}</div></div>`;
-  drawHero($('#spr'), S.app, S.wear);
-  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { AUDIO.click(); wardSlot = b.dataset.s; renderWardrobe(); });
+  drawHero($('#spr'), S.app, prev, { emo: tr ? 'smile' : null });
+  // маленькая иконка вещи на манекене
+  document.querySelectorAll('[data-ic]').forEach(c => { const i = ITEM[c.dataset.ic], w = { ...DEFAULT_WEAR, acc: [] };
+    if (i.slot === 'acc') w.acc = [i.id]; else w[i.slot] = i.id; drawHero(c, S.app, w); });
+  document.querySelectorAll('[data-try]').forEach(d => d.onclick = e => {
+    if (e.target.closest('button')) return;
+    AUDIO.click(); tryOn = tryOn === d.dataset.try ? null : d.dataset.try; renderWardrobe(); $('#main').scrollTop = 0;
+  });
+  if ($('#tryoff')) $('#tryoff').onclick = () => { tryOn = null; AUDIO.click(); renderWardrobe(); };
+  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { AUDIO.click(); wardSlot = b.dataset.s; tryOn = null; renderWardrobe(); });
   document.querySelectorAll('.item .btn').forEach(b => b.onclick = () => {
-    const i = list[+b.dataset.i];
+    const i = list[+b.dataset.i]; tryOn = null;
     if ((S.torn || []).includes(i.id)) { repair(i); AUDIO.ok(); save('auto'); renderTop(); return renderWardrobe(); }
     if (!S.owned.includes(i.id)) { payFor(i); S.owned.push(i.id); log(`Купил: ${i.name}.`); AUDIO.sfx ? AUDIO.sfx('coin') : AUDIO.ok(); }
     else AUDIO.click();
@@ -444,26 +472,30 @@ function renderLog() {
   document.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { logTab = b.dataset.l; AUDIO.click(); renderLog(); });
 }
 function renderMenu() {
-  const slot = loadRaw('slot1');
   $('#main').innerHTML = `<div class="scene"><h2>Меню</h2><div class="choices">
-    <button class="btn" id="sv">Сохранить в слот</button>
-    <button class="btn" id="ld" ${slot ? '' : 'disabled'}>Загрузить слот${slot ? ' (' + dateStr(slot.day) + ')' : ''}</button>
+    <button class="btn" id="sv">Сохранения (5 слотов)</button>
+    <button class="btn" id="st">Настройки</button>
     <button class="btn" id="snd">Музыка: ${AUDIO.musicOn() ? 'вкл' : 'выкл'}</button>
     ${S.mode === 'career' ? '<button class="btn" id="jr">Журнал</button>' : ''}
+    <button class="btn" id="ach">Достижения</button>
     <button class="btn" id="ng">В главное меню</button></div>
     <p class="note">Игра сохраняется автоматически. Все персонажи вымышлены, совпадения случайны.
     Игра не пропагандирует насилие и криминал: у каждого выбора есть цена.</p></div>`;
-  $('#sv').onclick = () => { save('slot1'); AUDIO.ok(); renderMenu(); };
-  $('#ld').onclick = () => { S = migrate(loadRaw('slot1')); view = 'map'; render(); };
+  const back = () => { view = 'menu'; render(); };
+  $('#sv').onclick = () => { AUDIO.click(); slotsScreen(back); };
+  $('#st').onclick = () => { AUDIO.click(); settingsScreen(back); };
+  $('#ach').onclick = () => { AUDIO.click(); achScreen(back); };
   $('#snd').onclick = () => { AUDIO.toggleMusic(); renderMenu(); };
   if ($('#jr')) $('#jr').onclick = () => { view = 'log'; render(); };
   $('#ng').onclick = () => { save('auto'); titleScreen(); };
 }
 
 function renderTop() {
-  const ap = '●'.repeat(S.ap) + '○'.repeat(Math.max(0, AP_PER_DAY - S.ap));
-  $('#top').innerHTML = `<span>${dateStr()}</span><span><b>${RANKS[S.rank]}</b></span>
-    <span>${S.st.dengi} р.${S.st.dol ? ' · $' + S.st.dol : ''}</span><span>♥ ${S.st.zdor}</span><span>${ap}</span>`;
+  const night = S.min >= 20 * 60;
+  $('#top').innerHTML = `<span>${dateStr()}</span><span class="clock${night ? ' night' : ''}">${night ? '☾' : '☀'} ${clock()}</span>
+    <button class="tp" id="tp">${timePaused ? '▶' : '❚❚'}</button>
+    <span><b>${RANKS[S.rank]}</b></span><span>${S.st.dengi} р.${S.st.dol ? ' · $' + S.st.dol : ''}</span><span>♥ ${S.st.zdor}</span>`;
+  $('#tp').onclick = () => { timePaused = !timePaused; AUDIO.click(); renderTop(); };
 }
 
 function render() {
@@ -471,17 +503,18 @@ function render() {
   renderTop();
   const inScene = S.cur || S.res;
   $('#nav').classList.toggle('hidden', !!inScene);
-  const b4 = $('#nav [data-v="log"], #nav [data-v="tasks"]');   // в карьере вместо журнала — задания
-  b4.dataset.v = S.mode === 'career' ? 'tasks' : 'log'; b4.textContent = S.mode === 'career' ? 'Задания' : 'Журнал';
+  if (view === 'tasks') view = 'map';   // задания теперь маячки на карте
   checkAch();
+  setTimeout(() => tutorial(S.cur || S.res ? 'scene' : view), 450);
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.v === view));
   const BG_TRACK = { kuhnya: 'dom', shkola: 'dom', dk: 'disco', otdel: 'trevoga', pustyr: 'trevoga', noch: 'noch', ostanovka: 'noch' };
   const ev = S.cur && EV[S.cur];
-  const tape = !ev && view === 'map' && S.tape && TAPE[S.tape];
-  AUDIO.track(ev && ev.fight && S.fight ? 'fight' : ev ? BG_TRACK[T(ev.bg)] || 'dvor' : tape ? tape.track : view === 'ward' ? 'disco' : season() === 'winter' ? 'zima' : 'dvor');
+  const tape = !ev && S.tape && TAPE[S.tape];   // кассета играет везде, кроме сцен
+  if (tape && AUDIO.tape) AUDIO.tape(tape.spec);
+  else AUDIO.track(ev && ev.fight && S.fight ? 'fight' : ev ? BG_TRACK[T(ev.bg)] || 'dvor' : view === 'ward' ? 'disco' : season() === 'winter' ? 'zima' : 'dvor');
   if (AUDIO.ambience) AUDIO.ambience(ev ? T(ev.bg) || 'dvor' : view === 'map' ? (season() === 'winter' ? 'pustyr' : 'dvor') : null);
   if (inScene) renderScene();
-  else ({ map: renderMap, hero: renderHero, ward: renderWardrobe, log: renderLog, tasks: renderTasks, menu: renderMenu })[view]();
+  else ({ map: renderMap, hero: renderHero, ward: renderWardrobe, log: renderLog, tasks: renderTasks, menu: renderMenu, place: renderPlace })[view]();
   $('#main').scrollTop = 0;
 }
 
@@ -519,7 +552,7 @@ function ending() {
 // --- Сохранения -------------------------------------------------------------------
 // У карьеры свои слоты (asfalt_c_*), чтобы не затирать кампанию
 const key = (slot, mode = S && S.mode) => 'asfalt_' + ({ career: 'c_', surv: 's_' }[mode] || '') + slot;
-function save(slot) { try { localStorage.setItem(key(slot), JSON.stringify(S)); } catch (e) {} }
+function save(slot) { try { S.savedAt = Date.now(); localStorage.setItem(key(slot), JSON.stringify(S)); } catch (e) {} }
 function loadRaw(slot, mode) { try { return JSON.parse(localStorage.getItem(key(slot, mode))); } catch (e) { return null; } }
 function dropSave(slot, mode) { try { localStorage.removeItem(key(slot, mode)); } catch (e) {} }
 
@@ -527,6 +560,7 @@ function dropSave(slot, mode) { try { localStorage.removeItem(key(slot, mode)); 
 // Старые сохранения (до гардероба) получают внешность и одежду по умолчанию
 function migrate(s) {
   if (s && !s.cnt) { s.cnt = {}; s.squad = []; s.withMe = null; }
+  if (s && s.min == null) { s.min = 7 * 60; s.jobs = []; }
   if (s && !s.points) {
     s.points = s.flags.income ? [{ name: 'Старые точки', amt: s.flags.income }] : []; delete s.flags.income;
     s.torn = []; s.st.dol = s.st.dol || 0;
@@ -538,22 +572,20 @@ function migrate(s) {
   return s;
 }
 
-function titleScreen() {
+// Выбор режима (главное меню — titleScreen в menu.js)
+function playScreen() {
   const auto = migrate(loadRaw('auto', 'campaign')), car = migrate(loadRaw('auto', 'career')), sv = migrate(loadRaw('auto', 'surv'));
   AUDIO.track('theme');
   $('#top').classList.add('hidden'); $('#nav').classList.add('hidden');
-  $('#main').innerHTML = `<div class="title"><h1>АСФАЛЬТ</h1><div class="s">КАЗАНЬ · 1987</div></div>
-    <div class="scene"><div class="choices">
+  $('#main').innerHTML = `<div class="scene in"><h2>Выбери режим</h2><div class="choices">
       ${auto && !auto.ending ? `<button class="btn main" id="cont">Продолжить кампанию (${dateStr(auto.day)})</button>` : ''}
       <button class="btn mode" id="new"><b>Кампания${auto && !auto.ending ? ' · заново' : ''}</b><span class="sub">Сюжет. Путь от чушпана до автора</span></button>
       ${car ? `<button class="btn main" id="ccont">Продолжить карьеру: ${car.name}, ${RANKS[car.rank].toLowerCase()} (${dateStr(car.day)})</button>` : ''}
       <button class="btn mode" id="car"><b>Карьера${car ? ' · новая судьба' : ''}</b><span class="sub">Случайная судьба и цель. Сам выбираешь задания. Смерть — конец</span></button>
       ${sv ? `<button class="btn main" id="scont">Продолжить выживание: ${sv.name} (${dateStr(sv.day)})</button>` : ''}
       <button class="btn mode" id="surv"><b>Выживание чушпана${sv ? ' · заново' : ''}</b><span class="sub">Ничей. Трясут каждый день. Дожить до Нового года</span></button>
-      <button class="btn mode" id="chron"><b>Летопись судеб</b><span class="sub">Прошлые забеги и открытые вещи</span></button>
-      <button class="btn mode" id="achv"><b>Достижения и концовки</b><span class="sub">Что уже открыто</span></button></div>
-    <p class="note">16+. Вымышленная история по мотивам событий 1980-х в Казани.
-    Все персонажи вымышлены. Карта стилизована.</p></div>`;
+      <button class="btn" id="back">Назад</button></div></div>`;
+  $('#back').onclick = () => { AUDIO.click(); titleScreen(); };
   if ($('#cont')) $('#cont').onclick = () => { AUDIO.start(); S = auto; view = 'map'; S.cur || S.res ? render() : toMap(); };
   $('#new').onclick = () => { AUDIO.start(); createHero(); };
   if ($('#ccont')) $('#ccont').onclick = () => { AUDIO.start(); S = car; view = 'map'; S.cur || S.res ? render() : toMap(); };
@@ -562,8 +594,6 @@ function titleScreen() {
     if (car) { S = car; return endCareer(false, 'Бросил всё и уехал'); }
     AUDIO.start(); careerNew();
   };
-  $('#chron').onclick = chronicle;
-  $('#achv').onclick = () => achScreen();
   if ($('#scont')) $('#scont').onclick = () => { AUDIO.start(); S = sv; view = 'map'; S.cur || S.res ? render() : toMap(); };
   $('#surv').onclick = () => {
     if (sv) { if (!confirm('Бросить текущее выживание?')) return; S = sv; return endCareer(false, 'Бросил всё и уехал'); }
@@ -608,12 +638,14 @@ function createHero() {
     if (fam === 'mother') S.st.sovest += 10;
     log(`${S.name} начинает свою историю. Район — ${DIST[S.home].name}.`);
     save('day'); view = 'map';
-    card(['Казань', 'сентябрь 1987', 'Каждый двор — чей-то асфальт'], toMap, 3600);
+    card(['Казань', 'сентябрь 1987'], () =>
+      card(['Каждый двор', '— чей-то асфальт', 'Кто не с нами — тот чушпан'], toMap, 3400, 'dvor'), 3000, 'kazan');
   };
   upd();
 }
 
 function boot() {
   document.querySelectorAll('#nav button').forEach(b => b.onclick = () => { AUDIO.click(); view = b.dataset.v; selDist = null; render(); });
+  timeStart();
   titleScreen();
 }

@@ -6,15 +6,17 @@ const LOOKS = {
   build:  { thin: 'Худой', normal: 'Обычный', strong: 'Крепкий', fat: 'Полный' },
   height: { short: 'Мелкий', normal: 'Средний', tall: 'Высокий' },
   skin:   { s1: 'Светлая', s2: 'Смуглая', s3: 'Загорелая', s4: 'Тёмная' },
-  hair:   { ezhik: 'Ёжик', chelka: 'Чёлка набок', gorshok: 'Под горшок', kudri: 'Кудри', mallet: 'Маллет', nol: 'Под ноль' },
-  hairc:  { black: 'Чёрные', dark: 'Тёмно-русые', rus: 'Русые', ginger: 'Рыжие', blond: 'Светлые' },
+  hair:   { ezhik: 'Ёжик', chelka: 'Чёлка набок', probor: 'Пробор набок', bobrik: 'Бобрик', gorshok: 'Под горшок', kudri: 'Кудри',
+            mallet: 'Маллет', zaliz: 'Зализанные назад', dlinnye: 'Длинные', nol: 'Под ноль' },
+  hairc:  { black: 'Чёрные', dark: 'Тёмно-русые', kashtan: 'Каштановые', rus: 'Русые', ginger: 'Рыжие', blond: 'Светлые' },
   eyes:   { brown: 'Карие', grey: 'Серые', blue: 'Голубые', green: 'Зелёные' },
-  mark:   { none: 'Нет', scar: 'Шрам на щеке', fingal: 'Фингал', plaster: 'Пластырь', freckles: 'Веснушки', usiki: 'Пушок над губой' },
+  mark:   { none: 'Нет', scar: 'Шрам на щеке', brov: 'Шрам на брови', fingal: 'Фингал', plaster: 'Пластырь', freckles: 'Веснушки',
+            usiki: 'Пушок над губой', zub: 'Золотой зуб', serga: 'Серьга', tatu: 'Наколка на руке' },
 };
 const LOOK_NAMES = { build: 'Телосложение', height: 'Рост', skin: 'Кожа', hair: 'Причёска', hairc: 'Цвет волос', eyes: 'Глаза', mark: 'Приметы' };
 const DEFAULT_APP = { build: 'normal', height: 'normal', skin: 's1', hair: 'ezhik', hairc: 'rus', eyes: 'grey', mark: 'none' };
 const SKIN = { s1: '#f1c9a5', s2: '#e0ac85', s3: '#c68863', s4: '#9c6644' };
-const HAIRC = { black: '#26201c', dark: '#4a3426', rus: '#8a6a45', ginger: '#b5562a', blond: '#d9b45a', grey: '#9a968e' };
+const HAIRC = { black: '#26201c', dark: '#4a3426', kashtan: '#6a3a22', rus: '#8a6a45', ginger: '#b5562a', blond: '#d9b45a', grey: '#9a968e' };
 const EYEC = { brown: '#5a3a1e', grey: '#6d7b85', blue: '#3f6fb5', green: '#4f7d3a' };
 const BUILD = { thin: 5, normal: 6, strong: 7, fat: 7 };   // полуширина плеч
 const lookText = a => `${LOOKS.build[a.build]}, ${LOOKS.height[a.height].toLowerCase()} рост, ${LOOKS.hairc[a.hairc].toLowerCase()} волосы`;
@@ -141,6 +143,29 @@ const ITEMS = [
   { id: 'a_cep', slot: 'acc', name: 'Золотая цепь', price: 120, rank: 4, bonus: { yaz: 1 }, v: { k: 'chain' }, desc: 'Толщиной с палец. Блестит на всю улицу.' },
   { id: 'a_gitara', slot: 'acc', npc: true, v: { k: 'guitar' } },
 ];
+// Ещё вещи: многие открываются только с ранга (rank), импорт — за доллары (см. economy.js)
+ITEMS.push(
+  { id: 'h_bandana', slot: 'hat', name: 'Бандана', price: 6, v: { k: 'bandana', c: '#8a1a1a', c2: '#f0f0f0' }, desc: 'Как у рокеров. Бабушки на лавке крестятся.' },
+  { id: 'h_ny', slot: 'hat', name: 'Шапка «NY»', price: 15, v: { k: 'knit', c: BLK, c2: BLK, s: W_, pom: BLK }, desc: 'Чёрная, с белыми буквами. Привезли моряки.' },
+  { id: 'h_pilot', slot: 'hat', name: 'Кожаная ушанка-«пилот»', price: 25, rank: 2, v: { k: 'ushanka', c: '#2a1e18' }, desc: 'Кожа и мех. Тепло и с понтами.' },
+  { id: 'h_shlyapa', slot: 'hat', name: 'Шляпа', price: 60, rank: 4, bonus: { yaz: 1 }, v: { k: 'shlyapa', c: '#2a2622', c2: '#6a1a1a' }, desc: 'Как у гангстеров в кино. На районе так никто не ходит. Пока.' },
+  { id: 'o_pilot', slot: 'outer', name: 'Кожаный «пилот»', price: 70, rank: 2, bonus: { sila: 1 }, v: { k: 'bomber', c: '#1e1612', lin: '#5a3a24', rib: '#3a2a20' }, desc: 'Короткая кожанка с мехом. Классика старших.' },
+  { id: 'o_ankara', slot: 'outer', name: 'Турецкая кожанка «Анкара»', price: 90, rank: 3, bonus: { yaz: 1 }, v: { k: 'leather', c: '#4a2a1a', hl: '#6a4a3a' }, desc: 'Коричневая, на кнопках. Девяностые близко.' },
+  { id: 'o_shuba', slot: 'outer', name: 'Шуба', price: 250, rank: 5, bonus: { yaz: 2 }, v: { k: 'coat', c: '#5a3a24', fur: '#7a5638', furry: true }, desc: 'Норковая, до колен. Автор должен быть виден издалека.' },
+  { id: 's_kletka', slot: 'shirt', name: 'Рубашка в клетку', price: 8, v: { k: 'plaid', c: '#2a4a6a', c2: '#8a2a2a' }, desc: 'Фланелевая. Тёплая и надёжная, как батя.' },
+  { id: 's_bulz', slot: 'shirt', name: 'Майка «Chicago Bulz»', price: 16, v: { k: 'tee', c: RED, logo: 'eagle', lc: BLK }, desc: 'Номер двадцать три на спине. Кто это — никто не знает.' },
+  { id: 's_apash', slot: 'shirt', name: 'Рубашка с воротником «апаш»', price: 12, v: { k: 'shirt', c: '#d8c8a0', col: '#f0e8d0' }, desc: 'Воротник поверх пиджака. Как у старшего брата на выпускном.' },
+  { id: 's_shelk', slot: 'shirt', name: 'Шёлковая рубашка', price: 40, rank: 4, bonus: { yaz: 1 }, v: { k: 'shirt', c: '#5a2a6a', col: '#7a3a8a' }, desc: 'Фиолетовый шёлк. Блестит под фонарём.' },
+  { id: 'p_klesh', slot: 'pants', name: 'Клёши', price: 15, v: { k: 'banan', c: '#3a3a5a' }, desc: 'Штанины-колокола. Мамины, из семидесятых. Снова в моде?' },
+  { id: 'p_kamo', slot: 'pants', name: 'Камуфляжные штаны', price: 18, rank: 1, bonus: { sila: 1 }, v: { k: 'jeans', c: '#4a5a34', sp: '#2a3a20' }, desc: 'Армейские. Дембель подогнал.' },
+  { id: 'f_valenki', slot: 'shoes', name: 'Валенки', price: 4, v: { k: 'valenki', c: '#6a6a66' }, desc: 'Зимой лучше не придумаешь. Но в ДК — позор.' },
+  { id: 'f_jordun', slot: 'shoes', name: 'Кроссовки «Air Jordun»', price: 70, rank: 2, bonus: { lovk: 2 }, v: { k: 'sneaker', c: RED, s: BLK, sole: '#f0f0f0' }, desc: 'Красно-чёрные, высокие. В Казани таких две пары. Обе — у старших.' },
+  { id: 'f_kazaki', slot: 'shoes', name: 'Казаки', price: 50, rank: 3, bonus: { yaz: 1 }, v: { k: 'kazaki', c: '#6a3a1a' }, desc: 'Ковбойские сапоги со скошенным каблуком. Стучат на всю улицу.' },
+  { id: 'a_cepochka', slot: 'acc', name: 'Тонкая цепочка', price: 30, rank: 2, v: { k: 'thinchain' }, desc: 'Пока не цепь. Но уже и не значок.' },
+  { id: 'a_zipa', slot: 'acc', name: 'Зажигалка «Zipa»', price: 15, v: { k: 'lighter' }, desc: 'Щёлк — и огонь. Даже если не куришь, щёлкаешь.' },
+  { id: 'a_pager', slot: 'acc', name: 'Пейджер', price: 80, rank: 4, bonus: { um: 1 }, v: { k: 'pager' }, desc: 'Девяносто первый. «Срочно перезвони Седому».' },
+  { id: 'a_mobila', slot: 'acc', name: 'Мобильник-«кирпич»', price: 300, rank: 5, bonus: { yaz: 2 }, v: { k: 'phone' }, desc: 'Весит как кирпич, стоит как машина. Звонить некому, но все видят.' },
+);
 const ITEM = Object.fromEntries(ITEMS.map(i => [i.id, i]));
 const SHOP = ITEMS.filter(i => !i.npc);
 const DEFAULT_WEAR = { hat: 'h_none', outer: 'o_none', shirt: 's_school', pants: 'p_school', shoes: 'f_kedy', acc: ['a_znachok'] };
@@ -155,6 +180,8 @@ function shade(hex, k) {
 
 // opt: { emo: 'angry'|'smile'|'scared'|'sad', blink: true, mouth: true (рот открыт — говорит) }
 function drawHero(canvas, app, wear, opt = {}) {
+  // оброс — причёска теряет форму, пока не подстрижёшься
+  if (app.overgrown && app.hair !== 'nol') app = { ...app, hair: app.hair === 'dlinnye' ? 'dlinnye' : 'mallet' };
   const SW = 32, SH = 64, buf = new Array(SW * SH).fill(null);
   const px = (x, y, c) => { if (c && x >= 0 && y >= 0 && x < SW && y < SH) buf[y * SW + x] = c; };
   const rect = (x, y, w, h, c) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) px(x + i, y + j, c); };
@@ -205,6 +232,9 @@ function drawHero(canvas, app, wear, opt = {}) {
     case 'boot': shoe(fo.c, 57 - fo.h); sole(fo.sole || '#1a100a'); if (fo.h > 4) { px(L0, 57 - fo.h + 1, shade(fo.c, 1.5)); px(R1, 57 - fo.h + 1, shade(fo.c, 1.5)); } break;
     case 'moon': rect(L0 - 2, 53, lw + 1, 7, fo.c); rect(cx, 53, rw + 1, 7, fo.c); rect(L0 - 2, 55, lw + 1, 1, fo.c2); rect(cx, 55, rw + 1, 1, fo.c2); sole('#555555'); break;
     case 'tufli': shoe(fo.c, 58); px(L0, 58, shade(fo.c, 2.5)); px(R1, 58, shade(fo.c, 2.5)); sole(shade(fo.c, 0.6)); break;
+    case 'kazaki': shoe(fo.c, 51); sole('#1a100a'); rect(L0, 59, 2, 1, '#3a2010'); rect(R1 - 1, 59, 2, 1, '#3a2010');
+      for (let y = 52; y < 58; y += 2) { px(L0, y, shade(fo.c, 1.4)); px(R1, y, shade(fo.c, 1.4)); } px(L0 - 1, 58, shade(fo.c, 1.3)); px(R1 + 1, 58, shade(fo.c, 1.3)); break;
+    case 'valenki': shoe(fo.c, 49); for (let y = 49; y < 59; y++) for (let x = L0 - 1; x <= R1 + 1; x++) if (at(x, y) === fo.c && (x * 3 + y * 7) % 5 === 0) px(x, y, shade(fo.c, 1.15)); sole(shade(fo.c, 0.7)); break;
   }
 
   // --- ремень
@@ -247,6 +277,9 @@ function drawHero(canvas, app, wear, opt = {}) {
       if (sh.logo) logo(sh.logo, cx - 3, sy + 1, sh.c2);
       rect(tl, wy - 1, tr - tl + 1, 1, shade(sh.c, 0.7)); break;
     case 'turtle': rect(13, sy - 2, 6, 2, sh.c); break;
+    case 'plaid':
+      for (let y = sy; y <= wy + 1; y++) for (let x = tl - 3; x <= tr + 3; x++) { const v = at(x, y); if (v === sh.c || v === shade(sh.c, 0.8) || v === shade(sh.c, 0.85)) { if (y % 3 === 0) px(x, y, sh.c2); else if (x % 3 === 0) px(x, y, shade(sh.c2, 1.2)); } }
+      rect(cx - 3, sy, 2, 2, sh.c2); rect(cx + 1, sy, 2, 2, sh.c2); break;
     case 'hawaii': for (let y = sy; y < wy; y++) for (let x = tl - 3; x <= tr + 3; x++) if (at(x, y) === sh.c && (x * 3 + y * 5) % 7 === 0) px(x, y, sh.c2); vneck(3, skin); break;
   }
 
@@ -292,6 +325,7 @@ function drawHero(canvas, app, wear, opt = {}) {
         if (out.fur) { rect(cx - 5, sy - 1, 10, 2, out.fur); for (let y = sy + 2; y <= len; y++) px(cx - 1, y, out.fur); }
         else for (let y = sy + 6; y <= len; y++) px(cx - 1, y, '#3a3a3a');
         rect(tl - 3, wy + 1, 3, 1, out.fur || shade(out.c, 0.7)); rect(tr + 1, wy + 1, 3, 1, out.fur || shade(out.c, 0.7));
+        if (out.furry) for (let y = sy; y <= len; y++) for (let x = tl - 4; x <= tr + 4; x++) if (at(x, y) === out.c && (x * 5 + y * 3) % 4 === 0) px(x, y, shade(out.c, 1.3));
         break;
     }
   }
@@ -332,6 +366,9 @@ function drawHero(canvas, app, wear, opt = {}) {
     case 'freckles': [[12, ey + 2], [13, ey + 3], [18, ey + 2], [19, ey + 3], [16, ey + 1]].forEach(([x, y]) => px(x, y, shade(skin, 0.78))); break;
     case 'usiki': rect(14, ey + 3, 4, 1, shade(hc, 1.15)); break;
     case 'usy': rect(13, ey + 3, 6, 1, hc); break;
+    case 'brov': px(17, ey - 1, skin); px(18, ey - 2, '#c77a6a'); px(17, ey - 2, '#c77a6a'); break;
+    case 'zub': px(16, ey + 4, '#f0c040'); break;
+    case 'serga': px(21, ey + 3, '#f0c040'); px(21, ey + 4, '#f0c040'); break;
   }
 
   // --- причёска
@@ -352,6 +389,9 @@ function drawHero(canvas, app, wear, opt = {}) {
       rect(11, hy - 2, 10, 4, hc); rect(10, hy - 1, 2, 9, hc); rect(20, hy - 1, 2, 9, hc); for (let x = 12; x < 20; x += 2) px(x, hy - 2, hl);
       if (app.hair === 'kosa') for (let y = hy + 8; y <= sy + 9; y++) px(21 + (y % 2), y, y % 3 ? hc : hd);
       break;
+    case 'probor': rect(11, hy - 2, 10, 4, hc); rect(10, hy, 1, 4, hc); rect(21, hy, 1, 4, hc); rect(15, hy - 2, 1, 3, shade(skin, 0.8));
+      rect(16, hy + 2, 5, 1, hc); for (let x = 16; x < 21; x += 2) px(x, hy - 2, hl); break;
+    case 'bobrik': rect(11, hy - 3, 10, 3, hc); rect(11, hy, 1, 3, hc); rect(20, hy, 1, 3, hc); for (let x = 11; x < 21; x++) px(x, hy - 3, x % 2 ? hl : hd); break;
     case 'zaliz': rect(11, hy - 2, 10, 3, hc); rect(11, hy + 1, 1, 3, hc); rect(20, hy + 1, 1, 3, hc); for (let x = 11; x < 21; x++) px(x, hy - 2, x % 3 ? hl : hc); break;
   }
 
@@ -373,6 +413,12 @@ function drawHero(canvas, app, wear, opt = {}) {
       if (hat.band) rect(10, hy, 12, 1, hat.band); break;
     case 'aerodrom': rect(7, hy - 3, 18, 3, hat.c); clr(7, hy - 3); clr(24, hy - 3); rect(9, hy, 14, 1, shade(hat.c, 0.65)); rect(10, hy + 1, 12, 1, shade(hat.c, 0.45)); for (let x = 9; x < 23; x += 3) px(x, hy - 3, shade(hat.c, 1.4)); break;
     case 'fur': for (let y = hy - 6; y <= hy + 1; y++) for (let x = 9; x <= 22; x++) if (!(y === hy - 6 && (x < 11 || x > 20))) px(x, y, (x * 3 + y) % 4 === 0 ? hat.c2 : hat.c); break;
+    case 'bandana':
+      rect(10, hy - 2, 12, 4, hat.c); for (let x = 10; x < 22; x++) for (let y = hy - 2; y < hy + 2; y++) if ((x + y) % 3 === 0) px(x, y, hat.c2);
+      rect(21, hy + 1, 2, 2, hat.c); px(23, hy + 2, hat.c); break;
+    case 'shlyapa':
+      rect(7, hy, 18, 2, hat.c); rect(10, hy - 5, 12, 5, hat.c); clr(10, hy - 5); clr(21, hy - 5);
+      rect(10, hy - 1, 12, 1, hat.c2); rect(13, hy - 5, 6, 1, shade(hat.c, 0.75)); rect(7, hy + 1, 18, 1, shade(hat.c, 0.7)); break;
     case 'platok':
       rect(10, hy - 2, 12, 5, hat.c); rect(9, hy + 2, 2, ey - hy + 4, hat.c); rect(21, hy + 2, 2, ey - hy + 4, hat.c);
       for (let y = hy - 2; y <= ey + 3; y++) for (let x = 9; x <= 22; x++) if (at(x, y) === hat.c && (x + y) % 3 === 0) px(x, y, hat.c2);
@@ -391,17 +437,28 @@ function drawHero(canvas, app, wear, opt = {}) {
       case 'glasses': rect(12, ey, 3, 1, '#111'); rect(17, ey, 3, 1, '#111'); px(15, ey, '#111'); px(16, ey, '#111'); px(13, ey, '#3a4a5a'); px(18, ey, '#3a4a5a'); break;
       case 'phones': rect(11, hy - 2, 10, 1, '#333'); rect(9, ey - 1, 2, 3, '#e07a26'); rect(21, ey - 1, 2, 3, '#e07a26'); break;
       case 'ring': px(tr + 3, handY, GOLD); break;
+      case 'tatu': break;
       case 'bag': rect(tl - 4, handY + 1, 4, 4, a.c); px(tl - 3, handY + 1, GOLD); break;
+      case 'pager': rect(R1 - 1, wy - 1, 3, 3, '#1a1a1a'); px(R1, wy - 1, '#7ac080'); break;
+      case 'phone': rect(tr + 2, handY - 4, 3, 6, '#1e1e1e'); px(tr + 3, handY - 3, '#7ac080'); rect(tr + 4, handY - 7, 1, 3, '#333'); break;
+      case 'lighter': rect(tl - 2, handY + 1, 2, 2, '#c8c8c8'); px(tl - 2, handY, '#ff9a30'); break;
+      case 'thinchain': for (let x = cx - 3; x <= cx + 2; x += 2) px(x, sy + 1 + (Math.abs(x - cx + 0.5) < 2 ? 1 : 0), GOLD); break;
       case 'guitar': rect(tr - 2, wy - 4, 6, 6, '#a0602a'); rect(tr + 1, sy - 2, 1, 10, '#5a3a1a'); px(tr, wy - 2, '#3a2010'); break;
     }
   }
 
+  if (app.mark === 'tatu') { px(tl - 3, handY, '#3a4a8a'); px(tl - 2, handY + 1, '#3a4a8a'); }
+
   // --- контур и тень
+  // Цветной контур (тёмный оттенок соседней детали) + блик по левому краю — объём, как в хорошем пиксель-арте
   const res = buf.slice();
+  const solid = c => c && c[0] === '#';
   for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) {
-    if (buf[y * SW + x]) continue;
-    if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => { const X = x + a, Y = y + b; return X >= 0 && Y >= 0 && X < SW && Y < SH && buf[Y * SW + X]; }))
-      res[y * SW + x] = '#120e0b';
+    const c = buf[y * SW + x];
+    if (c) { if (solid(c) && x > 0 && !buf[y * SW + x - 1]) res[y * SW + x] = shade(c, 1.18); continue; }
+    let nb = null;
+    for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const X = x + a, Y = y + b; if (X >= 0 && Y >= 0 && X < SW && Y < SH && solid(buf[Y * SW + X])) { nb = buf[Y * SW + X]; break; } }
+    if (nb) res[y * SW + x] = shade(nb, 0.28);
   }
   for (let x = 8; x <= 23; x++) for (const y of [61, 62]) if (!res[y * SW + x] && (y === 61 || (x > 9 && x < 22))) res[y * SW + x] = 'rgba(0,0,0,0.3)';
 

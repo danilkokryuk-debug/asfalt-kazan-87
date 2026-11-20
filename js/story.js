@@ -789,9 +789,13 @@ function locActions(S, d) {
       no: { txt: 'Подстава! Жора исчез, деньги тоже. А тебя взяли на заметку.', fx: { mil: 10 } } });
     if (S.st.dol > 0) a.push({ t: `Сдать доллары Жоре ($${S.st.dol} → ${S.st.dol * RATE_SELL} р.)`, fx: s => ({ dengi: s.st.dol * RATE_SELL, dol: -s.st.dol }), txt: 'Жора пересчитывает дважды. Спокойнее без них.' });
     if (S.flags.met_natasha) a.push({ t: 'Цветы для Наташи (3 р.)', req: { dengi: 3 }, fx: s => { s.flags.gift = Math.floor(s.day / 7); return { dengi: -3, lyub: 6, natasha: 5 }; }, txt: 'Три гвоздики, завёрнутые в «Вечернюю Казань». Она краснеет.' });
-    a.push({ t: 'Напёрстки у рынка (ставка 3 р.)', req: { dengi: 3 }, fx: { dengi: -3 }, chk: ['um', 5], mini: 'naperstki',
-      ok: { txt: '«Ну ты глазастый…» Напёрсточник отдаёт выигрыш сквозь зубы.', fx: s => { s.cnt.naperstki = (s.cnt.naperstki || 0) + 1; return { dengi: 7 }; } },
-      no: { txt: '«Не повезло, братишка. Ещё разок?» Его подельники в толпе ухмыляются.' } });
+    // не больше двух игр в день: напёрсточник запоминает лица
+    const napN = S.flags.nap_d === S.day ? S.flags.nap_n : 0;
+    if (napN < 2) a.push({ t: `Напёрстки у рынка (ставка 3 р., ещё ${2 - napN} сегодня)`, req: { dengi: 3 }, chk: ['um', 6], mini: 'naperstki',
+      fx: s => { s.flags.nap_n = (s.flags.nap_d === s.day ? s.flags.nap_n : 0) + 1; s.flags.nap_d = s.day; return { dengi: -3 }; },
+      ok: { txt: () => V('«Ну ты глазастый…» Выигрыш отдают сквозь зубы.', '«Фартовый, да?» Напёрсточник косится на подельников.', 'Шесть рублей! Толпа ахает. Напёрсточник улыбается — недобро.', '«Всё, малой, на сегодня хватит». Деньги твои.'),
+        fx: s => { s.cnt.naperstki = (s.cnt.naperstki || 0) + 1; return { dengi: 6 }; } },
+      no: { txt: () => V('«Не повезло, братишка. Ещё разок?»', 'Подельники в толпе ухмыляются. Три рубля — как не бывало.', '«Глаз замылился? Бывает». Он уже зазывает следующего.', 'Ты был уверен. Абсолютно уверен.') } });
     if (S.flags.met_natasha) a.push({ t: 'Позвать Наташу в кино', req: { dengi: 1 }, chk: ['yaz', 4],
       ok: { txt: '«Курьер» в «Родине». На последнем ряду она берёт тебя за руку.', fx: s => { s.flags.gift = Math.floor(s.day / 7); return { dengi: -1, lyub: 10, natasha: 10 }; } },
       no: { txt: '«Я занята». Может быть, правда.', fx: { natasha: -2 } } });
@@ -802,7 +806,8 @@ function locActions(S, d) {
 
 // Новый день: раз в неделю — карманные деньги
 function onNewDay(S) {
-  if (S.day % 7 === 0) { economyWeek(S); S.squad.forEach(m => m.loyal = Math.max(0, m.loyal - 4)); }
+  hairDay(S);
+  if (S.day % 7 === 0) { economyWeek(S); carWeek(S); if (S.bank) S.bank += Math.max(1, Math.round(S.bank * 0.01)); S.squad.forEach(m => m.loyal = Math.max(0, m.loyal - 4)); }
   if (S.mode === 'career') careerDay(S);
   if (S.mode === 'surv') survDay(S);
 }

@@ -3,7 +3,8 @@ const AUDIO = (() => {
   let ctx = null, master, mus, musFx, amb, dly, nbuf, timer = null;
   let on = (() => { try { return localStorage.getItem('asfalt_music') !== '0'; } catch (e) { return true; } })();
   let cur = 'theme', want = 'theme', s = 0, bar = 0, vi = 0, fill = false, nextT = 0;
-  const MUSV = 0.12, AMBV = 0.55, NB = 6;               // музыка тише эффектов (master = 0.5)
+  let tapeSpec = null, retape = false;
+  let MUSV = 0.12, VOL = 0.5; const AMBV = 0.55, NB = 6;   // музыка тише эффектов; меняются в настройках
   const R = Math.random, rnd = n => Math.floor(R() * n), pick = a => a[rnd(a.length)];
   const hz = m => 440 * Math.pow(2, (m - 69) / 12);       // MIDI → Гц
 
@@ -15,8 +16,10 @@ const AUDIO = (() => {
     const comp = ctx.createDynamicsCompressor();          // чтобы наложения не хрипели
     comp.threshold.value = -16; comp.ratio.value = 4; comp.attack.value = 0.005; comp.release.value = 0.25;
     comp.connect(ctx.destination);
-    master = gain(0.5, comp);
-    mus = gain(on ? MUSV : 0, master);
+    master = gain(VOL, comp);
+    // музыка идёт через тёплый фильтр: без режущих верхов, приятнее на телефоне
+    const warm = filt('lowpass', 2100, 0.5); warm.connect(master);
+    mus = gain(on ? MUSV : 0, warm);
     musFx = gain(1, mus);                                 // лиды с эхом
     dly = ctx.createDelay(1); dly.delayTime.value = 45 / 96;
     const dlp = filt('lowpass', 2200), fb = gain(0.3, dly), wet = gain(0.22, mus);
@@ -73,12 +76,14 @@ const AUDIO = (() => {
     o.connect(g); g.connect(mus); o.start(t); o.stop(t + 0.25);
   }
   const snare = (t, v = 0.35) => { noise(0.15, hv(v), mus, t, 1200); tone(190, 0.08, 'triangle', v * 0.5, mus, t); };
-  const hat = (t, v = 0.12, open) => noise(open ? 0.18 : 0.04, hv(v), mus, t, 7000);
+  const hat = (t, v = 0.12, open) => noise(open ? 0.14 : 0.03, hv(v) * 0.5, mus, t, 7000);
   const clap = (t, v = 0.2) => [0, 0.012, 0.024].forEach(dt => noise(dt ? 0.03 : 0.12, hv(v), mus, t + dt, 0, { ft: 'bandpass', f: 1500, q: 1.2 }));
   const tom = (t, f, v = 0.4) => tone(f, 0.25, 'sine', hv(v), mus, t, { to: f * 0.6 });
-  const bass = (m, t, len, v = 0.3, type = 'sawtooth') => tone(hz(m), len, type, hv(v), mus, t, { ft: 'lowpass', f: 700, atk: 0.008 });
-  const lead = (m, t, len, v = 0.1, type = 'square') => tone(hz(m), len, type, hv(v), musFx, t, { ft: 'lowpass', f: 2600, atk: 0.012 });
-  const pluck = (m, t, len, v = 0.1) => tone(hz(m), len, 'square', hv(v), mus, t, { ft: 'lowpass', f: 1700, atk: 0.004 });
+  // мягкие тембры: квадрат и пила заменены на треугольник/синус там, где они резали ухо
+  const soft = type => type === 'square' ? 'triangle' : type;
+  const bass = (m, t, len, v = 0.3, type = 'sawtooth') => tone(hz(m), len, type, hv(v) * 0.9, mus, t, { ft: 'lowpass', f: 480, atk: 0.01 });
+  const lead = (m, t, len, v = 0.1, type = 'square') => tone(hz(m), len, soft(type), hv(v) * 1.3, musFx, t, { ft: 'lowpass', f: 1900, atk: 0.02 });
+  const pluck = (m, t, len, v = 0.1) => { tone(hz(m), len, 'triangle', hv(v) * 1.4, mus, t, { ft: 'lowpass', f: 1500, atk: 0.004 }); tone(hz(m) * 2, len * 0.3, 'sine', v * 0.25, mus, t); };
   const bell = (m, t, len, v = 0.2) => { tone(hz(m), len, 'sine', hv(v), musFx, t, { atk: 0.004 }); tone(hz(m) * 2.76, len * 0.4, 'sine', v * 0.15, musFx, t); };
   function pad(ns, t, len, v) {                           // два расстроенных пилообразных на ноту, медленно «дышит»
     const f = filt('lowpass', 1000, 0.5), g = ctx.createGain();
@@ -143,7 +148,7 @@ const AUDIO = (() => {
         if (s % 4 === 0 || (s === 10 && R() < 0.5) || (s === 14 && R() < 0.3)) kick(t, 0.9);
         if ((s === 4 || s === 12) && !roll) snare(t, 0.4);
         if (s % 2) hat(t, 0.08);
-        if ([0, 6, 10].includes(s)) n.forEach(m => tone(hz(m + 12), d * 1.5, 'square', 0.05, mus, t, { ft: 'lowpass', f: 2000 }));
+        if ([0, 6, 10].includes(s)) n.forEach(m => tone(hz(m + 12), d * 1.5, 'triangle', 0.06, mus, t, { ft: 'lowpass', f: 1600 }));
         const r = [0, 3, 6, 8, 11, 14].indexOf(s);
         if (v === 2 && r >= 0) lead(n[[0, 1, 2, 0, 2, 1][r]] + 24, t, d * 1.2, 0.07);
       } },
@@ -186,12 +191,12 @@ const AUDIO = (() => {
       [[60, 'M'], [55, 'M'], [55, 'M'], [60, 'M']], [[53, 'M'], [60, 'M'], [55, 'M'], [60, 'M']], [[57, 'm'], [50, 'm'], [55, 'M'], [60, 'M']]],
       play({ s, c, n, t, d, roll }) {
         if (s % 4 === 0) bass(c[0] - 12 - (s % 8 ? 5 : 0), t, d * 1.5, 0.3, 'triangle');
-        if (s % 4 === 2) { n.forEach(m => tone(hz(m), d * 1.2, 'square', 0.035, mus, t, { ft: 'lowpass', f: 1800 })); if (!roll) snare(t, 0.06); }
+        if (s % 4 === 2) { n.forEach(m => tone(hz(m), d * 1.2, 'triangle', 0.045, mus, t, { ft: 'lowpass', f: 1500 })); if (!roll) snare(t, 0.06); }
         if (s % 2) hat(t, 0.04);
         if (s % 2 === 0 && R() < 0.8) {
           rk = Math.max(0, Math.min(6, rk + pick([-1, 0, 1, 1, -1, 2, -2])));
           const f = hz(at(rk, n) + 12);
-          tone(f, d * 1.8, 'square', 0.05, musFx, t, { ft: 'lowpass', f: 2200, vib: [6, 4] });
+          tone(f, d * 1.8, 'triangle', 0.07, musFx, t, { ft: 'lowpass', f: 1800, vib: [6, 4] });
           tone(f, d * 1.8, 'sawtooth', 0.03, mus, t, { ft: 'lowpass', f: 2200, det: 12 });
         }
       } },
@@ -204,6 +209,33 @@ const AUDIO = (() => {
         if (v === 2 && s % 2 === 0) noise(0.08, 0.025, mus, t, 7000);   // бубенцы
       } },
     // финал: медленно и грустно, одна мелодия над пэдом
+    // кассета: параметры (темп, гармония, стиль, мотив) задаёт AUDIO.tape(spec)
+    tape: { bpm: 90, v: [[[57, 'm'], [53, 'M'], [48, 'M'], [55, 'M']]],
+      play({ s, c, n, t, d, bar }) {
+        const sp = tapeSpec || {}, st = sp.style || 'ballad', mot = sp.mot || [0, 2, 1, 2, 0, 1, 2, 1];
+        const ep = (m, len, v) => { tone(hz(m), len, 'sine', v, mus, t, { atk: 0.006 }); tone(hz(m), len * 0.7, 'triangle', v * 0.35, mus, t, { atk: 0.006, det: 6 }); };
+        if (st === 'ballad') {
+          if (s === 0 || s === 8) n.forEach(m => ep(m, d * 7, 0.07));
+          if (s % 2 === 0) lead(at(mot[(s / 2 + bar) % 8], n) + 12, t, d * 2.2, 0.05, 'sine');
+          if (s === 0) bass(c[0] - 12, t, d * 8, 0.35, 'triangle');
+          if (s === 0) kick(t, 0.35); if (s === 8) snare(t, 0.08);
+        } else if (st === 'disco') {
+          if (s % 4 === 0) kick(t, 0.6); if (s % 4 === 2) hat(t, 0.12, true);
+          if (s === 4 || s === 12) clap(t, 0.12);
+          bass(c[0] - 12 + (s % 2 ? 12 : 0), t, d * 0.9, 0.25, 'triangle');
+          if (s % 4 === 2) n.forEach(m => ep(m + 12, d * 1.2, 0.04));
+          if ([0, 3, 6, 10].includes(s)) lead(at(mot[(s + bar) % 8], n) + 12, t, d * 1.8, 0.06, 'triangle');
+        } else if (st === 'rock') {
+          if (s % 2 === 0) bass(c[0] - 12, t, d * 1.6, 0.3, 'triangle');
+          if ([0, 6, 8].includes(s)) kick(t, 0.6); if (s === 4 || s === 12) snare(t, 0.16);
+          if (s % 4 === 0) [c[0], c[0] + 7, c[0] + 12].forEach(m => tone(hz(m), d * 3.5, 'sawtooth', 0.025, mus, t, { ft: 'lowpass', f: 900 }));
+          if (s % 4 === 2) lead(at(mot[(s / 2 + bar) % 8], n) + 12, t, d * 2, 0.05, 'triangle');
+        } else {   // dvor: гитарный перебор
+          if (s === 0 || s === 8) bass(c[0] - 12, t, d * 6, 0.4, 'triangle');
+          if (s % 2 === 0 && s % 8) pluck(n[(s >> 1) % 3] + 12, t, d * 2.5, 0.1);
+          if (s === 6 || s === 14) lead(at(mot[bar % 8], n) + 12, t, d * 3, 0.05, 'sine');
+        }
+      } },
     final: { bpm: 64, v: [[[57, 'm'], [53, 'M'], [48, 'M'], [52, 'M']], [[50, 'm'], [57, 'm'], [52, 'M'], [57, 'm']]],
       play({ s, c, n, t, d, v, bar }) {
         if (s === 0) { pad(n, t, d * 16, 0.04); tone(hz(c[0] - 12), d * 16, 'sine', 0.17, mus, t, { atk: 0.4, rel: 1 }); }
@@ -218,7 +250,7 @@ const AUDIO = (() => {
     while (nextT < ctx.currentTime + 0.15) {
       let tr = TRACKS[cur];
       if (s === 0) {
-        if (want !== cur) { cur = want; tr = TRACKS[cur]; bar = 0; vi = rnd(tr.v.length); dly.delayTime.setTargetAtTime(45 / tr.bpm, ctx.currentTime, 0.1); }
+        if (want !== cur || retape) { retape = false; cur = want; tr = TRACKS[cur]; bar = 0; vi = rnd(tr.v.length); dly.delayTime.setTargetAtTime(45 / tr.bpm, ctx.currentTime, 0.1); }
         else if (bar >= tr.v[vi].length) { bar = 0; vi = (vi + (R() < 0.75 ? 1 : 2)) % tr.v.length; }
         fill = R() < 0.55;
       }
@@ -308,8 +340,9 @@ const AUDIO = (() => {
   }
 
   // ===== эффекты =====
+  function bellUi(f, t, v) { tone(f, 0.6, 'sine', v, master, t, { atk: 0.004 }); tone(f * 2.01, 0.25, 'sine', v * 0.3, master, t, { atk: 0.004 }); }
   const SFX = {
-    coin(t) { tone(988, 0.08, 'square', 0.07, master, t); tone(1319, 0.3, 'square', 0.07, master, t + 0.08); jingle(t + 0.02, master, 0.04); },
+    coin(t) { bellUi(988, t, 0.07); bellUi(1319, t + 0.08, 0.07); jingle(t + 0.02, master, 0.04); },
     door(t) {
       tone(90, 0.7, 'sawtooth', 0.09, master, t, { to: 140, ft: 'bandpass', f: 700, q: 4, vib: [18, 25], atk: 0.05 });   // скрип
       tone(80, 0.25, 'sine', 0.35, master, t + 0.7, { to: 45 }); noise(0.15, 0.2, master, t + 0.7, 0, { ft: 'lowpass', f: 500 });   // хлоп
@@ -318,19 +351,48 @@ const AUDIO = (() => {
     crowd(t) { noise(1.4, 0.14, master, t, 0, { ft: 'bandpass', f: 900, q: 0.8, atk: 0.15, rel: 0.8 }); for (let i = 0; i < 6; i++) shout(t + R() * 0.6, master, 0.06); },
     swish(t) { noise(0.28, 0.25, master, t, 0, { ft: 'bandpass', f: 500, q: 1.5, fto: 3500, atk: 0.08 }); },
     page(t) { noise(0.18, 0.12, master, t, 0, { ft: 'highpass', f: 2500, atk: 0.03 }); noise(0.12, 0.08, master, t + 0.16, 0, { ft: 'bandpass', f: 4000, q: 1 }); noise(0.1, 0.1, master, t + 0.05, 0, { ft: 'lowpass', f: 600 }); },
-    achievement(t) { [72, 76, 79, 84].forEach((m, i) => tone(hz(m), 0.25, 'square', 0.07, master, t + i * 0.08, { ft: 'lowpass', f: 3000 })); tone(hz(88), 0.8, 'triangle', 0.06, master, t + 0.32); noise(0.5, 0.04, master, t + 0.32, 7000); },
+    // сирена «лунохода»: вой вверх-вниз 4 секунды, с удалением
+    siren(t) { for (let i = 0; i < 5; i++) tone(620, 0.42, 'sawtooth', 0.05, master, t + i * 0.8, { to: 980, ft: 'lowpass', f: 1800, atk: 0.05 }),
+      tone(980, 0.38, 'sawtooth', 0.05, master, t + i * 0.8 + 0.4, { to: 620, ft: 'lowpass', f: 1800, atk: 0.03 }); },
+    steps(t) { for (let i = 0; i < 10; i++) noise(0.05, 0.18, master, t + i * 0.24 + R() * 0.03, 0, { ft: 'lowpass', f: 400 }); },
+    slam(t) { tone(55, 1.4, 'sine', 0.6, master, t, { to: 30 }); noise(0.6, 0.35, master, t, 0, { ft: 'lowpass', f: 900 });
+      tone(hz(45), 2, 'sawtooth', 0.08, master, t, { ft: 'lowpass', f: 600 }); tone(hz(57), 2, 'sawtooth', 0.06, master, t, { ft: 'lowpass', f: 800 }); },
+    achievement(t) { [72, 76, 79, 84].forEach((m, i) => tone(hz(m), 0.25, 'triangle', 0.09, master, t + i * 0.08, { ft: 'lowpass', f: 2600 })); tone(hz(88), 0.8, 'triangle', 0.06, master, t + 0.32); noise(0.5, 0.04, master, t + 0.32, 7000); },
   };
 
   return {
     start() { init(); if (ctx && ctx.state === 'suspended') ctx.resume(); startMusic(); if (on) setAmb(ambWant); },
     track(name) { if (TRACKS[name]) want = name; },
+    // кассета: { bpm, prog: [[MIDI, 'm'|'M'] ×4], style: 'ballad'|'disco'|'rock'|'dvor', mot: [8 индексов] }
+    tape(spec) {
+      if (!spec) return;
+      if (tapeSpec !== spec) { tapeSpec = spec; TRACKS.tape.bpm = spec.bpm; TRACKS.tape.v = [spec.prog]; retape = true; }
+      want = 'tape';
+    },
+    // all, music: 0..1 из настроек
+    setVolume(all, music) {
+      VOL = 0.5 * all; MUSV = 0.12 * 2 * music;
+      if (ctx) { master.gain.setTargetAtTime(VOL, ctx.currentTime, 0.05); if (on) mus.gain.setTargetAtTime(MUSV, ctx.currentTime, 0.05); }
+    },
     ambience(bg) { ambWant = AMB_OF[bg] || null; if (on) setAmb(ambWant); },   // null или неизвестный фон — тишина
     sfx(name) { if (ctx && SFX[name]) SFX[name](ctx.currentTime); },
-    click() { tone(660, 0.05, 'square', 0.05); },
-    ok() { tone(523, 0.1); tone(784, 0.18, 'square', 0.15, master, ctx && ctx.currentTime + 0.1); },
+    // мягкий деревянный клик и тихий колокольчик вместо писка
+    click() { if (!ctx) return; noise(0.02, 0.12, master, 0, 0, { ft: 'bandpass', f: 1800, q: 2 }); tone(320, 0.04, 'sine', 0.08); },
+    ok() { if (!ctx) return; const t = ctx.currentTime; bellUi(hz(76), t, 0.1); bellUi(hz(83), t + 0.09, 0.09); },
     no() { tone(196, 0.25, 'sawtooth', 0.15); },
     hit() { noise(0.15, 0.4); tone(90, 0.15, 'sine', 0.4); },
-    type() { tone(1400 + Math.random() * 300, 0.015, 'square', 0.025); },
+    // пишущая машинка: щелчок рычага + удар литеры по бумаге на валике; в конце строки — перевод каретки
+    type() {
+      if (!ctx) return; const t = ctx.currentTime, v = 0.7 + R() * 0.5;
+      noise(0.012, 0.16 * v, master, t, 0, { ft: 'bandpass', f: 3200 + R() * 1400, q: 1.5 });
+      noise(0.035, 0.22 * v, master, t + 0.006, 0, { ft: 'bandpass', f: 900 + R() * 300, q: 1.2 });
+      tone(140 + R() * 30, 0.05, 'sine', 0.07 * v, master, t + 0.006);
+    },
+    ret() {
+      if (!ctx) return; const t = ctx.currentTime;
+      noise(0.28, 0.07, master, t, 0, { ft: 'bandpass', f: 1400, q: 0.8, fto: 700, atk: 0.04 });
+      bellUi(hz(93), t + 0.02, 0.025);
+    },
     whoosh() { noise(0.5, 0.12); tone(110, 1.2, 'sawtooth', 0.08); tone(55, 1.6, 'sine', 0.2); },
     musicOn: () => on,
     // выключатель гасит и музыку, и эмбиент; эффекты остаются
