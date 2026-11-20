@@ -196,12 +196,22 @@ function card(lines, then, ms = 2200, scene) {
   stopTyping(); AUDIO.whoosh();
   const el = document.createElement('div');
   scene = scene === undefined ? sceneFor([].concat(lines).join(' ')) : scene;
-  el.className = 'card' + (scene ? ' art' : '');
+  // если уже идёт другая заставка — новая появляется сразу целиком, без проявления (иначе сквозь обе виден экран)
+  el.className = 'card' + (scene ? ' art' : '') + (document.querySelector('.card') ? ' instant' : '');
   el.innerHTML = (scene ? artHtml(scene, 'cardart') : '') + [].concat(lines).map((l, i) => `<div class="${i ? 'c2' : 'c1'}">${l}</div>`).join('');
   document.body.appendChild(el);
   if (scene) { artStart(el); ms += 800; }
   let done = false;
-  const end = () => { if (done) return; done = true; el.classList.add('out'); setTimeout(() => { el.remove(); then && then(); }, 400); };
+  // под непрозрачной заставкой убираем старый экран (выбор персонажа и т.п.), чтобы он нигде не мелькнул
+  setTimeout(() => { if (!done && $('#nav').classList.contains('hidden')) $('#main').innerHTML = ''; }, 550);
+  // Сначала готовим то, что будет дальше (следующая заставка ляжет поверх, экран — под нами),
+  // и только потом плавно растворяемся: без мелькания предыдущего экрана между заставками.
+  const end = () => {
+    if (done) return; done = true;
+    then && then();
+    el.style.pointerEvents = 'none';
+    requestAnimationFrame(() => { el.classList.add('out'); setTimeout(() => el.remove(), 700); });
+  };
   el.onclick = end; setTimeout(end, ms);
 }
 
