@@ -42,6 +42,16 @@
 <script src="js/time.js"></script>
 <script src="js/places.js"></script>
 <script>
+  // iPhone, игра на экране «Домой»: окно короче экрана на высоту зоны часов → снизу полоса.
+  // Ставим высоту игры ровно по экрану телефона.
+  function fitScreen() {
+    const app = navigator.standalone || matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches;
+    if (!app) return;
+    const h = Math.max(innerHeight, matchMedia('(orientation: portrait)').matches ? Math.max(screen.height, screen.width) : Math.min(screen.height, screen.width));
+    document.documentElement.style.height = h + 'px';
+    Object.assign(document.body.style, { bottom: 'auto', height: h + 'px' });
+  }
+  fitScreen(); addEventListener('resize', fitScreen); addEventListener('orientationchange', () => setTimeout(fitScreen, 300));
   boot();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js');
 </script>
