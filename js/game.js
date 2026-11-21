@@ -91,7 +91,7 @@ function play(id) {
   if (ev.sfx) AUDIO.sfx && AUDIO.sfx(T(ev.sfx));
   if (ev.fight) AUDIO.sfx && AUDIO.sfx('crowd');
   save('auto');
-  if (ev.card) return card(T(ev.card), render, 2600);
+  if (ev.card) return card(T(ev.card), render, 2600, ev.art);   // art — своя картинка к карточке
   render();
 }
 

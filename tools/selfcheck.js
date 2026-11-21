@@ -11,7 +11,7 @@ const ctx = {
   localStorage: { getItem: k => store[k] ?? null, setItem: (k, v) => store[k] = v },
 };
 vm.createContext(ctx);
-const src = ['js/map.js', 'js/sprite.js', 'js/audio.js', 'js/settings.js', 'js/game.js', 'js/story.js', 'js/career.js', 'js/mini.js', 'js/world.js', 'js/economy.js', 'js/mechanics.js', 'js/atmos.js', 'js/story2.js', 'js/street.js', 'js/scenes.js', 'js/menu.js', 'js/time.js', 'js/places.js', 'js/eggs.js', 'js/stats.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
+const src = ['js/map.js', 'js/sprite.js', 'js/audio.js', 'js/settings.js', 'js/game.js', 'js/story.js', 'js/career.js', 'js/mini.js', 'js/world.js', 'js/economy.js', 'js/mechanics.js', 'js/atmos.js', 'js/story2.js', 'js/street.js', 'js/scenes.js', 'js/menu.js', 'js/time.js', 'js/places.js', 'js/prison.js', 'js/eggs.js', 'js/stats.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
 vm.runInContext(src + `
 ;globalThis.EV = EV; globalThis.DISTRICTS = DISTRICTS; save = () => {};
 function __run(seedHome, steps) {
@@ -23,6 +23,7 @@ function __run(seedHome, steps) {
   toMap();
   const seen = new Set();
   for (let i = 0; i < steps; i++) {
+    if (globalThis.__arrestAt === i && !S.cur && !S.res) S.st.mil = 100;   // принудительный арест: проверка веток тюрьмы/подписи
     if (S.ending || S.st.zdor <= 0) return { end: S.ending || 'death', day: S.day, seen };
     if (S.res) { next(S.res.go); continue; }
     if (S.cur) {
@@ -74,6 +75,7 @@ function __career(steps, surv) {
 }
 globalThis.__career = __career;`, ctx);
 
+const pick0 = a => a[Math.floor(Math.random() * a.length)];
 // 1) Статические ссылки go → существующие события
 const bad = [];
 for (const ev of Object.values(ctx.EV)) {
@@ -89,6 +91,16 @@ for (const d of ctx.DISTRICTS.filter(d => d.gang)) for (let k = 0; k < 15; k++) 
   const r = ctx.__run(d.id, 1500);
   ends[r.end] = (ends[r.end] || 0) + 1; r.seen.forEach(s => allSeen.add(s));
 }
+// 2б) Арест в кампании: обе ветки (подписал / сел) должны доходить до конца без ошибок
+const aEnds = {};
+for (let k = 0; k < 80; k++) {
+  ctx.__arrestAt = 40 + Math.floor(Math.random() * 600);
+  const r = ctx.__run(pick0(ctx.DISTRICTS.filter(d => d.gang)).id, 2500);
+  const path = r.seen.has('z_sud') ? 'сел' : r.seen.has('k_uslovno') ? 'подписал' : 'без ареста';
+  aEnds[path + ': ' + r.end] = (aEnds[path + ': ' + r.end] || 0) + 1; r.seen.forEach(s => allSeen.add(s));
+}
+ctx.__arrestAt = undefined;
+console.log('Арест, исходы:', aEnds);
 const cEnds = {}, ranks = [0, 0, 0, 0, 0, 0]; let maxDay = 0;
 ctx.__seen = new Set();
 const vmRun = code => vm.runInContext(code, ctx);
