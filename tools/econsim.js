@@ -38,6 +38,9 @@ function __econ(until) {
         // жадность: вариант, который больше всего обещает денег
         const val = c => { const f = c.fx || (c.ok && c.ok.fx); const o = typeof f === 'object' && f ? f : {}; return (o.dengi || 0) + (o.dol || 0) * 4; };
         doChoice(ch.slice().sort((a, b) => val(b) - val(a))[0]); }
+    } else if (S.ap > 0 && S.body && S.body.inj.some(i => !i.q)) {   // живой игрок лечится: самое дешёвое, что по карману
+      const h = PLACES.find(p => p.k === 'hosp'), acts = hospActs(S, h).filter(a => a.cost && (!a.req || Object.entries(a.req).every(([k, v]) => (S.st[k] || 0) >= v)));
+      const a = acts.find(x => /отблагодарить/.test(x.t)) || acts[0]; if (a) { label = 'больница'; S.at = h.d; doChoice({ ...a }); } else sleep();
     } else if (S.ap > 0) {
       const r = Math.random();
       if (S.jobs.length && r < 0.45) { label = 'задание: ' + S.jobs[0].id; takeJob(S.jobs[0].uid); }
@@ -53,7 +56,8 @@ function __econ(until) {
     const m1 = S.st.dengi + (S.st.dol || 0) * 4; if (m1 !== m0 && label) __add(label, m1 - m0);
     if (!S.cur && !S.res) label = '';
   }
-  return { marks, final: worth(), rank: S.rank, vl: S.vl || 0, gar: (S.gar || []).length, days: S.day };
+  const __pc = (S.points || []).reduce((m, p) => (m[p.name] = (m[p.name] || 0) + p.amt, m), {}); console.log('  точек:', (S.points || []).length, 'валовые:', pointsCalc(S).gross, 'чистыми:', pointsCalc(S).net, JSON.stringify(__pc).slice(0, 400));
+  return { body: S.body ? { spent: S.body.spent, injN: S.body.injN, injT: S.body.injT, blockDays: S.body.blockDays } : null, marks, final: worth(), rank: S.rank, vl: S.vl || 0, gar: (S.gar || []).length, days: S.day };
 }
 globalThis.__econ = __econ; globalThis.__inc = __inc;`, ctx);
 
@@ -65,6 +69,7 @@ console.log(`Забегов: ${res.length}. Богатство (деньги + $
 for (const y of years) { const w = res.map(r => r.marks[y] && r.marks[y].worth).filter(v => v != null);
   console.log(`  ${y}: ${med(w)} [${Math.min(...w)}–${Math.max(...w)}]  ранг ~${med(res.map(r => r.marks[y] ? r.marks[y].rank : 0))}  влияние ~${med(res.map(r => r.marks[y] ? r.marks[y].vl : 0))}`); }
 console.log(`  финал: ${med(res.map(r => r.final))}`);
+res.forEach(r => r.body && console.log('  тело:', JSON.stringify(r.body), 'дней:', r.days));
 const top = Object.entries(ctx.__inc).map(([k, v]) => [k, Math.round(v / res.length)]).sort((a, b) => b[1] - a[1]);
 console.log('Главные источники дохода (в среднем за забег):'); top.slice(0, 22).forEach(([k, v]) => console.log(`  ${String(v).padStart(7)}  ${k}`));
 console.log('Главные траты:'); top.slice(-10).reverse().forEach(([k, v]) => console.log(`  ${String(v).padStart(7)}  ${k}`));

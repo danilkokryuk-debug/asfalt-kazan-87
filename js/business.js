@@ -79,7 +79,7 @@ function bizScreen() {
   const heistOk = !S.flags.heist_day || S.day - S.flags.heist_day >= 5, kryOk = !S.flags.kry_day || S.day - S.flags.kry_day >= 3;
   const row = (img, body, btn) => `<div class="item biz"><div class="bimg" style="background-image:url(img/${bgPhoto(img) || img}.jpg)"></div><div style="flex:1">${body}</div>${btn}</div>`;
   $('#main').innerHTML = `<div class="scene in"><h2>💼 Дела</h2>
-    <p class="sub">Твои деньги: ${S.st.dengi} р. · Бизнес приносит ${bizSum(S)} р. в неделю · Крыша: ${pointsSum()} р.</p>
+    <p class="sub">Твои деньги: ${S.st.dengi} р. · Бизнес приносит ${bizSum(S)} р. в неделю · Крыша чистыми: ${pointsSum()} р.</p>
     <h3 class="mag-h">Свой бизнес</h3><div class="choices">${BIZ.map(b => { const x = owned(b.id);
       if (x) return row(b.bg, `<b>${b.name}</b><div class="sub">Уровень ${x.lv}/3 · +${bizInc(b, x.lv)} р./нед${x.closed ? ' · <span style="color:var(--bad)">закрыт</span>' : ''}${b.dark ? ' · греет милицию' : ''}</div>`,
         x.lv < 3 ? `<button class="btn" data-up="${b.id}" ${S.st.dengi >= bizUp(b, x.lv) ? '' : 'disabled'}>Расширить ${bizUp(b, x.lv)} р.</button>` : '<span class="ch hi">✔ макс</span>');

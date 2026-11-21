@@ -649,3 +649,17 @@ body:has(#top.hidden) #pager, body:has(.card) #pager { display: none; }
 .pg-h { font-size: 11px; letter-spacing: 1px; opacity: .75; }
 .pg-t { font: 14px/1.4 'Courier New', monospace; letter-spacing: 1px; margin: 4px 0; }
 .pg-msg .btn { width: auto; padding: 6px 12px; font-size: 12px; background: #2a3a22; color: #d8f0c8; }
+
+/* ---- 1.4.0: тело — сытость, рацион, травмы ---- */
+.body-box { margin: 0 0 12px; padding: 10px 12px; border-radius: 8px; background: rgba(30, 26, 20, .9); border: 1px solid rgba(216, 164, 65, .25); }
+.body-row { display: flex; align-items: center; gap: 10px; } .body-row span { font-size: 12px; color: var(--dim); white-space: nowrap; }
+.body-row .bar { flex: 1; height: 6px; background: rgba(255, 255, 255, .08); border-radius: 3px; overflow: hidden; } .body-row .bar i { display: block; height: 100%; }
+.body-box .sub { margin: 6px 0; } .body-box .lo { color: var(--bad); }
+.rat { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 6px; }
+.rat .btn { flex-direction: column; align-items: flex-start; gap: 2px; padding: 7px 8px; font-size: 12px; } .rat .btn span { color: var(--dim); font-size: 11px; }
+.rat .btn.on { border-color: var(--accent); background: rgba(200, 64, 47, .18); }
+.inj { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; } .inj-i { font-size: 13px; line-height: 1.4; }
+/* разбивка дохода с точек в кошельке */
+.pts { margin: 8px 0 4px; padding: 6px 8px; background: rgba(0, 0, 0, .25); border-radius: 6px; font-size: 12px; }
+.ptr { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; } .ptr span { color: var(--dim); } .ptr b { font-weight: normal; white-space: nowrap; }
+.ptr b.lo { color: var(--bad); } .ptr.tot { border-top: 1px solid rgba(255, 255, 255, .1); margin-top: 3px; padding-top: 4px; } .ptr.tot b { color: var(--good); }

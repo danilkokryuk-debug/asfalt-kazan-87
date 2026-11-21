@@ -228,7 +228,7 @@ function renderTasks() {
   $('#main').innerHTML = `<div class="scene"><h2>Задания</h2>
     <div class="result ok">Цель: <b>${g.text}</b><br>Срок: ${dateStr(g.until)}</div>
     <div class="result">Ранг: <b>${RANKS[S.rank]}</b>${need ? ` · до «${RANKS[S.rank + 1]}»: авторитет ${S.st.avt}/${need.avt}, уважение ${S.st.uvazh}/${need.uvazh}${need.land ? `, районов ${myLand(S).length}/${need.land}` : ''}` : ' · вершина'}
-    ${(S.points || []).length ? `<br>Доход с точек: ${pointsSum()} р. в неделю (потолок ранга ${CAP[S.rank]})` : ''}
+    ${(S.points || []).length ? `<br>Доход с точек: ${pointsSum()} р. в неделю чистыми (подробно — в кошельке героя)` : ''}
     <br>Твоя доля с заданий: ${Math.round(SHARE[S.rank] * 100)}%, остальное — в общак</div>
     <p class="sub">Старшие раздают задания. Новые — раз в три дня. Каждое отнимает одно действие.</p>
     <div class="choices">${S.board.map((t, i) => `<div class="item"><div><b>${TPL[t.id].title(t.p)}</b>
