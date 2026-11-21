@@ -207,8 +207,11 @@ function genBoard(S) {
 def('k_task', {
   mode: 'career',
   title: S => TPL[S.kt.id].title(S.kt.p),
-  bg: S => ({ dezhur: 'dk', rynok: 'rynok', menty: 'otdel', nabeg: 'pustyr', razv: 'dvor', mir: 'pustyr' })[S.kt.id] || 'korobka',
-  lines: S => [[TPL[S.kt.id].who || 'starsh', TPL[S.kt.id].text(S.kt.p)]],
+  bg: S => TPL[S.kt.id].bg || ({ dezhur: 'dk', rynok: 'rynok', menty: 'otdel', nabeg: 'pustyr', razv: 'dvor', mir: 'pustyr', obshak: 'garazhi',
+    dolg: 'rynok', farca: 't_taksi', skorl: 't_kachalka', krysha: 'pl_kino', prish: 'pustyr', j_posylka: 't_avtobus', j_shuher: 'garazhi',
+    j_kiosk: 'gazeta', j_sobaka: 'dvor', j_zapiska: 'shkola', j_deficit: 'rynok', j_zhiguli: 'noch', j_vagon: 't_sortirovka',
+    j_pensiya: 't_pochta', j_magnitofon: 'rynok', j_sobranie: 'shkola', j_provodit: 'ostanovka' })[S.kt.id] || 'korobka',
+  lines: S => [[TPL[S.kt.id].who === null ? null : TPL[S.kt.id].who || 'starsh', TPL[S.kt.id].text(S.kt.p)]],
   choices: S => TPL[S.kt.id].choices(S, S.kt.p),
 });
 def('k_fight', {

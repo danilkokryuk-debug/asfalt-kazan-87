@@ -169,13 +169,28 @@ const ACH = [
   { id: 'dollar', name: 'Валютчик', d: 'Иметь $50', c: S => (S.st.dol || 0) >= 50 },
   { id: 'zona', name: 'Отсидевший', d: 'Выйти с зоны', c: S => !!S.done.m_zona3 },
 ];
-function metaGet() { const m = meta(); m.ach = m.ach || []; m.ends = m.ends || []; return m; }
+function metaGet() { const m = meta(); m.ach = m.ach || []; m.ends = m.ends || []; m.claimed = m.claimed || []; return m; }
+// Сундук: награды за достижения — общие для всех сохранений
+const rewardItems = () => { const c = metaGet().claimed; return ITEMS.filter(i => i.reward && c.includes(i.id)); };
+function syncRewards() { if (S && S.owned) rewardItems().forEach(i => { if (!S.owned.includes(i.id)) S.owned.push(i.id); }); }
+function openChest(item, done) {
+  const el = document.createElement('div'); el.className = 'chest-ov';
+  el.innerHTML = `<div class="chest"><div class="lid"></div><div class="box"></div><div class="glow"></div></div>
+    <canvas class="sprite big chest-item"></canvas><div class="chest-name">${item.name}</div><div class="chest-sub">${item.desc}</div>
+    <button class="btn main">Забрать</button>`;
+  document.body.appendChild(el);
+  const w = { ...DEFAULT_WEAR, acc: [] }; if (item.slot === 'acc') w.acc = [item.id]; else w[item.slot] = item.id;
+  drawHero(el.querySelector('canvas'), S ? S.app : DEFAULT_APP, S ? { ...S.wear, ...(item.slot === 'acc' ? { acc: [...S.wear.acc, item.id] } : { [item.slot]: item.id }) } : w, { emo: 'smile' });
+  AUDIO.sfx && AUDIO.sfx('crowd');
+  setTimeout(() => { el.classList.add('open'); AUDIO.sfx && AUDIO.sfx('achievement'); }, 900);
+  el.querySelector('.btn').onclick = () => { el.remove(); done && done(); };
+}
 function metaPut(m) { try { localStorage.setItem('asfalt_meta', JSON.stringify(m)); } catch (e) {} }
 function checkAch() {
   if (!S || !S.cnt) return;
   const m = metaGet(); let got = null;
   for (const a of ACH) if (!m.ach.includes(a.id) && a.c(S)) { m.ach.push(a.id); got = a; }
-  if (got) { metaPut(m); toast('Достижение: ' + got.name); }
+  if (got) { metaPut(m); toast('Достижение: ' + got.name + (ITEMS.some(i => i.reward === got.id) ? ' · награда в сундуке!' : '')); }
 }
 function noteEnding(name) { const m = metaGet(); if (!m.ends.includes(name)) { m.ends.push(name); metaPut(m); } }
 function toast(t) {
@@ -187,10 +202,26 @@ const ALL_ENDS = ['Ничей', 'Колония', 'Крыса', 'Сломалс�
 function achScreen(back) {
   const m = metaGet();
   $('#top').classList.add('hidden'); $('#nav').classList.add('hidden');
-  $('#main').innerHTML = `<div class="scene"><h2>Достижения ${m.ach.length}/${ACH.length}</h2>
+  const rewards = ITEMS.filter(i => i.reward);
+  $('#main').innerHTML = `<div class="scene"><h2>Сундук наград</h2>
+    <p class="sub">За достижения — вещи, которых нет на барахолке. Забранные вещи появляются в гардеробе во всех сохранениях.</p>
+    <div class="choices">${rewards.map(i => { const a = ACH.find(x => x.id === i.reward), got = m.ach.includes(i.reward), cl = m.claimed.includes(i.id);
+      return `<div class="item ${got ? (cl ? 'worn' : 'trying') : 'locked'}"><canvas class="sprite mini-spr" data-rw="${i.id}"></canvas>
+        <div style="flex:1"><b>${got ? i.name : '???'}</b><div class="sub">${got ? i.desc : 'Откроется за достижение «' + a.name + '»'}</div></div>
+        ${got && !cl ? `<button class="btn main" data-claim="${i.id}">Открыть</button>` : cl ? '<span class="ch hi">✔ твоё</span>' : '<span class="ch">🔒</span>'}</div>`; }).join('')}</div>
+    <h2 style="margin-top:20px">Достижения ${m.ach.length}/${ACH.length}</h2>
     <div class="choices">${ACH.map(a => `<div class="item ${m.ach.includes(a.id) ? 'worn' : 'locked'}"><div><b>${m.ach.includes(a.id) ? '★' : '☆'} ${a.name}</b><div class="sub">${a.d}</div></div></div>`).join('')}</div>
     <h2 style="margin-top:20px">Концовки ${ALL_ENDS.filter(e => m.ends.some(x => x.startsWith(e))).length}/${ALL_ENDS.length}</h2>
     <div class="choices">${ALL_ENDS.map(e => { const ok = m.ends.some(x => x.startsWith(e)); return `<div class="item ${ok ? 'worn' : 'locked'}"><b>${ok ? e : '???'}</b></div>`; }).join('')}</div>
     <div class="choices"><button class="btn" id="bk">Назад</button></div></div>`;
   $('#bk').onclick = back || titleScreen;
+  document.querySelectorAll('[data-rw]').forEach(c => { const i = ITEM[c.dataset.rw], got = m.ach.includes(i.reward);
+    const w = { ...DEFAULT_WEAR, acc: [] }; if (i.slot === 'acc') w.acc = [i.id]; else w[i.slot] = i.id;
+    drawHero(c, DEFAULT_APP, w); if (!got) c.style.filter = 'brightness(0)'; });
+  document.querySelectorAll('[data-claim]').forEach(b => b.onclick = () => {
+    const mm = metaGet(), i = ITEM[b.dataset.claim];
+    if (!mm.claimed.includes(i.id)) { mm.claimed.push(i.id); metaPut(mm); }
+    syncRewards(); if (S) save('auto');
+    openChest(i, () => achScreen(back));
+  });
 }

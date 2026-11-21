@@ -72,7 +72,7 @@ function photo(id) {
 function albumScreen() {
   const al = S.album || [];
   $('#main').innerHTML = `<div class="scene"><h2>Фотоальбом</h2>
-    ${al.length ? `<div class="album">${al.map((p, i) => `<div class="photo"><div class="stage bg-${p.bg}">
+    ${al.length ? `<div class="album">${al.map((p, i) => `<div class="photo"><div class="${stageCls(p.bg)}">
       <canvas class="sprite npc" data-pn="${i}"></canvas><canvas class="sprite me" data-pm="${i}"></canvas></div>
       <div class="pcap">${p.cap}<br><span class="sub">${p.d}</span></div></div>`).join('')}</div>` : '<p class="sub">Пока ни одной фотографии. Они появятся в главные моменты жизни.</p>'}
     <div class="choices"><button class="btn" id="bk">Назад</button></div></div>`;

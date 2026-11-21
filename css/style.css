@@ -273,7 +273,7 @@ label { font-size: 13px; color: var(--dim); }
 .menu { background: linear-gradient(#0a0c24 0, #2a2040 40%, #0c1424 62%, #0a0806 100%); }
 .menuart { position: absolute; left: 0; top: 16%; width: 100%; height: auto; aspect-ratio: 16 / 10; image-rendering: pixelated; z-index: 0; }
 .menu::before { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 45%, rgba(10, 8, 6, .9) 75%); z-index: 1; }
-.menu > .logo, .menu > .menu-btns, .menu > .tapstart, .menu > .note { position: relative; z-index: 2; }
+.menu > .logo, .menu > .menu-btns, .menu > .tapstart, .menu > .stats, .menu > .note { position: relative; z-index: 2; }
 .menu > .menuart { z-index: 0; }
 .logo { text-align: center; margin-bottom: auto; padding-top: 12vh; }
 .logo h1 { font-size: 52px; letter-spacing: 8px; margin: 0; color: var(--accent);
@@ -334,6 +334,7 @@ label { font-size: 13px; color: var(--dim); }
 .btn.job { border-color: var(--gold); background: linear-gradient(90deg, rgba(240, 192, 64, .18), transparent); }
 #map .jobmark { font: bold 7px var(--font); fill: #000; dominant-baseline: middle; pointer-events: none; }
 #map .walker { image-rendering: pixelated; }
+#map .roadlabel { font: 7px var(--font); fill: #c8c0a0; paint-order: stroke; stroke: #0c0e14; stroke-width: 2.5px; pointer-events: none; }
 /* Интерьеры заведений */
 .bg-pl_barber { background: linear-gradient(#e8d8c8 0 62%, #8a6a5a 62%); }
 .bg-pl_barber::before { content: ""; position: absolute; left: 10%; right: 10%; top: 24px; height: 80px;
@@ -357,24 +358,55 @@ label { font-size: 13px; color: var(--dim); }
 .btn.place { border-style: dashed; }
 .pli { display: inline-block; width: 10px; height: 10px; margin-right: 8px; border: 1px solid #000; vertical-align: -1px; }
 
-/* Фоны-картинки из Google Flow (перекрывают нарисованные градиенты выше) */
-.bg-pl_barber, .bg-pl_resto, .bg-pl_bar, .bg-pl_sto, .bg-pl_bank, .bg-pl_hosp, .bg-pl_kino, .bg-dk, .bg-otdel, .bg-rynok,
-.bg-kuhnya, .bg-dvor, .bg-korobka, .bg-pustyr { background-size: cover !important; background-position: center 62% !important;
-  image-rendering: pixelated; animation: none !important; background-blend-mode: normal !important; }
-.bg-pl_barber::before, .bg-pl_resto::before, .bg-pl_bar::before, .bg-pl_sto::before, .bg-pl_bank::before, .bg-pl_hosp::before,
-.bg-dk::before, .bg-otdel::before, .bg-kuhnya::before, .bg-dvor::before, .bg-korobka::before, .bg-pustyr::before { display: none; }
-.bg-pl_barber { background: url(../img/pl_barber.jpg); } .bg-pl_resto { background: url(../img/pl_resto.jpg); }
-.bg-pl_bar { background: url(../img/pl_bar.jpg); } .bg-pl_sto { background: url(../img/pl_sto.jpg); }
-.bg-pl_bank { background: url(../img/pl_bank.jpg); } .bg-pl_hosp { background: url(../img/pl_hosp.jpg); }
-.bg-pl_kino { background: url(../img/pl_video.jpg); } .bg-dk { background: url(../img/pl_dk.jpg); }
-.bg-otdel { background: url(../img/pl_police.jpg); } .bg-rynok { background: url(../img/pl_rynok.jpg); }
-.bg-kuhnya { background: url(../img/kuhnya.jpg); } .bg-dvor { background: url(../img/dvor.jpg); }
-.bg-korobka { background: url(../img/korobka.jpg); } .bg-pustyr { background: url(../img/pustyr.jpg); }
-.bg-kuhnya, .bg-dvor, .bg-korobka, .bg-pustyr { background-position: center 70% !important; }
+/* Фоны-картинки из Google Flow: картинка задаётся в stageHtml, здесь — подача и медленный «проезд камеры» */
+.stage.ph { background-color: #0c0c10 !important; background-size: cover !important; background-repeat: no-repeat !important;
+  background-position: 50% 62%; image-rendering: pixelated; background-blend-mode: normal !important;
+  animation: phDrift 28s ease-in-out infinite alternate !important; }
+.stage.ph::before { display: none !important; }
+@keyframes phDrift { from { background-position: 30% 66%; } to { background-position: 70% 56%; } }
 /* лёгкое затемнение снизу, чтобы персонажи читались на картинке */
 .stage::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 45%; pointer-events: none;
   background: linear-gradient(transparent, rgba(0, 0, 0, .35)); z-index: 0; }
 .stage .sprite { z-index: 2; }
+
+/* Живые слои сцены */
+.stage .fx { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.fx-lamp { background: radial-gradient(circle at 72% 26%, rgba(255, 210, 130, .22), transparent 38%); animation: lampFlicker 5s infinite; }
+@keyframes lampFlicker { 0%, 100% { opacity: 1; } 41% { opacity: 1; } 42% { opacity: .45; } 44% { opacity: 1; } 71% { opacity: .9; } 72% { opacity: .55; } 73% { opacity: 1; } }
+.fx-dust { opacity: .5; background-image: radial-gradient(1px 1px at 20px 30px, #ffe8c0, transparent), radial-gradient(1.5px 1.5px at 90px 120px, #ffe8c0, transparent),
+  radial-gradient(1px 1px at 160px 60px, #ffe8c0, transparent), radial-gradient(1px 1px at 240px 150px, #ffe8c0, transparent), radial-gradient(1.5px 1.5px at 310px 40px, #ffe8c0, transparent);
+  background-size: 340px 210px; animation: dustFloat 18s linear infinite; }
+@keyframes dustFloat { from { background-position: 0 0; } to { background-position: 30px -210px; } }
+.fx-smoke { background: radial-gradient(ellipse 40px 60px at 30% 100%, rgba(230, 230, 230, .18), transparent 70%),
+  radial-gradient(ellipse 50px 70px at 62% 100%, rgba(230, 230, 230, .14), transparent 70%); filter: blur(6px); animation: smokeRise 7s ease-in-out infinite; }
+@keyframes smokeRise { 0% { transform: translateY(20px); opacity: 0; } 40% { opacity: 1; } 100% { transform: translateY(-90px) scaleX(1.4); opacity: 0; } }
+.fx-disco { mix-blend-mode: screen; background: radial-gradient(circle at 20% 30%, rgba(255, 60, 140, .3), transparent 25%),
+  radial-gradient(circle at 75% 40%, rgba(60, 140, 255, .3), transparent 25%), radial-gradient(circle at 50% 70%, rgba(255, 220, 60, .2), transparent 25%);
+  animation: discoSpin 3s linear infinite; }
+@keyframes discoSpin { 0% { filter: hue-rotate(0); transform: translateX(-8%); } 50% { transform: translateX(8%); } 100% { filter: hue-rotate(360deg); transform: translateX(-8%); } }
+.fx-tv { mix-blend-mode: screen; background: radial-gradient(circle at 42% 35%, rgba(140, 180, 255, .2), transparent 30%); animation: tvFlicker .9s steps(3) infinite; }
+@keyframes tvFlicker { 0% { opacity: .6; } 33% { opacity: 1; } 66% { opacity: .75; } }
+/* персонаж входит в кадр */
+.stage .npc.enter { animation: enterL .5s cubic-bezier(.2, .9, .3, 1); }
+@keyframes enterL { from { transform: translateX(-60px); opacity: 0; } }
+
+/* Сундук наград */
+.chest-ov { position: fixed; inset: 0; z-index: 85; background: radial-gradient(circle at 50% 40%, rgba(60, 40, 10, .95), rgba(5, 4, 6, .97) 70%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; animation: cardIn .3s; }
+.chest { position: relative; width: 120px; height: 96px; animation: chestShake .15s 6 alternate; }
+.chest .box { position: absolute; left: 0; right: 0; bottom: 0; height: 60px; background: linear-gradient(#8a5a2a, #5a3a1a); border: 4px solid #2a1a0a;
+  box-shadow: inset 0 -8px 0 rgba(0, 0, 0, .25); }
+.chest .box::after { content: ""; position: absolute; left: 50%; top: 10px; width: 16px; height: 20px; margin-left: -8px; background: #e5c04a; border: 3px solid #2a1a0a; }
+.chest .lid { position: absolute; left: -4px; right: -4px; top: 0; height: 40px; background: linear-gradient(#a06a32, #6a4220); border: 4px solid #2a1a0a;
+  border-radius: 14px 14px 0 0; transform-origin: 10% 100%; transition: transform .5s cubic-bezier(.3, 1.6, .5, 1); z-index: 2; }
+.chest .glow { position: absolute; left: 50%; top: 30%; width: 10px; height: 10px; margin: -5px; border-radius: 50%; background: #ffe8a0; opacity: 0; transition: all .6s; }
+.chest-ov.open .lid { transform: rotate(-35deg) translate(-10px, -18px); }
+.chest-ov.open .glow { opacity: .8; box-shadow: 0 0 60px 40px rgba(255, 220, 120, .55); }
+.chest-item, .chest-name, .chest-sub, .chest-ov .btn { opacity: 0; transform: translateY(12px); transition: all .5s .35s; }
+.chest-ov.open .chest-item, .chest-ov.open .chest-name, .chest-ov.open .chest-sub, .chest-ov.open .btn { opacity: 1; transform: none; }
+.chest-name { color: #ffe8a0; font-size: 20px; letter-spacing: 1px; } .chest-sub { color: #cfc5b2; font-size: 13px; max-width: 300px; }
+.chest-ov .btn { width: auto; padding: 12px 30px; }
+@keyframes chestShake { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
 
 /* Гардероб: примерка */
 .ward-top { position: sticky; top: 0; z-index: 3; display: flex; gap: 14px; align-items: center; background: var(--bg); padding: 6px 0 10px; margin: -16px 0 8px; padding-top: 16px; }
@@ -409,3 +441,15 @@ label { font-size: 13px; color: var(--dim); }
 .btn.mode { flex-direction: column; align-items: flex-start; gap: 4px; }
 .btn.mode b { font-weight: normal; color: var(--gold); }
 .btn.mode .sub { margin: 0; }
+
+.menu .stats { position: relative; z-index: 2; text-align: center; font-size: 11px; color: #9c927f; padding: 0 16px 8px; letter-spacing: .3px; }
+.menu .stats b { color: #e8c878; font-weight: 600; }
+
+/* Сцена занимает весь экран: картинка растягивается вниз, текст и выбор прижаты к низу — без пустого серого поля */
+#main > .scene:has(> .stage) { display: flex; flex-direction: column; min-height: 100%; box-sizing: border-box; padding-bottom: 12px; }
+#main > .scene > .stage { flex: 1 0 210px; height: auto; max-height: 64vh; }
+#main > .scene > .choices.hidden { display: flex !important; visibility: hidden; }  /* место под выбор — заранее, чтобы картинка не прыгала */
+/* портрет говорящего в окне диалога */
+.say .face { float: left; width: 58px; height: 58px; margin: -4px 12px 4px -4px; border-radius: 8px; border: 2px solid rgba(232, 200, 120, .55);
+  background: #111 center / cover no-repeat; image-rendering: pixelated; box-shadow: 0 2px 10px rgba(0, 0, 0, .6); animation: faceIn .35s ease-out; }
+@keyframes faceIn { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }

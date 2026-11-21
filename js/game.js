@@ -134,10 +134,21 @@ function normLines(x) {
   }
   return out.length ? out : [[null, '']];
 }
+// Фоны-картинки из Google Flow: t_* — у каждого задания свой кадр (img/t_*.jpg)
+const BG_PHOTO = { dvor: 'bg_dvor', noch: 'bg_noch', ostanovka: 'bg_ostanovka', garazhi: 'bg_garazhi', korobka: 'bg_korobka',
+  kuhnya: 'bg_kuhnya', shkola: 'bg_shkola', pustyr: 'bg_pustyr', gazeta: 'bg_gazeta', otdel: 'pl_police', rynok: 'pl_rynok',
+  dk: 'pl_dk', pl_kino: 'pl_video', pl_barber: 'pl_barber', pl_resto: 'pl_resto', pl_bar: 'pl_bar', pl_sto: 'pl_sto', pl_bank: 'pl_bank', pl_hosp: 'pl_hosp' };
+const bgPhoto = bg => BG_PHOTO[bg] || (/^t_/.test(bg) ? bg : null);
+const stageCls = bg => { const f = bgPhoto(bg); return `stage bg-${bg}${f ? ` ph" style="background-image:url(img/${f}.jpg)` : ''}`; };
 function stageHtml(bg) {
   bg = bg || 'dvor';
   const wx = OUTDOOR.includes(bg) ? `<div class="wx wx-${season()}"></div>` : '';
-  return `<div class="stage bg-${bg}">${wx}<canvas class="sprite npc hidden" id="spk"></canvas><canvas class="sprite me" id="me"></canvas></div>`;
+  // живые слои поверх картинки: фонарь, пыль, дым, огни дискотеки, телевизор
+  const FX = { dvor: 'lamp', noch: 'lamp', ostanovka: 'lamp', garazhi: 'lamp smoke', korobka: 'lamp', kuhnya: 'tv smoke', shkola: 'dust',
+    otdel: 'dust', pl_bank: 'dust', pl_hosp: 'dust', pl_barber: 'dust', pl_resto: 'dust lamp', pl_bar: 'smoke lamp', pl_sto: 'smoke lamp',
+    dk: 'disco', pl_kino: 'tv dust', rynok: 'dust', gazeta: 'dust' };
+  const fx = (FX[bg] || '').split(' ').filter(Boolean).map(f => `<div class="fx fx-${f}"></div>`).join('');
+  return `<div class="${stageCls(bg)}">${fx}${wx}<canvas class="sprite npc hidden" id="spk"></canvas><canvas class="sprite me" id="me"></canvas></div>`;
 }
 // Оживление сцены: моргание и рот, пока печатается реплика
 let stage = { who: null, npc: null, emo: null, heroEmo: null }, stageT = null;
@@ -150,9 +161,13 @@ function stageStart() {
   clearInterval(stageT); let t = 0;
   stageT = setInterval(() => { if (!$('#me')) return clearInterval(stageT); drawStage(++t); }, 140);
 }
+// Портреты из Google Flow (img/p_*.jpg). «Чужой» с прозвищем — это уже другой человек, без портрета.
+const PORTRAITS = ['mama', 'ildar', 'bacha', 'natasha', 'garipov', 'sedoy', 'zima', 'starsh', 'zavuch', 'chuzhoy'];
+const faceOf = who => { const [k, label] = (who || '').split(':'); return PORTRAITS.includes(k) && !(k === 'chuzhoy' && label) ? k : ''; };
 function setSpeaker(who, emo) {
   const [key, label] = (who || '').split(':');
   const npc = key && key !== 'hero' ? npcOf(key) : null;
+  if (npc && $('#spk').classList.contains('hidden')) { $('#spk').classList.remove('enter'); void $('#spk').offsetWidth; $('#spk').classList.add('enter'); }
   if (npc) stage = { who: key, npc, emo, heroEmo: stage.heroEmo };
   else stage = { ...stage, who: key || null, heroEmo: key === 'hero' ? emo : stage.heroEmo };
   $('#spk').classList.toggle('hidden', !stage.npc);
@@ -169,7 +184,7 @@ function renderScene() {
   const lines = normLines(ev.lines ? T(ev.lines) : T(ev.text));
   const choices = (T(ev.choices) || []).filter(c => !c.if || c.if(S));
   $('#main').innerHTML = `<div class="scene in">${sceneHead(ev)}${stageHtml(T(ev.bg))}
-    <div class="say" id="say"><div class="who" id="who"></div><div class="line" id="line"></div><div class="more hidden" id="more">▼</div></div>
+    <div class="say" id="say"><div class="who" id="who"></div><div class="face hidden" id="face"></div><div class="line" id="line"></div><div class="more hidden" id="more">▼</div></div>
     <div class="choices hidden" id="chs">${choices.map((c, i) => choiceBtn(c, i)).join('')}</div></div>`;
   stage = { who: null, npc: null, emo: null, heroEmo: null };
   drawHero($('#me'), S.app, S.wear); stageStart();
@@ -179,6 +194,8 @@ function renderScene() {
     const name = setSpeaker(who, emo);
     $('#who').textContent = name; $('#who').classList.toggle('hidden', !name);
     $('#say').classList.toggle('narr', !who);
+    const pk = faceOf(who), fc = $('#face');
+    if (fc.dataset.k !== pk) { fc.dataset.k = pk; fc.style.backgroundImage = pk ? `url(img/p_${pk}.jpg)` : ''; fc.classList.toggle('hidden', !pk); }
     $('#more').classList.add('hidden');
     typeInto($('#line'), t, () => {
       if (i < lines.length - 1) $('#more').classList.remove('hidden');
@@ -428,7 +445,8 @@ function renderHero() {
 // --- Гардероб ------------------------------------------------------------------------
 let wardSlot = 'outer', tryOn = null;
 function renderWardrobe() {
-  const list = SHOP.filter(i => i.slot === wardSlot).sort((a, b) => (a.rank || 0) - (b.rank || 0) || (a.cur === '$') - (b.cur === '$') || a.price - b.price);
+  syncRewards();
+  const list = [...SHOP, ...rewardItems()].filter(i => i.slot === wardSlot).sort((a, b) => (a.rank || 0) - (b.rank || 0) || (a.cur === '$') - (b.cur === '$') || a.price - b.price);
   const worn = id => wardSlot === 'acc' ? S.wear.acc.includes(id) : S.wear[wardSlot] === id;
   const bon = i => i.bonus ? Object.entries(i.bonus).map(([k, v]) => `${NAMES[k]} +${v}`).join(', ') : '';
   // примерка: показать вещь на герое, даже если она ещё не куплена

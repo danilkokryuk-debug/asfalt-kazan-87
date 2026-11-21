@@ -1,7 +1,7 @@
 // Самопроверка: node tools/selfcheck.js — случайные прохождения + проверка ссылок между событиями.
 const fs = require('fs'), vm = require('vm'), path = require('path');
 const root = path.join(__dirname, '..');
-const el = () => new Proxy({ classList: { add() {}, remove() {}, toggle() {} }, style: {}, dataset: {} },
+const el = () => new Proxy({ classList: { add() {}, remove() {}, toggle() {}, contains: () => false }, style: {}, dataset: {} },
   { get: (t, k) => k in t ? t[k] : (k === 'innerHTML' ? '' : () => el()), set: (t, k, v) => (t[k] = v, true) });
 const store = {};
 const ctx = {
@@ -11,7 +11,7 @@ const ctx = {
   localStorage: { getItem: k => store[k] ?? null, setItem: (k, v) => store[k] = v },
 };
 vm.createContext(ctx);
-const src = ['js/map.js', 'js/sprite.js', 'js/audio.js', 'js/settings.js', 'js/game.js', 'js/story.js', 'js/career.js', 'js/mini.js', 'js/world.js', 'js/economy.js', 'js/mechanics.js', 'js/atmos.js', 'js/story2.js', 'js/street.js', 'js/scenes.js', 'js/menu.js', 'js/time.js', 'js/places.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
+const src = ['js/map.js', 'js/sprite.js', 'js/audio.js', 'js/settings.js', 'js/game.js', 'js/story.js', 'js/career.js', 'js/mini.js', 'js/world.js', 'js/economy.js', 'js/mechanics.js', 'js/atmos.js', 'js/story2.js', 'js/street.js', 'js/scenes.js', 'js/menu.js', 'js/time.js', 'js/places.js', 'js/stats.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
 vm.runInContext(src + `
 ;globalThis.EV = EV; globalThis.DISTRICTS = DISTRICTS; save = () => {};
 function __run(seedHome, steps) {

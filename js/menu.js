@@ -42,7 +42,7 @@ function titleScreen(epic) {
       <button class="btn" id="ach">Достижения и концовки</button>
       <button class="btn" id="chron">Летопись судеб</button>
       <button class="btn" id="set">Настройки</button></div>`}
-    <p class="note">16+. Вымышленная история по мотивам событий 1980-х в Казани. Все персонажи вымышлены.</p></div>`;
+    <p class="note">16+. Вымышленная история по мотивам событий 1980-х в Казани. Все персонажи вымышлены.</p><div id="stats" class="stats">${typeof statsHtml === 'function' ? statsHtml() : ''}</div></div>`;
   artStart($('#main'));
   // первый тап нужен iPhone, чтобы разрешить звук; дальше — вступление
   if (!splashDone) { $('#main').onclick = () => { $('#main').onclick = null; splashDone = true; AUDIO.start(); playIntro(() => titleScreen(true)); }; return; }
@@ -104,9 +104,31 @@ const TUT = {
     ['.item', 'Импорт продаётся только за доллары, а некоторое — только с нужного ранга.']],
   tasks: [['.result', 'Цель этой судьбы и срок. Не успеешь — забег окончен.'], ['.item', 'Задания от старших. Новые появляются раз в три дня.']],
 };
+// Обучение по сюжету: в кампании объясняет Ильдар (вместо всплывающих подсказок)
+def('t_ildar', {
+  trigger: S => S.done.c1_intro && (S.done.c1_school || S.done.c1_garages) && !S.cur,
+  title: 'Как тут всё устроено', bg: 'dvor',
+  fx: S => { S.flags.met_ildar = true; },
+  lines: S => [
+    ['ildar', 'О, ты тут! Слушай, раз уж сам по городу ходишь — объясню, как всё устроено. А то пропадёшь.', 'smile'],
+    ['ildar', `Карта — это весь город. Каждый цвет — чей-то асфальт. Твой район со звёздочкой, ${HOME(S)}. В чужие лучше не соваться.`],
+    ['ildar', 'Время идёт само — часы наверху видишь? Любое дело — часа четыре. В одиннадцать вечера — домой, а то мать убьёт. Надо подумать — жми паузу.'],
+    ['ildar', 'Жёлтые маячки с восклицательным знаком — это где кому-то нужна помощь: бабкам, мужикам, старшим. Долго ждать не будут.'],
+    ['ildar', 'Квадратные значки — места: парикмахерская, пивбар, рынок, больница, милиция. Тапнешь — зайдёшь.'],
+    ['ildar', 'Деньги — их мало. Мать даёт мелочь раз в неделю, остальное сам. А пришьёшься — ещё и в общак сдавать.', 'sad'],
+    ['ildar', 'Внизу «Герой» — там твои силы и кошелёк. «Гардероб» — шмотки, на рынке у Жоры. «Журнал» — дневник твой. Ну всё, давай. Если что — я в школе.', 'smile'],
+  ],
+  choices: [{ t: 'Понял. Спасибо, Ильдар', fx: S => {
+    const s = tutSeen(); ['map', 'hero', 'ward', 'scene'].forEach(k => s[k] = 1);
+    try { localStorage.setItem('asfalt_tut', JSON.stringify(s)); } catch (e) {}
+    return { ildar: 5 };
+  } }],
+});
+
 function tutSeen() { try { return JSON.parse(localStorage.getItem('asfalt_tut') || '{}'); } catch (e) { return {}; } }
 function tutorial(key) {
   if (typeof __TEST !== 'undefined' || !SET.tutorial || tutSeen()[key] || document.querySelector('.tut')) return;
+  if (S && S.mode === 'campaign' && !S.done.t_ildar && ['map', 'hero', 'ward'].includes(key)) return;   // в кампании объяснит Ильдар
   const steps = (TUT[key] || []).filter(([sel]) => document.querySelector(sel));
   if (!steps.length) return;
   let i = 0;

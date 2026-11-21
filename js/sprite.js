@@ -166,8 +166,20 @@ ITEMS.push(
   { id: 'a_pager', slot: 'acc', name: 'Пейджер', price: 80, rank: 4, bonus: { um: 1 }, v: { k: 'pager' }, desc: 'Девяносто первый. «Срочно перезвони Седому».' },
   { id: 'a_mobila', slot: 'acc', name: 'Мобильник-«кирпич»', price: 300, rank: 5, bonus: { yaz: 2 }, v: { k: 'phone' }, desc: 'Весит как кирпич, стоит как машина. Звонить некому, но все видят.' },
 );
+// Награды из сундука: только за достижения, в магазине их нет (reward: id достижения)
+ITEMS.push(
+  { id: 'rw_boec', slot: 'outer', reward: 'wins10', name: 'Олимпийка «Уличный боец»', price: 0, bonus: { sila: 1 }, v: { k: 'zip', c: '#141414', s: '#e5c04a', n: 3, col: '#e5c04a' }, desc: 'Чёрная с золотом. Её не купишь — её зарабатывают кулаками.' },
+  { id: 'rw_adibas', slot: 'outer', reward: 'adibas', name: 'Золотая «Adibas»', price: 0, bonus: { lovk: 1 }, v: { k: 'zip', c: '#c8a030', s: '#1a1a1a', n: 3, col: '#1a1a1a' }, desc: 'Таких в Казани одна. Твоя.' },
+  { id: 'rw_land', slot: 'outer', reward: 'land5', name: 'Кожанка «Пол-Казани»', price: 0, bonus: { sila: 1, yaz: 1 }, v: { k: 'leather', c: '#3a0e0e', hl: '#6a2a2a' }, desc: 'Бордовая кожа. Носит тот, под кем полгорода.' },
+  { id: 'rw_avtor', slot: 'hat', reward: 'avtor', name: 'Кепка автора', price: 0, bonus: { yaz: 2 }, v: { k: 'flat', c: '#1a1410', c2: '#0a0806', band: '#e5c04a' }, desc: 'С золотой лентой. Все знают, кто под ней.' },
+  { id: 'rw_zima', slot: 'hat', reward: 'winter', name: 'Шапка «Первый снег»', price: 0, v: { k: 'knit', c: '#f0f0f0', c2: '#2a4f9e', s: '#2a4f9e', pom: '#2a4f9e' }, desc: 'Белая, с синими полосками. Дожил до зимы — заслужил.' },
+  { id: 'rw_belt', slot: 'acc', reward: 'kachok', name: 'Пояс чемпиона', price: 0, bonus: { sila: 1 }, v: { k: 'belt' }, desc: 'Золотая бляха на всё пузо. Качалка не прошла даром.' },
+  { id: 'rw_ochki', slot: 'acc', reward: 'prof', name: 'Очки отличника', price: 0, bonus: { um: 1 }, v: { k: 'glasses', c: '#e5c04a' }, desc: 'В золотой оправе. Умный, но не ботаник.' },
+  { id: 'rw_pleer', slot: 'acc', reward: 'tapes5', name: 'Золотой плеер', price: 0, v: { k: 'phones', c: '#e5c04a' }, desc: 'Для настоящего меломана. Звучит так же, но выглядит дороже.' },
+  { id: 'rw_sharf', slot: 'acc', reward: 'love', name: 'Шарф Наташи', price: 0, bonus: { yaz: 1 }, v: { k: 'scarf', c: '#3a8a4a' }, desc: 'Зелёный, вязаный. Она связала его для тебя.' },
+);
 const ITEM = Object.fromEntries(ITEMS.map(i => [i.id, i]));
-const SHOP = ITEMS.filter(i => !i.npc);
+const SHOP = ITEMS.filter(i => !i.npc && !i.reward);
 const DEFAULT_WEAR = { hat: 'h_none', outer: 'o_none', shirt: 's_school', pants: 'p_school', shoes: 'f_kedy', acc: ['a_znachok'] };
 const wornIds = w => [w.hat, w.outer, w.shirt, w.pants, w.shoes, ...w.acc];
 
@@ -434,8 +446,10 @@ function drawHero(canvas, app, wear, opt = {}) {
       case 'watch': rect(tl - 3, wy + 1, 3, 1, a.c); px(tl - 2, wy + 1, a.c === '#2a2a2a' ? '#7ac080' : '#222'); break;
       case 'beads': for (let y = handY + 2; y <= handY + 6; y++) px(tr + 2, y, y % 2 ? '#6b3a2a' : '#a0603a'); break;
       case 'cig': px(21, hy + 2, W_); px(22, hy + 2, W_); px(22, hy + 1, '#d0a060'); break;
-      case 'glasses': rect(12, ey, 3, 1, '#111'); rect(17, ey, 3, 1, '#111'); px(15, ey, '#111'); px(16, ey, '#111'); px(13, ey, '#3a4a5a'); px(18, ey, '#3a4a5a'); break;
-      case 'phones': rect(11, hy - 2, 10, 1, '#333'); rect(9, ey - 1, 2, 3, '#e07a26'); rect(21, ey - 1, 2, 3, '#e07a26'); break;
+      case 'glasses': { const f = a.c || '#111'; rect(12, ey, 3, 1, f); rect(17, ey, 3, 1, f); px(15, ey, f); px(16, ey, f); px(13, ey, '#3a4a5a'); px(18, ey, '#3a4a5a'); break; }
+      case 'phones': rect(11, hy - 2, 10, 1, '#333'); rect(9, ey - 1, 2, 3, a.c || '#e07a26'); rect(21, ey - 1, 2, 3, a.c || '#e07a26'); break;
+      case 'belt': rect(L0, wy, R1 - L0 + 1, 1, '#5a3a1a'); rect(cx - 2, wy - 1, 4, 3, GOLD); px(cx - 1, wy, '#fff3b0'); break;
+      case 'scarf': rect(cx - 4, sy - 1, 8, 2, a.c); rect(cx + 1, sy + 1, 2, 6, a.c); for (let y = sy + 1; y < sy + 7; y += 2) px(cx + 1, y, shade(a.c, 1.3)); break;
       case 'ring': px(tr + 3, handY, GOLD); break;
       case 'tatu': break;
       case 'bag': rect(tl - 4, handY + 1, 4, 4, a.c); px(tl - 3, handY + 1, GOLD); break;

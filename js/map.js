@@ -79,16 +79,50 @@ const svgEl = (tag, attrs) => { const e = document.createElementNS(ns, tag); for
 const lighten = (hex, k) => '#' + [1, 3, 5].map(i => Math.max(0, Math.min(255, Math.round(parseInt(hex.substr(i, 2), 16) * k))).toString(16).padStart(2, '0')).join('');
 
 // control: {districtId: владелец}; home — твой район; sel — выбранный; at — где ты сейчас
+// Внешний мир вокруг города (недоступен, но виден): Волга дальше, леса, поля, дачи, дороги на выезд
+const MG = 6;   // ширина каймы в клетках
+const ROADS = [   // [выход из клетки города, направление, подпись]
+  { from: [33, 26], to: [W + MG, 22], label: '→ Оренбург' },
+  { from: [22, 2], to: [24, -MG], label: '↑ Арск' },
+  { from: [22, 57], to: [20, H + MG], label: '↓ Ульяновск' },
+  { from: [8, 26], to: [-MG, 30], label: '← Москва' },
+];
+function drawOutskirts(svg) {
+  const paths = {}, add = (c, x, y) => (paths[c] = paths[c] || []).push(`M${x * CELL} ${y * CELL}h${CELL}v${CELL}h${-CELL}z`);
+  for (let gy = -MG; gy < H + MG; gy++) for (let gx = -MG; gx < W + MG; gx++) {
+    if (gx >= 0 && gy >= 0 && gx < W && gy < H) continue;
+    const h = hash(gx + 99, gy + 77);
+    const volga = gx < 4 && gx >= -3 + Math.round(Math.sin(gy * 0.3)) && !(gy < 0 && gx < -1);
+    if (volga) continue;                                                       // вода — фоновые волны
+    const field = (gx > W + 1 || gy > H + 1) && hash(gx >> 2, gy >> 2) > 0.55;
+    const dacha = gy < 0 && gx > 10 && gx < 30 && hash(gx >> 1, gy) > 0.7;
+    if (dacha) { add('#4a4238', gx, gy); if (h > 0.5) add('#6a5a48', gx, gy); continue; }
+    add(field ? (h > 0.5 ? '#4e5a3a' : '#556142') : (h > 0.3 ? '#22301f' : '#1a2618'), gx, gy);
+    if (!field && h > 0.55) add('#2f4a2a', gx, gy);                         // крона
+  }
+  for (const c in paths) svg.appendChild(svgEl('path', { d: paths[c].join(''), fill: c, opacity: 0.95 }));
+  // дороги на выезд + подписи
+  for (const r of ROADS) {
+    const [x0, y0] = r.from, [x1, y1] = r.to;
+    svg.appendChild(svgEl('path', { d: `M${(x0 + .5) * CELL} ${(y0 + .5) * CELL} L${(x1 + .5) * CELL} ${(y1 + .5) * CELL}`, stroke: '#3a3630', 'stroke-width': 5, fill: 'none' }));
+    svg.appendChild(svgEl('path', { d: `M${(x0 + .5) * CELL} ${(y0 + .5) * CELL} L${(x1 + .5) * CELL} ${(y1 + .5) * CELL}`, stroke: '#c8c0a0', 'stroke-width': .8, 'stroke-dasharray': '4 4', fill: 'none' }));
+    const lx = Math.max(-MG + 1, Math.min(W + MG - 9, x1)) * CELL, ly = Math.max(-MG + 2, Math.min(H + MG - 1, y1)) * CELL;
+    const t = svgEl('text', { x: lx, y: ly, class: 'roadlabel' }); t.textContent = r.label; svg.appendChild(t);
+  }
+}
+
 function drawMapSvg(svg, control, homeId, selectedId, onTap, atId, jobs) {
   if (typeof __TEST !== 'undefined') return;   // самопроверка: карта не нужна, а рисовать её тысячи раз долго
-  svg.setAttribute('viewBox', `0 0 ${W * CELL} ${H * CELL}`);
+  svg.setAttribute('viewBox', `${-MG * CELL} ${-MG * CELL} ${(W + MG * 2) * CELL} ${(H + MG * 2) * CELL}`);
   svg.innerHTML = '';
   const defs = svgEl('defs', {});
   defs.innerHTML = `<pattern id="waves" width="12" height="6" patternUnits="userSpaceOnUse">
       <rect width="12" height="6" fill="#26394a"/><path d="M0 4 q3 -2 6 0 t6 0" stroke="#3a5670" fill="none" stroke-width="1"/></pattern>
-    <filter id="glow"><feGaussianBlur stdDeviation="2.5"/></filter>`;
+    <filter id="glow"><feGaussianBlur stdDeviation="2.5"/></filter>
+    <radialGradient id="fog" cx="50%" cy="50%" r="72%"><stop offset="62%" stop-color="#0c0e14" stop-opacity="0"/><stop offset="100%" stop-color="#0c0e14" stop-opacity=".85"/></radialGradient>`;
   svg.appendChild(defs);
-  svg.appendChild(svgEl('rect', { x: 0, y: 0, width: W * CELL, height: H * CELL, fill: 'url(#waves)' }));
+  svg.appendChild(svgEl('rect', { x: -MG * CELL, y: -MG * CELL, width: (W + MG * 2) * CELL, height: (H + MG * 2) * CELL, fill: 'url(#waves)' }));
+  drawOutskirts(svg);
 
   // Суша: один path на цвет (быстро даже на телефоне)
   const paths = {};
@@ -176,13 +210,17 @@ function drawMapSvg(svg, control, homeId, selectedId, onTap, atId, jobs) {
     const t = svgEl('text', { x: x - 1.5, y: y + 0.5, class: 'jobmark' }); t.textContent = '!'; svg.appendChild(t);
   }
 
+  // дымка по краям: мир дальше есть, но туда не попасть
+  svg.appendChild(svgEl('rect', { x: -MG * CELL, y: -MG * CELL, width: (W + MG * 2) * CELL, height: (H + MG * 2) * CELL, fill: 'url(#fog)', 'pointer-events': 'none' }));
+
   // Тап по карте → район (координаты с учётом масштаба)
   svg.onclick = e => {
     if (svg._dragged) return;
     const r = svg.getBoundingClientRect();
-    const sx = (e.clientX - r.left) / r.width * W * CELL, sy = (e.clientY - r.top) / r.height * H * CELL;
+    // координаты с учётом каймы внешнего мира вокруг города
+    const sx = (e.clientX - r.left) / r.width * (W + MG * 2) * CELL - MG * CELL, sy = (e.clientY - r.top) / r.height * (H + MG * 2) * CELL - MG * CELL;
     for (const [pid, [x, y]] of Object.entries(PLACE_POS)) if (Math.hypot(sx - x, sy - y) < 9) return openPlace(pid);   // тап по зданию
-    const gx = Math.floor((e.clientX - r.left) / r.width * W), gy = Math.floor((e.clientY - r.top) / r.height * H);
+    const gx = Math.floor(sx / CELL), gy = Math.floor(sy / CELL);
     const id = cellAt(gx, gy); if (id) onTap(id);
   };
   enableZoom(svg);

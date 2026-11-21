@@ -8,7 +8,7 @@ const SQUAD_PAY = 2;                          // содержание одног
 const RATE_BUY = 4, RATE_SELL = 3;            // фарца: продаёт 1$ за 4 р., покупает за 3 р.
 
 // Импортные вещи (бренд латиницей в «») — только за доллары. Цена в $ ≈ рубли / 5.
-for (const i of ITEMS) if (/«[A-Za-z]/.test(i.name || '') && !i.start) { i.cur = '$'; i.price = Math.max(2, Math.round(i.price / 5)); }
+for (const i of ITEMS) if (/«[A-Za-z]/.test(i.name || '') && !i.start && !i.reward) { i.cur = '$'; i.price = Math.max(2, Math.round(i.price / 5)); }
 const priceTxt = i => i.cur === '$' ? `$${i.price}` : `${i.price} р.`;
 const canAfford = i => (i.cur === '$' ? S.st.dol : S.st.dengi) >= i.price;
 function payFor(i) { if (i.cur === '$') S.st.dol -= i.price; else S.st.dengi -= i.price; }
