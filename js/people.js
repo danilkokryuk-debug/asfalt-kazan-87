@@ -73,3 +73,8 @@ function npcVar(key, label, seed) {
   }
   return ss(who, emo);
 }; }
+
+// портреты второстепенных (Flow, 1.5.1) и эмоции главных героев: p_<key>_angry|sad|smile.jpg
+['zhora', 'mehanik', 'vrach', 'oficiant', 'barmen', 'kassir', 'parikm', 'kinomeh', 'koop', 'moskvich', 'voenkom', 'gop', 'tsyganka', 'fartsa', 'dembel', 'vor', 'svetka', 'otets']
+  .forEach(k => { if (!PORTRAITS.includes(k)) PORTRAITS.push(k); });
+const EMO_FACES = { natasha: 1, ildar: 1, zima: 1, garipov: 1 };   // у кого есть p_<key>_angry/sad/smile.jpg

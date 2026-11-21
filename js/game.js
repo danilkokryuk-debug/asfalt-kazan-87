@@ -138,7 +138,7 @@ function normLines(x) {
 // Фоны-картинки из Google Flow: t_* — у каждого задания свой кадр (img/t_*.jpg)
 const BG_PHOTO = { dvor: 'bg_dvor', noch: 'bg_noch', ostanovka: 'bg_ostanovka', garazhi: 'bg_garazhi', korobka: 'bg_korobka',
   kuhnya: 'bg_kuhnya', shkola: 'bg_shkola', pustyr: 'bg_pustyr', gazeta: 'bg_gazeta', otdel: 'pl_police', rynok: 'pl_rynok',
-  dk: 'pl_dk', pl_kino: 'pl_video', pl_barber: 'pl_barber', pl_resto: 'pl_resto', pl_bar: 'pl_bar', pl_sto: 'pl_sto', pl_bank: 'pl_bank', pl_hosp: 'pl_hosp' };
+  dk: 'pl_dk', pl_kino: 'pl_video', pl_barber: 'pl_barber', pl_resto: 'pl_resto', pl_bar: 'pl_bar', pl_sto: 'pl_sto', pl_bank: 'pl_bank', pl_hosp: 'pl_hosp', vokzal: 't_r_vokzal' };
 const bgPhoto = bg => BG_PHOTO[bg] || (/^t_/.test(bg) ? bg : null);
 const stageCls = bg => { const f = bgPhoto(bg); return `stage bg-${bg}${f ? ` ph" style="background-image:url(img/${f}.jpg)` : ''}`; };
 function stageHtml(bg) {
@@ -196,7 +196,9 @@ function renderScene() {
     $('#who').textContent = name; $('#who').classList.toggle('hidden', !name);
     $('#say').classList.toggle('narr', !who);
     const pk = faceOf(who), fc = $('#face');
-    if (fc.dataset.k !== pk) { fc.dataset.k = pk; fc.style.backgroundImage = pk ? `url(img/p_${pk}.jpg)` : ''; fc.classList.toggle('hidden', !pk); }
+    const ek = pk && emo && typeof EMO_FACES !== 'undefined' && EMO_FACES[pk] && { angry: 'angry', sad: 'sad', scared: 'sad', smile: 'smile' }[emo];   // портрет с эмоцией
+    const src = pk ? `img/p_${pk}${ek ? '_' + ek : ''}.jpg` : '';
+    if (fc.dataset.k !== src) { fc.dataset.k = src; fc.style.backgroundImage = src ? `url(${src})` : ''; fc.classList.toggle('hidden', !pk); }
     $('#more').classList.add('hidden');
     typeInto($('#line'), t, () => {
       if (i < lines.length - 1) $('#more').classList.remove('hidden');

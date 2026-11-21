@@ -230,7 +230,7 @@ function renderPlace() {
   acts = limFilter(S, p.id, acts.filter(a => !a.if || a.if(S)).map(a => p.k === 'bank' && a.lim == null ? { ...a, lim: 4 } : a));
   $('#main').innerHTML = `<div class="scene in"><div class="when">${DIST[p.d].name} · ${clock()}</div><h2>${p.name}</h2>
     ${stageHtml(p.bg)}
-    <div class="say" id="say"><div class="who" id="who">${npcOf(p.npc).name}</div><div class="line" id="line"></div></div>
+    <div class="say" id="say"><div class="who" id="who">${npcOf(p.npc).name}</div>${PORTRAITS.includes(p.npc) ? `<div class="face" style="background-image:url(img/p_${p.npc}.jpg)"></div>` : ''}<div class="line" id="line"></div></div>
     <div class="choices" id="chs">${acts.map((c, i) => choiceBtn(c, i)).join('')}
       <button class="btn" id="out">← На карту</button></div></div>`;
   drawHero($('#me'), S.app, S.wear);
