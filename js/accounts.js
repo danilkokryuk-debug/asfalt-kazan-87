@@ -1,9 +1,9 @@
 // Аккаунты по никнейму + «Что нового» и «Что будет дальше» (анонсы и пожелания игроков, видны всем).
 // Игрок выбирает уникальный ник. За ним закреплён скрытый код в браузере (asfalt_id) — его не видит никто, даже сам игрок.
-// Сервер — Supabase (таблицы и функции: tools/supabase.sql). Пока ACC_CFG пустой, ник хранится только на устройстве
-// и займётся на сервере при первом запуске после подключения.
-const ACC_CFG = { url: '', key: '' };   // Supabase → Project Settings → API: Project URL и anon public key
-const ACC_ON = !!(ACC_CFG.url && ACC_CFG.key);
+// Сервер — Google Таблица «Асфальт — игроки» со скриптом (код: tools/apps_script.js). Пока ACC_URL пустой,
+// ник хранится только на устройстве и займётся на сервере при первом запуске после подключения.
+const ACC_URL = 'https://script.google.com/macros/s/AKfycby28fGg770Z6YurJk4niwqqM3aRfuRbIzk85fA5-2ZIyzBP4YJ1duplLlieDA6oLYo/exec';   // адрес веб-приложения Apps Script (…/exec)
+const ACC_ON = !!ACC_URL;
 const NICK_RE = /^[A-Za-zА-Яа-яЁё0-9_.-]{3,16}$/;
 const accGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const accSet = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
@@ -14,11 +14,16 @@ function accSecret() {
   return s;
 }
 const accNick = () => accGet('asfalt_nick');
-async function accRpc(fn, args) {
+// GET — чтение (свободен ли ник, список пожеланий); POST простым текстом — без лишнего CORS-запроса
+async function accGetJ(q) { try { const r = await fetch(ACC_URL + '?' + new URLSearchParams(q), { cache: 'no-store' }); return r.ok ? r.json() : null; } catch (e) { return null; } }
+async function accPost(o) { try { const r = await fetch(ACC_URL, { method: 'POST', cache: 'no-store', body: JSON.stringify(o) }); return r.ok ? r.json() : null; } catch (e) { return null; } }
+async function accRpc(fn, a) {
   if (!ACC_ON) return null;
-  try { const r = await fetch(`${ACC_CFG.url}/rest/v1/rpc/${fn}`, { method: 'POST', cache: 'no-store',
-      headers: { apikey: ACC_CFG.key, Authorization: 'Bearer ' + ACC_CFG.key, 'Content-Type': 'application/json' }, body: JSON.stringify(args) });
-    return r.ok ? r.json() : null; } catch (e) { return null; }
+  if (fn === 'nick_free') return accGetJ({ a: 'free', nick: a.p_nick });
+  if (fn === 'claim_nick') return accPost({ a: 'claim', nick: a.p_nick, secret: a.p_secret });
+  if (fn === 'save_progress') return accPost({ a: 'progress', secret: a.p_secret, p: a.p_progress });
+  if (fn === 'add_wish') return accPost({ a: 'wish', secret: a.p_secret, text: a.p_text });
+  return null;
 }
 const escH = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -66,7 +71,7 @@ function nickScreen(done) {
 }; }
 statsHtml = () => `${accNick() ? `👤 ${escH(accNick())} · ` : ''}Версия ${APP_VER} · <u>что нового</u>`;
 
-// прогресс — на сервер не чаще раза в 5 минут (смотреть: Supabase → players)
+// прогресс — на сервер не чаще раза в 5 минут (смотреть: Google Таблица «Асфальт — игроки», лист «Игроки»)
 { const sv = save; let last = 0; save = (slot, ...r) => { sv(slot, ...r);
   if (!ACC_ON || !S || Date.now() - last < 300000) return; last = Date.now();
   let m = {}; try { m = metaGet(); } catch (e) {}
@@ -77,6 +82,10 @@ statsHtml = () => `${accNick() ? `👤 ${escH(accNick())} · ` : ''}Версия
 // ---------------- «Что нового» и «Что будет дальше» ----------------
 // Новое обновление — новая запись В НАЧАЛО списка. img — картинка из img/ (без .jpg).
 const NEWS = [
+  { ver: '1.9.2', title: 'Пожелания игроков', items: [
+    { t: 'Пиши, что добавить', d: 'Во вкладке «Что будет дальше» теперь можно оставить пожелание к следующему обновлению — его увидят все игроки.' },
+    { t: 'Ники на сервере', d: 'Ник проверяется сразу при вводе: занятый взять нельзя.' },
+  ] },
   { ver: '1.9.1', title: 'Ники, ролик и Москва без казанских повторов', items: [
     { t: 'Ники игроков', d: 'У каждого теперь свой ник — он закреплён за тобой и больше ни у кого не повторится.' },
     { t: 'Ролик Москвы', d: 'Вступление теперь показывается при каждом входе в Москву, в полном качестве и без подтормаживаний.', img: 't_m_kreml' },
@@ -121,8 +130,7 @@ function newsScreen(tab) {
   }
 }
 async function wishLoad() {
-  let list = null;
-  try { const r = await fetch(`${ACC_CFG.url}/rest/v1/wishes?select=nick,text,created_at&order=id.desc&limit=60`, { cache: 'no-store', headers: { apikey: ACC_CFG.key, Authorization: 'Bearer ' + ACC_CFG.key } }); if (r.ok) list = await r.json(); } catch (e) {}
+  const list = await accGetJ({ a: 'wishes' });
   const el = $('#wlist'); if (!el) return;
   el.innerHTML = !list ? '<div class="sub">Нет связи с сервером.</div>' : !list.length ? '<div class="sub">Пока пусто — будь первым.</div>'
     : list.map(w => `<div class="nw-wish"><b>${escH(w.nick)}</b> <span class="ch">${new Date(w.created_at).toLocaleDateString('ru-RU')}</span><div>${escH(w.text)}</div></div>`).join('');
