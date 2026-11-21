@@ -1,7 +1,12 @@
 // Мини-игры. MINI.run(вид, p, done): p — шанс по статам (0..1), чем выше — тем легче. done(true/false).
 const MINI = (() => {
-  const NAMES = { kach: 'Качалка', udar: 'Удар', naperstki: 'Напёрстки', pobeg: 'Побег' };
+  const NAMES = { kach: 'Качалка', udar: 'Удар', naperstki: 'Напёрстки', pobeg: 'Побег', zamok: 'Взлом замка', karty: 'Двадцать одно', gonka: 'Гонка', tir: 'Тир', shuher: 'Шухер' };
   const HINT = {
+    zamok: 'Жми, когда метка в тёмной щели штифта. 4 штифта — и замок открыт.',
+    karty: 'Набери ближе к 21, чем катала. Перебор — проигрыш.',
+    gonka: 'Жми по экрану как можно чаще — разгоняйся и обгони соперника.',
+    tir: 'Стреляй по уткам на полке. Сбей 4 из 6 патронов.',
+    shuher: 'Жми только на ментов в фуражках. Прохожих не трогай.',
     kach: 'Жми, когда бегунок в зелёной зоне. Нужно 3 повтора из 5.',
     udar: 'Жми, когда кольцо совпадёт с целью.',
     naperstki: 'Запомни, где шарик. Потом выбери стаканчик.',
@@ -105,6 +110,97 @@ const MINI = (() => {
           }
         }
         obs = obs.filter(o => +o.dataset.y < 110 || (o.remove(), false));
+      });
+    },
+    // Взлом замка: 4 штифта, у каждого своя щель; бегунок всё быстрее. Промах — штифт падает обратно.
+    zamok(body, p, finish, loop) {
+      const N = 4, gw = 10 + p * 14;
+      const gaps = Array.from({ length: N }, () => 8 + Math.random() * (84 - gw));
+      body.innerHTML = `<div class="lock">${gaps.map((g, i) => `<div class="pin" data-i="${i}"><div class="pgap" style="top:${g}%;height:${gw}%"></div><div class="pmark"></div></div>`).join('')}</div><div class="kreps" id="lk"></div>`;
+      const pins = [...body.querySelectorAll('.pin')];
+      let cur = 0, y = 0, dir = 1, miss = 0, maxMiss = 2 + Math.round(p * 2);
+      const info = () => body.querySelector('#lk').textContent = `Штифты: ${'▮'.repeat(cur)}${'▯'.repeat(N - cur)}   срывов осталось: ${maxMiss - miss}`;
+      info(); pins[0].classList.add('on');
+      loop(() => { y += dir * (1.1 + cur * 0.35 + (1 - p) * 0.6); if (y > 100 || y < 0) dir *= -1; pins[cur] && (pins[cur].querySelector('.pmark').style.top = y + '%'); });
+      body.onclick = () => {
+        const g = gaps[cur];
+        if (y >= g && y <= g + gw) { AUDIO.click(); pins[cur].classList.remove('on'); pins[cur].classList.add('set'); cur++; if (cur >= N) return finish(true, '✔ Щёлк! Открыто'); pins[cur].classList.add('on'); y = 0; dir = 1; }
+        else { AUDIO.hit(); miss++; body.classList.remove('shake'); void body.offsetWidth; body.classList.add('shake'); if (miss >= maxMiss) return finish(false, '✘ Отмычка сломалась'); }
+        info();
+      };
+    },
+    // «Двадцать одно» против каталы: берёшь карты, пока не решишь остановиться. Перебор — проигрыш.
+    karty(body, p, finish) {
+      const deck = []; for (const v of [6, 7, 8, 9, 10, 2, 3, 4, 11]) for (let s = 0; s < 4; s++) deck.push(v);
+      deck.sort(() => Math.random() - 0.5);
+      const NAME = { 2: 'В', 3: 'Д', 4: 'К', 11: 'Т' };
+      const me = [deck.pop(), deck.pop()];
+      const sum = h => h.reduce((a, b) => a + b, 0);
+      const card = v => `<div class="kcard">${NAME[v] || v}</div>`;
+      const draw = (msg = '') => body.innerHTML = `<div class="ktable"><div class="ksub">Катала: ${'<div class="kcard back"></div>'.repeat(2)}</div>
+        <div class="ksub">Ты (${sum(me)}): ${me.map(card).join('')}</div><div class="kbtns"><button class="btn" id="kmore">Ещё</button><button class="btn main" id="kstop">Хватит</button></div><div class="mhint">${msg}</div></div>`;
+      const bind = () => {
+        body.querySelector('#kmore').onclick = e => { e.stopPropagation(); me.push(deck.pop()); AUDIO.click(); if (sum(me) > 21) { draw('Перебор.'); return finish(false, `✘ Перебор: ${sum(me)}`); } draw(); bind(); };
+        body.querySelector('#kstop').onclick = e => {
+          e.stopPropagation();
+          // катала тянет до 17, а если рука у тебя хорошая и он умелый — иногда «подтягивает» нужную карту
+          const dl = [deck.pop(), deck.pop()]; while (sum(dl) < 17) dl.push(deck.pop());
+          if (sum(dl) <= 21 && sum(dl) < sum(me) && Math.random() < 0.35 * (1 - p)) dl[dl.length - 1] += sum(me) - sum(dl) + 1;
+          const d = sum(dl), m = sum(me);
+          body.querySelector('.ksub').innerHTML = `Катала (${d}): ${dl.map(card).join('')}`;
+          finish(d > 21 || m > d, d > 21 ? `✔ У каталы перебор (${d})` : m > d ? `✔ ${m} против ${d}` : `✘ ${m} против ${d}`);
+        };
+      };
+      draw('Ближе к 21, но не больше. Туз — 11, валет — 2, дама — 3, король — 4.'); bind();
+    },
+    // Гонка: жми как можно чаще, чтобы обогнать соперника за 6 секунд
+    gonka(body, p, finish, loop) {
+      body.innerHTML = `<div class="race"><div class="lane"><div class="car me" id="cme">▶</div></div><div class="lane"><div class="car en" id="cen">▶</div></div><div class="finish"></div></div><div class="kreps" id="rt">Жми чаще!</div>`;
+      let me = 0, en = 0, v = 0; const t0 = performance.now(), ev = 0.0115 + (1 - p) * 0.006;
+      body.onclick = () => { v = Math.min(v + 0.55, 2.4); AUDIO.click(); };
+      let last = t0;
+      loop(t => {
+        const dt = (t - last) / 16.7; last = t;
+        v = Math.max(0, v - 0.035 * dt); me += v * 0.32 * dt; en += (ev * 100 * 0.32 + Math.sin(t / 400) * 0.05) * dt;
+        body.querySelector('#cme').style.left = Math.min(92, me) + '%'; body.querySelector('#cen').style.left = Math.min(92, en) + '%';
+        body.querySelector('#rt').textContent = `${Math.max(0, 6 - (t - t0) / 1000).toFixed(1)} с`;
+        if (me >= 92 || en >= 92 || t - t0 > 6000) finish(me >= en, me >= en ? '✔ Первым на финише!' : '✘ Обошли на последних метрах');
+      });
+    },
+    // Тир: мишени едут по полке, нужно сбить 4 за 7 секунд, патронов 6
+    tir(body, p, finish, loop) {
+      body.innerHTML = `<div class="tir" id="tr"></div><div class="kreps" id="ti"></div>`;
+      const tr = body.querySelector('#tr'); let hits = 0, ammo = 6, ts = [], last = 0; const t0 = performance.now(), sp = 0.45 + (1 - p) * 0.45, size = 34 + p * 14;
+      const info = () => body.querySelector('#ti').textContent = `Сбито: ${'●'.repeat(hits)}${'○'.repeat(Math.max(0, 4 - hits))}   патроны: ${'|'.repeat(ammo)}`;
+      info();
+      tr.onclick = e => {
+        if (ammo <= 0) return; ammo--; AUDIO.hit();
+        const hit = e.target.classList && e.target.classList.contains('duck') && !e.target.down;
+        if (hit) { e.target.down = true; e.target.classList.add('down'); hits++; }
+        info(); if (hits >= 4) finish(true, '✔ Главный приз твой'); else if (ammo <= 0) setTimeout(() => finish(false, '✘ Патроны кончились'), 200);
+      };
+      loop(t => {
+        if (t - t0 > 7000) return finish(hits >= 4);
+        if (t - last > 700) { last = t; const d = document.createElement('div'); d.className = 'duck'; d.style.width = d.style.height = size + 'px'; d.dataset.x = -15; d.style.top = (10 + Math.floor(Math.random() * 3) * 30) + '%'; tr.appendChild(d); ts.push(d); }
+        for (const d of ts) { d.dataset.x = +d.dataset.x + sp; d.style.left = d.dataset.x + '%'; }
+        ts = ts.filter(d => +d.dataset.x < 110 || (d.remove(), false));
+      });
+    },
+    // Шухер: в окнах и из-за угла появляются люди. Жми только на ментов (фуражка), прохожих не трогай.
+    shuher(body, p, finish, loop) {
+      body.innerHTML = `<div class="shu">${Array.from({ length: 6 }, (_, i) => `<div class="win" data-i="${i}"></div>`).join('')}</div><div class="kreps" id="sh"></div>`;
+      const wins = [...body.querySelectorAll('.win')]; let caught = 0, missed = 0, wrong = 0, last = 0; const t0 = performance.now(), life = 1100 + p * 700;
+      const info = () => body.querySelector('#sh').textContent = `Заметил ментов: ${caught}/4   прозевал: ${missed}   ошибок: ${wrong}`;
+      info();
+      wins.forEach(w => w.onclick = e => { e.stopPropagation(); if (!w.who) return;
+        if (w.who === 'cop') { caught++; AUDIO.ok(); } else { wrong++; AUDIO.no(); }
+        w.who = null; w.className = 'win'; info();
+        if (caught >= 4) finish(true, '✔ Свистнул вовремя'); else if (wrong >= 2) finish(false, '✘ Поднял шум из-за прохожих'); });
+      loop(t => {
+        if (t - t0 > 9000) return finish(caught >= 4);
+        if (t - last > 650) { last = t; const free = wins.filter(w => !w.who); if (free.length) { const w = free[Math.floor(Math.random() * free.length)];
+          w.who = Math.random() < 0.45 ? 'cop' : 'man'; w.className = 'win ' + w.who; w.t = t; } }
+        for (const w of wins) if (w.who && t - w.t > life) { if (w.who === 'cop') { missed++; info(); if (missed >= 2) return finish(false, '✘ Менты подошли незамеченными'); } w.who = null; w.className = 'win'; }
       });
     },
   };

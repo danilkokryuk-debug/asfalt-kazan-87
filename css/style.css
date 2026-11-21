@@ -533,3 +533,32 @@ label.btn { display: flex; justify-content: center; cursor: pointer; }
 .btn.withimg > span:first-child { display: flex; align-items: center; gap: 10px; }
 .vthumb { flex: none; width: 64px; height: 36px; border-radius: 4px; background: #111 center / cover no-repeat; image-rendering: pixelated; border: 1px solid rgba(64, 208, 192, .35); }
 .veh .vimg { height: 120px; margin: -10px -12px 8px; background: #111 center / cover no-repeat; image-rendering: pixelated; }
+
+/* ---- новые мини-игры ---- */
+.lock { display: flex; gap: 14px; justify-content: center; height: 170px; }
+.pin { position: relative; width: 38px; border-radius: 6px; background: linear-gradient(#5a5048, #2a241e); border: 2px solid #1a1612; opacity: .5; }
+.pin.on { opacity: 1; box-shadow: 0 0 12px rgba(232, 200, 120, .45); } .pin.set { opacity: 1; background: linear-gradient(#6f9a4a, #3a5a2a); }
+.pgap { position: absolute; left: 4px; right: 4px; background: #0c0a08; border-radius: 3px; box-shadow: inset 0 0 6px #000; }
+.pmark { position: absolute; left: -4px; right: -4px; height: 4px; margin-top: -2px; background: #e8c878; box-shadow: 0 0 6px #e8c878; }
+.pin.set .pmark, .pin:not(.on) .pmark { display: none; }
+.ktable { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.ksub { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: center; color: var(--dim); }
+.kcard { width: 34px; height: 48px; border-radius: 4px; background: #f4ecdc; color: #1a1612; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0, 0, 0, .5); animation: faceIn .25s; }
+.kcard.back { background: repeating-linear-gradient(45deg, #9a3030 0 4px, #7a2020 4px 8px); }
+.kbtns { display: flex; gap: 10px; } .kbtns .btn { width: auto; padding: 10px 18px; }
+.race { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 10px 0; }
+.lane { position: relative; height: 34px; background: repeating-linear-gradient(90deg, #2c2c30 0 18px, #34343a 18px 22px); border-radius: 4px; }
+.car { position: absolute; top: 4px; width: 40px; height: 26px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #fff; }
+.car.me { background: #c8402f; } .car.en { background: #2e5f96; }
+.finish { position: absolute; right: 4%; top: 0; bottom: 0; width: 6px; background: repeating-linear-gradient(#fff 0 6px, #111 6px 12px); }
+.tir { position: relative; height: 190px; overflow: hidden; border-radius: 6px; background: linear-gradient(#3a2a1e, #1e1610); border: 3px solid #5a3a22; cursor: crosshair; }
+.tir::before { content: ""; position: absolute; left: 0; right: 0; top: 33%; height: 3px; background: #6a4a2a; box-shadow: 0 57px 0 #6a4a2a; }
+.duck { position: absolute; border-radius: 50% 50% 40% 40%; background: radial-gradient(circle at 70% 30%, #111 0 8%, transparent 9%), #e8c040; border: 2px solid #8a6a20; transition: transform .2s; }
+.duck.down { transform: rotateX(80deg) translateY(30px); opacity: .4; }
+.shu { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.win { height: 72px; border-radius: 4px; background: linear-gradient(#1a2230, #0c1018); border: 3px solid #4a3a2a; position: relative; overflow: hidden; }
+.win.man::after, .win.cop::after { content: ""; position: absolute; left: 50%; bottom: 0; width: 30px; height: 46px; margin-left: -15px; border-radius: 14px 14px 0 0; background: #6a5a4a; animation: popUp .2s ease-out; }
+.win.cop::after { background: linear-gradient(#2a4a8a 0 30%, #c8402f 30% 36%, #3a4a6a 36%); }
+.win.man::before { content: ""; position: absolute; inset: 0; background: rgba(255, 210, 130, .15); }
+.win.cop::before { content: ""; position: absolute; inset: 0; background: rgba(120, 160, 255, .18); }
+@keyframes popUp { from { transform: translateY(100%); } }
