@@ -11,7 +11,7 @@ const ctx = {
   localStorage: { getItem: k => store[k] ?? null, setItem: (k, v) => store[k] = v },
 };
 vm.createContext(ctx);
-const src = ['js/map.js', 'js/citymap.js', 'js/sprite.js', 'js/audio.js', 'js/settings.js', 'js/game.js', 'js/story.js', 'js/career.js', 'js/mini.js', 'js/world.js', 'js/economy.js', 'js/mechanics.js', 'js/atmos.js', 'js/story2.js', 'js/street.js', 'js/scenes.js', 'js/menu.js', 'js/time.js', 'js/places.js', 'js/ranks.js', 'js/fame.js', 'js/prison.js', 'js/eggs.js', 'js/songs.js', 'js/stats.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
+const src = ['js/map.js', 'js/citymap.js', 'js/sprite.js', 'js/audio.js', 'js/settings.js', 'js/game.js', 'js/story.js', 'js/career.js', 'js/mini.js', 'js/world.js', 'js/economy.js', 'js/mechanics.js', 'js/atmos.js', 'js/story2.js', 'js/street.js', 'js/scenes.js', 'js/menu.js', 'js/time.js', 'js/places.js', 'js/ranks.js', 'js/fame.js', 'js/slang.js', 'js/natasha.js', 'js/prison.js', 'js/eggs.js', 'js/songs.js', 'js/stats.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
 vm.runInContext(src + `
 ;globalThis.EV = EV; globalThis.DISTRICTS = DISTRICTS; save = () => {};
 function __run(seedHome, steps) {
@@ -36,6 +36,7 @@ function __run(seedHome, steps) {
       const c = ch[rnd(ch.length)]; T(c.t); T(ev.text); doChoice(c); continue;
     }
     if (S.ap > 0 && S.jobs.length && Math.random() < 0.3) { takeJob(S.jobs[0].uid); continue; }
+    if (S.ap > 0 && nOk(S) && nFree(S) && Math.random() < 0.15) { natDate(); continue; }   // свидания с Наташей
     if (S.ap > 0 && Math.random() < 0.15) {   // заходим в случайное заведение
       const pl = pick(PLACES), acts = placeActions(S, pl).filter(a => !a.barber && (!a.if || a.if(S)) && (!a.req || Object.entries(a.req).every(([k, v]) => S.st[k] >= v)));
       if (acts.length) { S.at = pl.d; doChoice({ ...pick(acts), cost: 0.5 }); continue; }

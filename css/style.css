@@ -501,3 +501,17 @@ label.btn { display: flex; justify-content: center; cursor: pointer; }
 .fame b { color: #e8c878; font-weight: normal; letter-spacing: 3px; text-align: right; }
 .fame em { grid-column: 1 / -1; color: #f4ecdc; font-style: normal; font-size: 14px; }
 .fame i { position: absolute; left: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, #c8402f, #e8c878); }
+
+/* Наташа на экране героя */
+.nat { display: flex; gap: 10px; align-items: center; margin: 0 0 12px; padding: 10px 12px; border-radius: 8px;
+  background: linear-gradient(180deg, rgba(58, 28, 34, .85), rgba(28, 16, 20, .9)); border: 1px solid rgba(240, 140, 160, .3); }
+.nat > div { position: relative; flex: 1; display: flex; flex-direction: column; gap: 2px; padding-bottom: 6px; }
+.nat span { color: #e8a0b0; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; }
+.nat b { color: #f4ecdc; font-weight: normal; font-size: 14px; }
+.nat i { position: absolute; left: 0; bottom: 0; height: 3px; border-radius: 2px; background: linear-gradient(90deg, #c8402f, #f08ca0); }
+.nat .btn { width: auto; flex: none; padding: 10px 12px; font-size: 13px; }
+.btn[disabled] { opacity: .45; }
+/* ночь у Наташи — только тёплое окно в сильном размытии, как в «Симс» */
+.card .photo-art[style*="t_n_okno"] { opacity: 1; animation: nGlow 3s ease-in-out infinite alternate; }
+@keyframes nGlow { from { opacity: 1; filter: blur(14px) saturate(1.3) brightness(.9); } to { opacity: 1; filter: blur(18px) saturate(1.5) brightness(1.25); } }
+.item.slang b { color: #e8c878; font-weight: normal; letter-spacing: .5px; }

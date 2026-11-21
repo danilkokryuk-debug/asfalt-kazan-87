@@ -36,7 +36,7 @@ const LOGO = {
 // --- Гардероб ---------------------------------------------------------------------------------
 // start — есть с начала; rank — с какого ранга продадут; bonus — к проверкам; npc — только для персонажей.
 // Бренды нарочно искажены (Adibas, Naik, Pama…): узнаваемо, но не настоящие марки.
-const SLOTS = { hat: 'Шапки', outer: 'Верх', shirt: 'Футболки и кофты', pants: 'Штаны', shoes: 'Обувь', acc: 'Аксессуары' };
+const SLOTS = { hat: 'Шапки', outer: 'Верх', shirt: 'Футболки и кофты', pants: 'Штаны', shoes: 'Обувь', acc: 'Аксессуары', wpn: 'Оружие' };
 const W_ = '#f0f0f0', BLK = '#1a1a1a', RED = '#c02a2a', NAVY = '#1f2f6b', GOLD = '#e5c04a';
 const ITEMS = [
   // ===== шапки
@@ -178,10 +178,25 @@ ITEMS.push(
   { id: 'rw_pleer', slot: 'acc', reward: 'tapes5', name: 'Золотой плеер', price: 0, v: { k: 'phones', c: '#e5c04a' }, desc: 'Для настоящего меломана. Звучит так же, но выглядит дороже.' },
   { id: 'rw_sharf', slot: 'acc', reward: 'love', name: 'Шарф Наташи', price: 0, bonus: { yaz: 1 }, v: { k: 'scarf', c: '#3a8a4a' }, desc: 'Зелёный, вязаный. Она связала его для тебя.' },
 );
+ITEMS.push(
+  // ===== оружие (одно в руке). hit — урон в драке, heat — сколько внимания милиции, когда достаёшь
+  { id: 'w_none', slot: 'wpn', name: 'Без оружия', price: 0, start: true, v: { k: 'none' }, desc: 'Кулаки — тоже аргумент.' },
+  { id: 'w_rogatka', slot: 'wpn', name: 'Рогатка', price: 2, bonus: { lovk: 1 }, wp: { hit: 1, heat: 0 }, v: { k: 'sling' }, desc: 'Резинка от трусов и рогулька. Окна соседей трепещут.' },
+  { id: 'w_palka', slot: 'wpn', name: 'Штакетина', price: 1, bonus: { sila: 1 }, wp: { hit: 1, heat: 1 }, v: { k: 'stick', c: '#8a6a3a' }, desc: 'Выломана из забора у детсада. Зато своя.' },
+  { id: 'w_cep', slot: 'wpn', name: 'Велосипедная цепь', price: 5, rank: 1, bonus: { sila: 1, lovk: 1 }, wp: { hit: 2, heat: 2 }, v: { k: 'chain' }, desc: 'Намотал на кулак — и уже не скорлупа.' },
+  { id: 'w_armatura', slot: 'wpn', name: 'Арматура', price: 4, rank: 1, bonus: { sila: 2 }, wp: { hit: 2, heat: 3 }, v: { k: 'stick', c: '#7a3a22', long: 1 }, desc: 'Ржавая, тяжёлая, со стройки. Классика махача.' },
+  { id: 'w_kastet', slot: 'wpn', name: 'Самодельный кастет', price: 12, rank: 1, bonus: { sila: 2 }, wp: { hit: 2, heat: 4 }, v: { k: 'kastet', c: '#a8a8b0' }, desc: 'Отлит в гараже из свинца. Удар как у слона.' },
+  { id: 'w_nunchaki', slot: 'wpn', name: 'Нунчаки', price: 20, rank: 2, bonus: { lovk: 2 }, wp: { hit: 2, heat: 3 }, v: { k: 'nunchaku' }, desc: 'Посмотрел Брюса Ли в видеосалоне — и выточил сам.' },
+  { id: 'w_bita', slot: 'wpn', name: 'Бейсбольная бита', price: 35, rank: 2, bonus: { sila: 2, lovk: 1 }, wp: { hit: 3, heat: 5 }, v: { k: 'bat' }, desc: 'Привёз моряк из загранки. В Казани в бейсбол не играют.' },
+  { id: 'w_nozh', slot: 'wpn', name: 'Нож-выкидуха', price: 30, rank: 3, bonus: { sila: 2, yaz: 1 }, wp: { hit: 3, heat: 10, sovest: -3 }, v: { k: 'knife' }, desc: 'Щелчок — и все замолкают. Достал — значит, готов применить.' },
+  { id: 'w_samopal', slot: 'wpn', name: 'Самопал', price: 45, rank: 3, bonus: { sila: 3 }, wp: { hit: 3, heat: 12, sovest: -4 }, v: { k: 'pistol', c: '#4a3a2a' }, desc: 'Трубка, изолента, спички. Может выстрелить. Может — в тебя.' },
+  { id: 'w_obrez', slot: 'wpn', name: 'Обрез', price: 140, rank: 4, bonus: { sila: 4 }, wp: { hit: 4, heat: 18, sovest: -6 }, v: { k: 'shotgun' }, desc: 'Дедова двустволка, отпиленная в гараже. Это уже не махач — это статья.' },
+  { id: 'w_tt', slot: 'wpn', name: 'Пистолет ТТ', price: 300, rank: 5, bonus: { sila: 5, yaz: 1 }, wp: { hit: 5, heat: 22, sovest: -8 }, v: { k: 'pistol', c: '#1e1e22' }, desc: 'Настоящий ствол. Им не пугают — его достают, только если всё решено.' },
+);
 const ITEM = Object.fromEntries(ITEMS.map(i => [i.id, i]));
 const SHOP = ITEMS.filter(i => !i.npc && !i.reward);
-const DEFAULT_WEAR = { hat: 'h_none', outer: 'o_none', shirt: 's_school', pants: 'p_school', shoes: 'f_kedy', acc: ['a_znachok'] };
-const wornIds = w => [w.hat, w.outer, w.shirt, w.pants, w.shoes, ...w.acc];
+const DEFAULT_WEAR = { hat: 'h_none', outer: 'o_none', shirt: 's_school', pants: 'p_school', shoes: 'f_kedy', acc: ['a_znachok'], wpn: 'w_none' };
+const wornIds = w => [w.hat, w.outer, w.shirt, w.pants, w.shoes, ...w.acc, w.wpn].filter(Boolean);
 
 // --- Рисование -------------------------------------------------------------------------------
 function shade(hex, k) {
@@ -458,6 +473,21 @@ function drawHero(canvas, app, wear, opt = {}) {
       case 'lighter': rect(tl - 2, handY + 1, 2, 2, '#c8c8c8'); px(tl - 2, handY, '#ff9a30'); break;
       case 'thinchain': for (let x = cx - 3; x <= cx + 2; x += 2) px(x, sy + 1 + (Math.abs(x - cx + 0.5) < 2 ? 1 : 0), GOLD); break;
       case 'guitar': rect(tr - 2, wy - 4, 6, 6, '#a0602a'); rect(tr + 1, sy - 2, 1, 10, '#5a3a1a'); px(tr, wy - 2, '#3a2010'); break;
+    }
+  }
+
+  // --- оружие в правой руке
+  { const w = V(wear.wpn), hx = tr + 3, hy2 = handY;
+    switch (w.k) {
+      case 'stick': rect(hx, hy2 - (w.long ? 17 : 13), 2, w.long ? 20 : 16, w.c); rect(hx, hy2 - (w.long ? 17 : 13), 1, w.long ? 20 : 16, shade(w.c, 1.25)); break;
+      case 'bat': rect(hx - 1, hy2 - 16, 3, 10, '#c8a070'); rect(hx, hy2 - 6, 2, 3, '#b89060'); rect(hx, hy2 - 3, 1, 6, '#8a6040'); px(hx - 1, hy2 - 16, '#e8cc98'); px(hx, hy2 - 16, '#e8cc98'); break;
+      case 'chain': for (let y = hy2; y < hy2 + 12; y++) { px(hx + (y % 2), y, y % 2 ? '#b8c0c8' : '#6a7078'); px(hx + 1 - (y % 2), y, '#4a5058'); } break;
+      case 'sling': rect(hx, hy2 - 3, 1, 4, '#8a5a2a'); px(hx - 1, hy2 - 4, '#8a5a2a'); px(hx + 1, hy2 - 4, '#8a5a2a'); px(hx - 1, hy2 - 5, '#8a5a2a'); px(hx + 1, hy2 - 5, '#8a5a2a'); break;
+      case 'kastet': rect(hx - 1, hy2 - 1, 4, 2, w.c); px(hx - 1, hy2 - 2, shade(w.c, 1.3)); px(hx + 1, hy2 - 2, shade(w.c, 1.3)); px(hx + 3, hy2 - 2, shade(w.c, 1.3)); break;
+      case 'knife': rect(hx, hy2 - 1, 2, 3, '#2a2a2a'); rect(hx, hy2 - 7, 1, 6, '#d8dde2'); rect(hx + 1, hy2 - 6, 1, 5, '#a8b0b8'); px(hx, hy2 - 8, '#ffffff'); break;
+      case 'nunchaku': rect(hx, hy2 - 7, 2, 8, '#2a1a10'); px(hx + 2, hy2 + 1, '#9a9a9a'); px(hx + 3, hy2 + 2, '#9a9a9a'); rect(hx + 3, hy2 + 3, 2, 7, '#2a1a10'); break;
+      case 'pistol': rect(hx - 1, hy2 - 1, 6, 2, w.c); rect(hx - 1, hy2 + 1, 2, 3, shade(w.c, 0.8)); px(hx + 4, hy2 - 1, shade(w.c, 1.8)); px(hx, hy2 - 1, shade(w.c, 1.5)); break;
+      case 'shotgun': rect(hx - 1, hy2 - 2, 9, 2, '#2a2a2e'); px(hx + 7, hy2 - 2, '#6a6a70'); rect(hx - 4, hy2 - 2, 4, 4, '#6a4a2a'); rect(hx - 4, hy2 + 1, 2, 2, '#4a3220'); break;
     }
   }
 

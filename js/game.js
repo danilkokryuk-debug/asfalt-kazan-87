@@ -103,7 +103,7 @@ function sceneHead(ev) {
 // --- Подача: печать текста, сцена с персонажами, переходы ----------------------------------
 let typing = null;
 function typeInto(el, text, done) {
-  stopTyping();
+  stopTyping(); typeof slangSeen === 'function' && slangSeen(text);   // новые слова — в словарь
   const k = SPEED[SET.speed] ?? 1;
   if (!k) { el.textContent = text; done && done(); return; }
   let i = 0;
@@ -287,6 +287,8 @@ function fightOptions(f) {
     { t: 'Уйти в сторону и подсечь', chk: ['lovk', p], hit: 1, dmg: 6 },
     { t: 'Забазарить, сбить с толку', chk: ['yaz', p + 1], hit: 1, dmg: 8, talk: true },
   ];
+  const wp = S.wear && ITEM[S.wear.wpn] && ITEM[S.wear.wpn].wp;   // своё оружие: сильнее, но милиция заметит
+  if (wp) o.unshift({ t: `Достать: ${ITEM[S.wear.wpn].name.toLowerCase()}`, chk: ['sila', p - wp.hit], hit: wp.hit, dmg: 10, wpn: wp });
   if (f.call && S.gang && S.ctrl[S.at] === S.gang) o.push({ t: 'Свистнуть своих', chk: ['uvazh', 2], call: true, dmg: 4 });
   if (T(f.flee) !== false) o.push({ t: 'Бежать', chk: ['lovk', p - 1], flee: true, dmg: 8 });
   return o;
@@ -314,6 +316,7 @@ function fightRound(ev, c, forced) {
   const ok = forced ?? Math.random() < chance(c.chk);
   if (!c.flee && !c.call) AUDIO.sfx && AUDIO.sfx('swish');
   st.ok = ok;
+  if (c.wpn) { S.st.mil = clamp((S.st.mil || 0) + c.wpn.heat, 0, 100); if (c.wpn.sovest) S.st.sovest = clamp(S.st.sovest + c.wpn.sovest, 0, 100); }
   if (c.call) { if (ok) return fightEnd(ev, 'win', 'Свистнул — из подъезда вылетели свои. Чужие сразу сдулись.'); }
   if (c.flee) {
     if (ok) return fightEnd(ev, 'flee', 'Ноги унёс. Но пацаны узнают, что ты побежал.');
@@ -411,7 +414,7 @@ function renderHero() {
   $('#main').innerHTML = `<div class="scene"><div class="herohead"><canvas class="sprite" id="spr"></canvas><div>
     <h2>${S.name}${S.nick ? ' «' + S.nick + '»' : ''}</h2>
     <div class="sub">${lookText(S.app)}.<br>Район: ${DIST[S.home].name}.<br>Моталка: ${g}.<br>Ранг: <b>${RANKS[S.rank]}</b></div></div></div>
-    ${typeof fameHtml === 'function' ? fameHtml(S) : ''}
+    ${typeof fameHtml === 'function' ? fameHtml(S) : ''}${typeof natHtml === 'function' ? natHtml(S) : ''}
     ${walletHtml()}
     <div class="grid">
       ${Object.keys(STATS).map(k => `<div class="stat">${NAMES[k]}<span class="v">${S.st[k]}${gear(k) ? ' +' + gear(k) : ''}</span>${bar(S.st[k], 10)}</div>`).join('')}
@@ -506,6 +509,7 @@ function renderMenu() {
     <button class="btn" id="st">Настройки</button>
     <button class="btn" id="snd">Музыка: ${AUDIO.musicOn() ? 'вкл' : 'выкл'}</button>
     <button class="btn" id="mag">📼 Магнитофон</button>
+    <button class="btn" id="slg">📖 Словарь улицы</button>
     ${S.mode === 'career' ? '<button class="btn" id="jr">Журнал</button>' : ''}
     <button class="btn" id="ach">Достижения</button>
     <button class="btn" id="ng">В главное меню</button></div>
@@ -517,6 +521,7 @@ function renderMenu() {
   $('#ach').onclick = () => { AUDIO.click(); achScreen(back); };
   $('#snd').onclick = () => { AUDIO.toggleMusic(); typeof songCue === 'function' && songCue(songPlace()); renderMenu(); };
   $('#mag').onclick = () => { AUDIO.click(); magScreen(() => { view = 'menu'; render(); }); };
+  $('#slg').onclick = () => { AUDIO.click(); slangScreen(() => { view = 'menu'; render(); }); };
   if ($('#jr')) $('#jr').onclick = () => { view = 'log'; render(); };
   $('#ng').onclick = () => { save('auto'); titleScreen(); };
 }
@@ -597,6 +602,7 @@ function migrate(s) {
     s.points = s.flags.income ? [{ name: 'Старые точки', amt: s.flags.income }] : []; delete s.flags.income;
     s.torn = []; s.st.dol = s.st.dol || 0;
   }
+  if (s && s.wear && !s.wear.wpn) { s.wear.wpn = 'w_none'; if (s.owned && !s.owned.includes('w_none')) s.owned.push('w_none'); }   // вкладка «Оружие»
   if (s && !s.app) {
     s.app = { ...DEFAULT_APP }; s.wear = { ...DEFAULT_WEAR, acc: [...DEFAULT_WEAR.acc] };
     s.owned = ITEMS.filter(i => i.start).map(i => i.id); s.mode = 'campaign';
