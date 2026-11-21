@@ -1,6 +1,6 @@
 // Офлайн-кэш. При изменении файлов игры увеличивай VERSION, иначе телефон покажет старую версию.
-const VERSION = 'asfalt-v1.0.0';
-const FILES = ['./', 'index.html', 'css/style.css', 'js/map.js', 'js/citymap.js', 'js/sprite.js', 'js/audio.js', 'js/game.js', 'js/story.js', 'js/career.js', 'js/mini.js', 'js/world.js', 'js/economy.js', 'js/mechanics.js', 'js/atmos.js', 'js/story2.js', 'js/street.js', 'js/settings.js', 'js/scenes.js', 'js/menu.js', 'js/time.js', 'js/places.js', 'js/stats.js', 'js/ranks.js', 'js/fame.js', 'js/slang.js', 'js/natasha.js', 'js/special.js', 'js/vehicles.js', 'js/business.js', 'js/social.js', 'js/arcs.js', 'js/calendar.js', 'js/prison.js', 'js/eggs.js', 'js/songs.js',
+const VERSION = 'asfalt-v1.0.1';
+const FILES = ['./', 'index.html', 'css/style.css', 'js/map.js', 'js/citymap.js', 'js/sprite.js', 'js/audio.js', 'js/game.js', 'js/story.js', 'js/career.js', 'js/mini.js', 'js/world.js', 'js/economy.js', 'js/mechanics.js', 'js/atmos.js', 'js/story2.js', 'js/street.js', 'js/settings.js', 'js/scenes.js', 'js/menu.js', 'js/time.js', 'js/places.js', 'js/stats.js', 'js/ranks.js', 'js/fame.js', 'js/slang.js', 'js/natasha.js', 'js/special.js', 'js/vehicles.js', 'js/business.js', 'js/social.js', 'js/arcs.js', 'js/calendar.js', 'js/goals.js', 'js/prison.js', 'js/eggs.js', 'js/songs.js',
   ...['kazan', 'chase', 'vokzal', 'kuhnya', 'pustyr', 'korobka', 'zona', 'dvor', 'pl_dk', 'pl_video', 'pl_hosp', 'pl_police',
     'pl_sto', 'pl_bank', 'pl_barber', 'pl_bar', 'pl_resto', 'pl_rynok',
     ...'dvor noch ostanovka garazhi korobka kuhnya shkola pustyr gazeta'.split(' ').map(n => 'bg_' + n),

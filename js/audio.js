@@ -4,7 +4,7 @@ const AUDIO = (() => {
   let on = (() => { try { return localStorage.getItem('asfalt_music') !== '0'; } catch (e) { return true; } })();
   let cur = 'theme', want = 'theme', s = 0, bar = 0, vi = 0, fill = false, nextT = 0;
   let tapeSpec = null, retape = false, ducked = false;   // ducked — играет настоящая песня с телефона, своя музыка молчит
-  let MUSV = 0.12, VOL = 0.5; const AMBV = 0.55, NB = 6;   // музыка тише эффектов; меняются в настройках
+  let MUSV = 0.2, VOL = 0.5; const AMBV = 0.55, NB = 6;   // музыка тише эффектов; меняются в настройках
   const R = Math.random, rnd = n => Math.floor(R() * n), pick = a => a[rnd(a.length)];
   const hz = m => 440 * Math.pow(2, (m - 69) / 12);       // MIDI → Гц
 
@@ -26,8 +26,15 @@ const AUDIO = (() => {
     comp.connect(ctx.destination);
     master = gain(VOL, comp);
     // музыка идёт через тёплый фильтр: без режущих верхов, приятнее на телефоне
-    const warm = filt('lowpass', 2100, 0.5); warm.connect(master);
+    const warm = filt('lowpass', 3400, 0.4); warm.connect(master);
     mus = gain(on ? MUSV : 0, warm);
+    // реверберация: синтетический «зал» — из-за неё инструменты звучат живо, а не из коробки
+    try {
+      const len = ctx.sampleRate * 2.4, ir = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (R() * 2 - 1) * Math.pow(1 - i / len, 2.6); }
+      const conv = ctx.createConvolver(); conv.buffer = ir;
+      const send = gain(0.42, conv); mus.connect(send); conv.connect(gain(0.55, warm));
+    } catch (e) {}
     musFx = gain(1, mus);                                 // лиды с эхом
     dly = ctx.createDelay(1); dly.delayTime.value = 45 / 96;
     const dlp = filt('lowpass', 2200), fb = gain(0.3, dly), wet = gain(0.22, mus);
@@ -99,6 +106,27 @@ const AUDIO = (() => {
     f.connect(g); g.connect(mus);
     ns.forEach(m => [-8, 8].forEach(dt => { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = hz(m); o.detune.value = dt; o.connect(f); o.start(t); o.stop(t + len + 0.05); }));
   }
+  // струнные: ансамбль из расстроенных пил с вибрато и медленной атакой
+  function strings(ns, t, len, v) {
+    const f = filt('lowpass', 1600, 0.6), g = ctx.createGain(); env(g, t, v, len, Math.min(0.6, len * 0.3), len * 0.35);
+    f.connect(g); g.connect(mus);
+    const lfo = ctx.createOscillator(), lg = gain(5); lfo.frequency.value = 5.2; lfo.connect(lg); lfo.start(t); lfo.stop(t + len + 0.1);
+    ns.forEach(m => [-11, 0, 9].forEach(dt => { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = hz(m); o.detune.value = dt; lg.connect(o.detune); o.connect(f); o.start(t); o.stop(t + len + 0.05); }));
+  }
+  // пианино: удар молоточка, обертоны и затухание
+  function piano(m, t, len, v) {
+    const f = hz(m);
+    tone(f, len, 'triangle', hv(v), musFx, t, { atk: 0.003, ft: 'lowpass', f: 2600, fto: 900 });
+    tone(f * 2.003, len * 0.6, 'sine', v * 0.35, musFx, t, { atk: 0.003 });
+    tone(f * 3.01, len * 0.25, 'sine', v * 0.12, musFx, t, { atk: 0.002 });
+    noise(0.03, v * 0.15, mus, t, 2500);
+  }
+  // медь: пила, фильтр открывается — как труба в саундтреке
+  const brass = (m, t, len, v) => [-6, 6].forEach(dt => tone(hz(m), len, 'sawtooth', hv(v), mus, t, { atk: 0.05, det: dt, ft: 'lowpass', f: 500, fto: 2400, rel: len * 0.3 }));
+  const flute = (m, t, len, v) => tone(hz(m), len, 'sine', hv(v), musFx, t, { atk: 0.08, vib: [5.5, 3], rel: len * 0.4 });
+  const timp = (m, t, v = 0.5) => { tone(hz(m), 1.4, 'sine', hv(v), mus, t, { to: hz(m) * 0.94, glide: 1.2 }); noise(0.12, v * 0.2, mus, t, 0, { ft: 'lowpass', f: 400 }); };
+  const crash = (t, v = 0.12) => noise(1.6, v, mus, t, 4500);
+  const bigKick = (t, v = 1) => { kick(t, v); tone(55, 0.5, 'sine', v * 0.35, mus, t, { to: 38 }); };
   function roll({ s, t, d }, kind) {                      // сбивка в конце фразы
     const i = s - 12;
     kind === 'tom' ? tom(t, [220, 180, 150, 120][i], 0.35) : snare(t, 0.12 + i * 0.07);
@@ -222,11 +250,26 @@ const AUDIO = (() => {
       play({ s, c, n, t, d, bar }) {
         const sp = tapeSpec || {}, st = sp.style || 'ballad', mot = sp.mot || [0, 2, 1, 2, 0, 1, 2, 1];
         const ep = (m, len, v) => { tone(hz(m), len, 'sine', v, mus, t, { atk: 0.006 }); tone(hz(m), len * 0.7, 'triangle', v * 0.35, mus, t, { atk: 0.006, det: 6 }); };
-        if (st === 'ballad') {
-          if (s === 0 || s === 8) n.forEach(m => ep(m, d * 7, 0.07));
-          if (s % 2 === 0) lead(at(mot[(s / 2 + bar) % 8], n) + 12, t, d * 2.2, 0.05, 'sine');
-          if (s === 0) bass(c[0] - 12, t, d * 8, 0.35, 'triangle');
-          if (s === 0) kick(t, 0.35); if (s === 8) snare(t, 0.08);
+        if (st === 'ballad') {   // пианино, струнные, мягкий бас
+          if (s === 0) strings(n, t, d * 16, 0.035);
+          if (s % 2 === 0) piano(n[(s >> 1) % 3] + (s >= 8 ? 12 : 0), t, d * 5, 0.09);
+          if (s % 4 === 0) flute(at(mot[(s / 4 + bar * 4) % 8], n) + 12, t, d * 3.6, 0.06);
+          if (s === 0) bass(c[0] - 12, t, d * 14, 0.32, 'triangle');
+          if (s === 0) kick(t, 0.3); if (s === 8) snare(t, 0.06);
+        } else if (st === 'epic') {   // драка: литавры, медь, струнное остинато, тяжёлые барабаны
+          if (s % 2 === 0) bass(c[0] - 12, t, d * 1.4, 0.36, 'sawtooth');
+          if (s % 2 === 1) tone(hz(c[0]), d * 0.9, 'sawtooth', 0.045, mus, t, { ft: 'lowpass', f: 1200, atk: 0.005 });
+          if (s === 0) { timp(c[0] - 24, t, 0.55); if (bar % 2 === 0) crash(t, 0.1); strings(n.map(m => m + 12), t, d * 16, 0.03); }
+          if ([0, 3, 8, 11].includes(s)) bigKick(t, 0.85); if (s === 4 || s === 12) { snare(t, 0.3); noise(0.3, 0.06, mus, t, 3000); }
+          if (s === 0 || s === 8) n.forEach(m => brass(m + 12, t, d * 3, 0.03));
+          if (s % 4 === 2) brass(at(mot[(s / 2 + bar) % 8], n) + 12, t, d * 2.2, 0.035);
+          if (s >= 14) tom(t, s === 14 ? 140 : 110, 0.45);
+        } else if (st === 'romance') {   // Наташа: перебор пианино, тёплые струнные, флейта
+          if (s === 0) strings(n, t, d * 16, 0.045);
+          if (s === 0) bass(c[0] - 12, t, d * 15, 0.28, 'sine');
+          piano(n[[0, 1, 2, 1][s % 4]] + 12 + (s % 8 >= 4 ? 12 : 0), t, d * 4, s % 4 === 0 ? 0.08 : 0.05);
+          if (s === 0 || s === 6 || s === 10) flute(at(mot[(s + bar * 3) % 8], n) + 24, t, d * (s === 0 ? 5 : 3.5), 0.055);
+          if (s % 8 === 4) hat(t, 0.04, true);
         } else if (st === 'disco') {
           if (s % 4 === 0) kick(t, 0.6); if (s % 4 === 2) hat(t, 0.12, true);
           if (s === 4 || s === 12) clap(t, 0.12);
@@ -379,7 +422,7 @@ const AUDIO = (() => {
     },
     // all, music: 0..1 из настроек
     setVolume(all, music) {
-      VOL = 0.5 * all; MUSV = 0.12 * 2 * music;
+      VOL = 0.5 * all; MUSV = 0.2 * 2 * music;
       if (ctx) { master.gain.setTargetAtTime(VOL, ctx.currentTime, 0.05); if (on) mus.gain.setTargetAtTime(ducked ? 0 : MUSV, ctx.currentTime, 0.05); }
     },
     duck(d) { ducked = !!d; if (ctx && on) mus.gain.setTargetAtTime(ducked ? 0 : MUSV, ctx.currentTime, 0.5); },

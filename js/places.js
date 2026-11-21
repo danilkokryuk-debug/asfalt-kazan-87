@@ -227,7 +227,7 @@ function renderPlace() {
   if (!p) { view = 'map'; return render(); }
   let acts = placeActions(S, p);
   if (p.k === 'market') acts = acts.concat(locActions(S, 'center').filter(x => /Напёрстки|Жоры|Жоре|Кассета|Жвачка|Видеосалон/.test(T(x.t))), mechActions(S, 'center'));
-  acts = acts.filter(a => !a.if || a.if(S));
+  acts = limFilter(S, p.id, acts.filter(a => !a.if || a.if(S)).map(a => p.k === 'bank' && a.lim == null ? { ...a, lim: 4 } : a));
   $('#main').innerHTML = `<div class="scene in"><div class="when">${DIST[p.d].name} · ${clock()}</div><h2>${p.name}</h2>
     ${stageHtml(p.bg)}
     <div class="say" id="say"><div class="who" id="who">${npcOf(p.npc).name}</div><div class="line" id="line"></div></div>
@@ -240,7 +240,7 @@ function renderPlace() {
   bindChoices(acts, c => {
     if (c.barber) { stopTyping(); return barberScreen(); }
     if (c.cost === 0 && !c.fx && !c.chk) { stopTyping(); return typeInto($('#line'), T(c.txt)); }
-    stopTyping(); S.cur = null; view = 'map'; doChoice({ ...c, cost: c.cost ?? 0.5 });
+    stopTyping(); S.cur = null; view = 'map'; limUse(S, c); doChoice({ ...c, cost: c.cost ?? 0.5 });
   });
   $('#out').onclick = () => { AUDIO.click(); stopTyping(); view = 'map'; render(); };
 }

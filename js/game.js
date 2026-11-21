@@ -380,7 +380,7 @@ function renderMap() {
   const d = DIST[selDist || S.at];
   const owner = S.ctrl[d.id] ? DIST[S.ctrl[d.id]] : null;
   const rel = !owner ? 'ничья земля' : S.gang === owner.id ? 'твои' : S.home === d.id ? 'твой район' : 'к тебе: ' + repWord(repOf(S, owner.id));
-  const acts = (S.ap > 0 ? [...locActions(S, d.id), ...mechActions(S, d.id)] : []).filter(a => !a.if || a.if(S));
+  const acts = limFilter(S, d.id, (S.ap > 0 ? [...locActions(S, d.id), ...mechActions(S, d.id)] : []).filter(a => !a.if || a.if(S)));
   const land = {}; DISTRICTS.forEach(x => { const o = S.ctrl[x.id]; if (o) land[o] = (land[o] || 0) + 1; });
   const legend = Object.entries(land).sort((a, b) => b[1] - a[1]).map(([g, n]) =>
     `<span class="lg${g === S.gang ? ' mine' : ''}"><i style="background:${DIST[g].color}"></i>${DIST[g].gang} ${n}</span>`).join('');
@@ -398,7 +398,7 @@ function renderMap() {
       <button class="btn main" id="sleep">Домой, лечь спать</button>
     </div></div>`;
   renderMap_(d.id);
-  bindChoices(acts, c => walkTo(S.at, d.id, () => { S.at = d.id; S.cur = null; doChoice({ ...c, cost: carSpeed() }); }));
+  bindChoices(acts, c => walkTo(S.at, d.id, () => { S.at = d.id; S.cur = null; limUse(S, c); doChoice({ ...c, cost: carSpeed() }); }));
   document.querySelectorAll('[data-pl]').forEach(b => b.onclick = () => openPlace(b.dataset.pl));
   $('#sleep').onclick = () => { AUDIO.click(); sleep(); };
 }
@@ -415,7 +415,7 @@ function renderHero() {
   $('#main').innerHTML = `<div class="scene"><div class="herohead"><canvas class="sprite" id="spr"></canvas><div>
     <h2>${S.name}${S.nick ? ' «' + S.nick + '»' : ''}</h2>
     <div class="sub">${lookText(S.app)}.<br>Район: ${DIST[S.home].name}.<br>Моталка: ${g}.<br>Ранг: <b>${RANKS[S.rank]}</b></div></div></div>
-    ${typeof fameHtml === 'function' ? fameHtml(S) : ''}${typeof natHtml === 'function' ? natHtml(S) : ''}${typeof vehHtml === 'function' ? vehHtml(S) : ''}${typeof bizHtml === 'function' ? bizHtml(S) : ''}${typeof socialHtml === 'function' ? socialHtml(S) : ''}
+    ${typeof goalsHtml === 'function' ? goalsHtml() : ''}${typeof fameHtml === 'function' ? fameHtml(S) : ''}${typeof natHtml === 'function' ? natHtml(S) : ''}${typeof vehHtml === 'function' ? vehHtml(S) : ''}${typeof bizHtml === 'function' ? bizHtml(S) : ''}${typeof socialHtml === 'function' ? socialHtml(S) : ''}
     ${walletHtml()}
     <div class="grid">
       ${Object.keys(STATS).map(k => `<div class="stat">${NAMES[k]}<span class="v">${S.st[k]}${gear(k) ? ' +' + gear(k) : ''}</span>${bar(S.st[k], 10)}</div>`).join('')}
@@ -690,3 +690,25 @@ function boot() {
   timeStart();
   titleScreen();
 }
+
+// ===================== ДНЕВНЫЕ ЛИМИТЫ =====================================================================
+// Ничего нельзя делать бесконечно: заработок и тренировки — раз в день, остальное — пару раз. Утром счётчик сбрасывается.
+// a.lim у действия задаёт свой лимит (0 — без лимита).
+const LIM_GAIN = ['dengi', 'dol', 'sila', 'lovk', 'um', 'yaz', 'avt', 'uvazh'];
+function limOf(a) {
+  if (a.lim != null) return a.lim;
+  if (a.cost === 0 || a.barber) return 0;                                    // справки, разговоры, стрижка — без лимита
+  const fxs = [a.fx, a.ok && a.ok.fx, a.no && a.no.fx];
+  if (fxs.some(f => typeof f === 'function')) return 1;                      // хитрые действия (подработки, сделки) — раз в день
+  return fxs.some(f => f && LIM_GAIN.some(k => f[k] > 0)) ? 1 : 2;           // деньги и навыки — раз в день
+}
+const limKey = (pre, a) => pre + '|' + String(T(a.t)).replace(/[\d$.,()]+/g, '').slice(0, 40);
+function limToday(S) { if (!S.lim || S.lim.d !== S.day) S.lim = { d: S.day, n: {} }; return S.lim.n; }
+// оставить только то, что ещё можно сегодня; к названию — «ещё N»
+function limFilter(S, pre, acts) {
+  const n = limToday(S);
+  return acts.filter(a => { const m = limOf(a); return !m || (n[limKey(pre, a)] || 0) < m; })
+    .map(a => { const m = limOf(a), left = m ? m - (n[limKey(pre, a)] || 0) : 0;
+      return m ? { ...a, _lk: limKey(pre, a), t: m > 1 ? `${T(a.t)} · ещё ${left} сегодня` : T(a.t) } : a; });
+}
+function limUse(S, a) { if (a && a._lk) { const n = limToday(S); n[a._lk] = (n[a._lk] || 0) + 1; } }
