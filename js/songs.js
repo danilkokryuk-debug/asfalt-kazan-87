@@ -1,89 +1,9 @@
-// «Магнитофон»: настоящие песни эпохи в нужных местах игры.
-// Записи принадлежат авторам — в игру они не вшиты. Игрок добавляет свои файлы с телефона,
-// они лежат только на этом устройстве (IndexedDB), а игра включает их по месту: дискотека, махач, сход, ночь, зона…
-// Нет файла — играет своя музыка игры, как раньше.
-
-const SONGS = [
-  { id: 'pyala', a: 'АИГЕЛ', t: 'Пыяла', at: ['title', 'final'] },
-  { id: 'sedaya', a: 'Ласковый май', t: 'Седая ночь', at: ['night', 'disco'] },
-  { id: 'nazare', a: 'Альянс', t: 'На заре', at: ['dawn', 'final'] },
-  { id: 'pachka', a: 'Кино', t: 'Пачка сигарет', at: ['city', 'zona', 'night'] },
-  { id: 'rozy', a: 'Ласковый май', t: 'Белые розы', at: ['disco'] },
-  { id: 'krovi', a: 'Кино', t: 'Группа крови', at: ['fight', 'shod'] },
-  { id: 'zvezda', a: 'Кино', t: 'Звезда по имени Солнце', at: ['shod', 'city'] },
-  { id: 'muzyka', a: 'Мираж', t: 'Музыка нас связала', at: ['disco'] },
-  { id: 'american', a: 'Комбинация', t: 'American Boy', at: ['disco'] },
-  { id: 'cep', a: 'Наутилус Помпилиус', t: 'Скованные одной цепью', at: ['zona', 'fight'] },
-  { id: 'rozoviy', a: 'Ласковый май', t: 'Розовый вечер', at: ['love', 'disco'] },
-  { id: 'gorod', a: 'Браво', t: 'Этот город', at: ['city'] },
-  { id: 'peremen', a: 'Кино', t: 'Перемен', at: ['shod', 'final'] },
-  { id: 'belaya', a: 'Форум', t: 'Белая ночь', at: ['disco', 'night'] },
-  { id: 'neproshu', a: 'Мираж', t: 'Я больше не прошу', at: ['love', 'disco'] },
-  { id: 'spokoynaya', a: 'Кино', t: 'Спокойная ночь', at: ['night'] },
-  { id: 'lirika', a: 'Сектор Газа', t: 'Лирика', at: ['love'] },
-  { id: 'voyna', a: 'Агата Кристи', t: 'Как на войне', at: ['fight'] },
-  { id: 'osen', a: 'ДДТ', t: 'Что такое осень', at: ['home'] },
-  { id: 'koni', a: 'Электроклуб', t: 'Кони в яблоках', at: ['disco'] },
-];
-const SONG = Object.fromEntries(SONGS.map(s => [s.id, s]));
-const SONG_PLACES = { title: 'Главное меню', disco: 'Дискотека, ДК, видеосалон', fight: 'Махач', shod: 'Коробка, сходы, стрелки',
-  city: 'Прогулка по карте', dawn: 'Утро на карте', night: 'Ночь', love: 'С Наташей', home: 'Дома, школа, осень', zona: 'Суд и зона', final: 'Финалы' };
-
-// ---- хранилище файлов на устройстве ----
-const songDb = (() => {
-  let dbp = null;
-  const open = () => dbp || (dbp = new Promise((ok, no) => {
-    const r = indexedDB.open('asfalt_music', 1);
-    r.onupgradeneeded = () => r.result.createObjectStore('songs');
-    r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error);
-  }));
-  const tx = (mode, fn) => open().then(db => new Promise((ok, no) => {
-    const t = db.transaction('songs', mode), st = t.objectStore('songs'), r = fn(st);
-    t.oncomplete = () => ok(r && r.result); t.onerror = () => no(t.error);
-  }));
-  return { get: id => tx('readonly', s => s.get(id)), put: (id, blob) => tx('readwrite', s => s.put(blob, id)),
-    del: id => tx('readwrite', s => s.delete(id)), keys: () => tx('readonly', s => s.getAllKeys()) };
-})();
-const SONG_HAVE = new Set();
-
-// ---- проигрыватель: свой AudioContext — нужен для плавных переходов (на iPhone громкость <audio> не меняется) ----
-const PLAYER = { el: null, ctx: null, g: null, cur: null, place: null, url: null, ready: false };
-function playerInit() {
-  if (PLAYER.ready || typeof Audio === 'undefined') return;
-  try {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    PLAYER.el = new Audio(); PLAYER.el.playsInline = true; PLAYER.el.preload = 'auto';
-    PLAYER.ctx = new AC(); PLAYER.g = PLAYER.ctx.createGain(); PLAYER.g.gain.value = 0;
-    PLAYER.ctx.createMediaElementSource(PLAYER.el).connect(PLAYER.g); PLAYER.g.connect(PLAYER.ctx.destination);
-    PLAYER.el.onended = () => { PLAYER.cur = null; songCue(PLAYER.place, true); };
-    PLAYER.ready = true;
-  } catch (e) { PLAYER.ready = false; }
-}
-// первый тап по экрану разрешает звук (правило iPhone)
-if (typeof document !== 'undefined' && document.addEventListener && typeof __TEST === 'undefined') document.addEventListener('pointerdown', () => {
-  playerInit(); if (PLAYER.ctx && PLAYER.ctx.state === 'suspended') PLAYER.ctx.resume();
-  if (PLAYER.el && !PLAYER.el.src) { PLAYER.el.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA='; PLAYER.el.play().then(() => PLAYER.el.pause()).catch(() => {}); }
-}, { capture: true });
-const songVol = () => (typeof SET !== 'undefined' ? (SET.vol ?? 1) * (SET.music ?? 1) : 1) * 0.9;
-function songFade(to, sec) { if (!PLAYER.g) return; const t = PLAYER.ctx.currentTime; PLAYER.g.gain.cancelScheduledValues(t); PLAYER.g.gain.setValueAtTime(PLAYER.g.gain.value, t); PLAYER.g.gain.linearRampToValueAtTime(to, t + sec); }
-
-async function songPlay(id) {
-  if (!PLAYER.ready) return;
-  const blob = await songDb.get(id).catch(() => null); if (!blob) { SONG_HAVE.delete(id); return; }
-  const start = () => {
-    if (PLAYER.url) URL.revokeObjectURL(PLAYER.url);
-    PLAYER.url = URL.createObjectURL(blob); PLAYER.el.src = PLAYER.url; PLAYER.cur = id;
-    PLAYER.el.play().then(() => { songFade(songVol(), 2.5); cassetteShow(SONG[id]); AUDIO.duck && AUDIO.duck(true); }).catch(() => { PLAYER.cur = null; });
-  };
-  if (PLAYER.cur && !PLAYER.el.paused) { songFade(0, 1.2); setTimeout(start, 1200); } else start();
-}
-function songStop() {
-  if (!PLAYER.cur) return;
-  PLAYER.cur = null; songFade(0, 1.5); setTimeout(() => { if (!PLAYER.cur) PLAYER.el.pause(); }, 1600);
-  AUDIO.duck && AUDIO.duck(false);
-}
-// Сменилось место — подобрать песню. Если текущая подходит и играет — пусть играет.
-
+// «Магнитофон»: в игре звучит только своя музыка — сборник «Асфальт-87».
+// Треки сами меняются по местам (дискотека, махач, сход, ночь, Наташа, зона, финал), или можно включить любой вручную.
+// Один звуковой движок (AUDIO) — без второго проигрывателя, чтобы на iPhone ничего не перехватывало звук.
+const PLAYER = { place: null, albPlace: null, albSpec: null, manual: null };
+const SONG_PLACES = { title: 'Главное меню', disco: 'Дискотека, ДК', fight: 'Махач', shod: 'Коробка, сходы', city: 'Прогулка по городу',
+  dawn: 'Утро', night: 'Ночь', love: 'С Наташей', home: 'Дома, осень', zona: 'Суд и зона', final: 'Финалы' };
 // ---- Сборник «Асфальт-87»: свои мелодии в духе эпохи, играют по местам сами, без файлов ----
 // Гармонии и мотивы написаны для игры (это не мелодии чужих песен). Аккорд: [нота MIDI, 'm' минор | 'M' мажор], мотив — 8 ступеней.
 const T_ = (t, bpm, style, prog, mot) => ({ t, spec: { bpm, style, prog, mot } });
@@ -115,21 +35,17 @@ const albumOn = () => { try { return localStorage.getItem('asfalt_album') !== '0
 function albumCue(place) {
   if (typeof AUDIO === 'undefined' || !AUDIO.tape) return;
   const list = place && ALBUM[place];
+  if (PLAYER.manual) return AUDIO.tape(PLAYER.manual.spec);                              // выбран трек вручную — играет он
   if (!list || !albumOn() || (S && !S.cur && S.tape)) { PLAYER.albPlace = null; return; }   // своя кассета на карте важнее
   if (PLAYER.albPlace === place) return AUDIO.tape(PLAYER.albSpec);
   const tr = list[Math.floor(Math.random() * list.length)];
   PLAYER.albPlace = place; PLAYER.albSpec = tr.spec; AUDIO.tape(tr.spec);
   if (AUDIO.musicOn()) cassetteShow({ t: tr.t, a: 'Сборник «Асфальт-87»' });
 }
-function songCue(place, next) {
+function songCue(place) {
   if (typeof __TEST !== 'undefined') return;
   PLAYER.place = place;
-  const pool = PLAYER.ready && AUDIO.musicOn() && place ? SONGS.filter(s => s.at.includes(place) && SONG_HAVE.has(s.id)) : [];
-  if (!pool.length) { songStop(); return albumCue(place); }   // своих файлов нет — играет сборник
-  PLAYER.albPlace = null;
-  if (!next && PLAYER.cur && pool.some(s => s.id === PLAYER.cur)) return;
-  const fresh = pool.filter(s => s.id !== PLAYER.cur);
-  songPlay((fresh.length ? fresh : pool)[Math.floor(Math.random() * (fresh.length || pool.length))].id);
+  albumCue(place);
 }
 // Какое «место» сейчас: по сцене, драке, фону, времени суток
 function songPlace() {
@@ -161,36 +77,32 @@ function cassetteShow(s) {
 }
 
 // ---- экран «Магнитофон» ----
-const songNorm = x => String(x).toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я0-9]/g, '');
-const songMatch = name => { const n = songNorm(name.replace(/\.[a-z0-9]+$/i, '')); return SONGS.find(s => n.includes(songNorm(s.t))) || null; };
-async function magScreen(back) {
+function magScreen(back) {
   $('#top').classList.add('hidden'); $('#nav').classList.add('hidden');
-  const row = s => `<div class="item mag ${SONG_HAVE.has(s.id) ? 'worn' : ''}"><div class="mag-reel${PLAYER.cur === s.id ? ' spin' : ''}"></div>
-      <div style="flex:1"><b>${s.t}</b><div class="sub">${s.a}</div></div>
-      ${SONG_HAVE.has(s.id) ? `<button class="btn" data-play="${s.id}">${PLAYER.cur === s.id ? '■' : '▶'}</button><button class="btn" data-del="${s.id}">✕</button>`
-        : `<label class="btn">Файл<input type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg" data-one="${s.id}" hidden></label>`}</div>`;
+  const all = Object.entries(ALBUM).flatMap(([p, list]) => list.map((tr, i) => ({ ...tr, p, k: p + i })));
+  const cur = PLAYER.manual ? PLAYER.manual.k : null;
   $('#main').innerHTML = `<div class="scene in"><h2>📼 Магнитофон</h2>
-    <p class="sub">Песни эпохи звучат в нужных местах: на дискотеке, в махаче, на сходе, ночью, на зоне. Записи принадлежат их авторам, поэтому в игру они не вшиты — добавь свои файлы с телефона. Они останутся только на этом устройстве.</p>
-    <div class="choices"><button class="btn" id="albTg">Сборник «Асфальт-87» на фоне: ${albumOn() ? 'вкл' : 'выкл'}</button></div>
-    <p class="sub">Сборник — 22 мелодии, написанные для игры в духе эпохи. Они играют по местам сами. Твои файлы, если добавишь, звучат вместо них.</p>
-    <div class="choices"><label class="btn main">Добавить файлы (можно все сразу)<input type="file" multiple accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg" id="magAll" hidden></label></div>
-    <div id="magMsg" class="sub"></div>
-    <p class="sub">Загружено: ${SONG_HAVE.size} из ${SONGS.length}. Файлы с названием песни в имени («Кино - Группа крови.mp3») разложатся сами.</p>
-    ${Object.entries(SONG_PLACES).map(([p, name]) => { const list = SONGS.filter(s => s.at[0] === p); return list.length ? `<h3 class="mag-h">${name}</h3><div class="choices">${list.map(row).join('')}</div>` : ''; }).join('')}
+    <p class="sub">Сборник «Асфальт-87» — ${all.length} мелодий, написанных для игры. В режиме «по местам» они сами меняются: дискотека, махач, сход, ночь, свидания, зона.</p>
+    <div class="choices"><button class="btn ${PLAYER.manual ? '' : 'main'}" id="auto">${PLAYER.manual ? 'Вернуть режим «по местам»' : '✔ Играет по местам'}</button>
+      <button class="btn" id="albTg">Музыка сборника: ${albumOn() ? 'вкл' : 'выкл'}</button></div>
+    ${!AUDIO.musicOn() ? '<p class="sub" style="color:var(--bad)">Музыка выключена в меню игры («Музыка: выкл»). Включи её там.</p>' : ''}
+    ${Object.entries(SONG_PLACES).map(([p, name]) => ALBUM[p] ? `<h3 class="mag-h">${name}</h3><div class="choices">${ALBUM[p].map((tr, i) => `<div class="item mag ${cur === p + i ? 'worn' : ''}">
+      <div class="mag-reel${cur === p + i ? ' spin' : ''}"></div><div style="flex:1"><b>${tr.t}</b><div class="sub">${tr.spec.bpm} уд/мин</div></div>
+      <button class="btn" data-play="${p + i}">${cur === p + i ? '■' : '▶'}</button></div>`).join('')}</div>` : '').join('')}
     <div class="choices"><button class="btn" id="bk">Назад</button></div></div>`;
   const redraw = () => magScreen(back);
-  const save1 = async (id, f) => { await songDb.put(id, f); SONG_HAVE.add(id); };
-  $('#albTg').onclick = () => { try { localStorage.setItem('asfalt_album', albumOn() ? '0' : '1'); } catch (e) {} PLAYER.albPlace = null; redraw(); };
-  $('#magAll').onchange = async e => {
-    const files = [...e.target.files], miss = [];
-    for (const f of files) { const s = songMatch(f.name); if (s) await save1(s.id, f); else miss.push(f.name); }
-    await redraw();
-    $('#magMsg').innerHTML = `Добавлено: ${files.length - miss.length}.` + (miss.length ? ` Не узнал: ${miss.map(n => '«' + n + '»').join(', ')} — добавь их кнопкой «Файл» у нужной песни.` : '');
-  };
-  document.querySelectorAll('[data-one]').forEach(i => i.onchange = async e => { if (e.target.files[0]) { await save1(i.dataset.one, e.target.files[0]); redraw(); } });
-  document.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { if (PLAYER.cur === b.dataset.del) songStop(); await songDb.del(b.dataset.del); SONG_HAVE.delete(b.dataset.del); redraw(); });
-  document.querySelectorAll('[data-play]').forEach(b => b.onclick = () => { playerInit(); if (PLAYER.cur === b.dataset.play) songStop(); else songPlay(b.dataset.play); setTimeout(redraw, 300); });
+  $('#auto').onclick = () => { PLAYER.manual = null; PLAYER.albPlace = null; songCue('title'); redraw(); };
+  $('#albTg').onclick = () => { try { localStorage.setItem('asfalt_album', albumOn() ? '0' : '1'); } catch (e) {} PLAYER.albPlace = null; songCue('title'); redraw(); };
+  document.querySelectorAll('[data-play]').forEach(b => b.onclick = () => {
+    AUDIO.start();
+    const tr = all.find(x => x.k === b.dataset.play);
+    if (cur === tr.k) { PLAYER.manual = null; PLAYER.albPlace = null; songCue('title'); }
+    else { PLAYER.manual = tr; AUDIO.tape(tr.spec); cassetteShow({ t: tr.t, a: 'Сборник «Асфальт-87»' }); }
+    redraw();
+  });
   $('#bk').onclick = () => { (back || titleScreen)(); };
 }
 
-if (typeof indexedDB !== 'undefined' && typeof __TEST === 'undefined') songDb.keys().then(ks => (ks || []).forEach(k => SONG[k] && SONG_HAVE.add(k))).catch(() => {});
+// iPhone «замораживает» звук, когда приложение сворачивают или приходит звонок. Любое касание экрана будит его снова.
+if (typeof document !== 'undefined' && document.addEventListener && typeof __TEST === 'undefined')
+  document.addEventListener('pointerdown', () => { if (typeof AUDIO !== 'undefined' && AUDIO.start && AUDIO.musicOn()) AUDIO.start(); }, { capture: true, passive: true });
