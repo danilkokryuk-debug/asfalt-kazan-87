@@ -38,7 +38,7 @@ function settingsScreen(back) {
   probe.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);visibility:hidden';
   document.body.appendChild(probe); const ps = getComputedStyle(probe);
   $('#scrinfo').textContent = `Экран ${screen.width}×${screen.height} · окно ${innerWidth}×${innerHeight} · игра ${Math.round(document.body.getBoundingClientRect().height)} · `
-    + `вырез ${parseInt(ps.paddingTop)}/${parseInt(ps.paddingBottom)} · ${matchMedia('(display-mode: standalone)').matches || navigator.standalone ? 'приложение' : 'браузер'} · ${navigator.standalone ? 'st' : '-'} · v0.9.5`;
+    + `вырез ${parseInt(ps.paddingTop)}/${parseInt(ps.paddingBottom)} · ${matchMedia('(display-mode: standalone)').matches || navigator.standalone ? 'приложение' : 'браузер'} · ${navigator.standalone ? 'st' : '-'} · v0.9.6`;
   probe.remove();
   document.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
     const v = b.dataset.v; SET[b.dataset.k] = v === 'true' ? true : v === 'false' ? false : v;

@@ -57,11 +57,11 @@ function applyFx(fx) {
     if (k === 'flag') [].concat(v).forEach(f => S.flags[f] = true);
     else if (k === 'unflag') [].concat(v).forEach(f => delete S.flags[f]);
     else if (k === 'join') { S.gang = v === true ? S.home : v; log(`Пришился к моталке «${DIST[S.gang].gang}».`); out.push(`<b>Ты теперь в «${DIST[S.gang].gang}»</b>`); }
-    else if (k === 'leave') { log(`Отшился от «${DIST[S.gang].gang}».`); S.gang = null; S.rank = 0; }
+    else if (k === 'leave') { if (S.gang) log(`Отшился от «${DIST[S.gang].gang}».`); S.gang = null; S.rank = 0; S.jobs = (S.jobs || []).filter(j => j.id.startsWith('j_')); }   // задания моталки уходят вместе с ней
     else if (k === 'rank') { if (v > S.rank && typeof toast === 'function') setTimeout(() => toast(`${RANKS[v]}: открылись новые задания`), 1200); S.rank = v; log(`Новый ранг: ${RANKS[v]}.`); out.push(`<b>Ранг: ${RANKS[v]}</b>`); AUDIO.ok(); }
     else if (k === 'limit') { const it = typeof limGive === 'function' && limGive(S, v); if (it) { out.push(`<b>Лимитированная вещь: «${it.name}»</b>`); AUDIO.ok(); } }
     else if (k === 'nick') { S.nick = v; log(`Теперь тебя зовут «${v}».`); out.push(`Погоняло: «${v}»`); }
-    else if (k === 'ctrl') for (const [d, o] of Object.entries(v)) { S.ctrl[d] = o; out.push(`${DIST[d].name} теперь под «${DIST[o].gang}»`); }
+    else if (k === 'ctrl') for (const [d, o] of Object.entries(v)) { if (!o || !DIST[o]) continue; S.ctrl[d] = o; out.push(`${DIST[d].name} теперь под «${DIST[o].gang}»`); }
     else if (k === 'ap') S.ap = Math.max(0, S.ap + v);
     else if (k === 'unpoint') { const p = S.points.splice(v, 1)[0]; if (p) { log(`Потеряна точка: ${p.name}.`); out.push(`Потеряна точка: ${p.name}`); } }
     else if (k === 'day') skipDays(v);
@@ -415,7 +415,7 @@ function renderHero() {
   $('#main').innerHTML = `<div class="scene"><div class="herohead"><canvas class="sprite" id="spr"></canvas><div>
     <h2>${S.name}${S.nick ? ' «' + S.nick + '»' : ''}</h2>
     <div class="sub">${lookText(S.app)}.<br>Район: ${DIST[S.home].name}.<br>Моталка: ${g}.<br>Ранг: <b>${RANKS[S.rank]}</b></div></div></div>
-    ${typeof fameHtml === 'function' ? fameHtml(S) : ''}${typeof natHtml === 'function' ? natHtml(S) : ''}${typeof vehHtml === 'function' ? vehHtml(S) : ''}${typeof bizHtml === 'function' ? bizHtml(S) : ''}
+    ${typeof fameHtml === 'function' ? fameHtml(S) : ''}${typeof natHtml === 'function' ? natHtml(S) : ''}${typeof vehHtml === 'function' ? vehHtml(S) : ''}${typeof bizHtml === 'function' ? bizHtml(S) : ''}${typeof socialHtml === 'function' ? socialHtml(S) : ''}
     ${walletHtml()}
     <div class="grid">
       ${Object.keys(STATS).map(k => `<div class="stat">${NAMES[k]}<span class="v">${S.st[k]}${gear(k) ? ' +' + gear(k) : ''}</span>${bar(S.st[k], 10)}</div>`).join('')}
