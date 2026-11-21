@@ -159,8 +159,8 @@ function placeActions(S, p) {
       const age = heroAge(S);
       if (S.car) a.push({ t: `У тебя уже есть: ${CAR[S.car.id].name}. Продать можно в СТО`, cost: 0, txt: 'Две машины — это уже кооператив, — смеётся продавец.' });
       else CARS.forEach(c => a.push({ t: `${c.name} — ${carTxt(c)}${age < c.age ? ` · с ${c.age} лет` : S.rank < c.rank ? ` · с ранга «${RANKS[c.rank]}»` : ''}`,
-        req: c.cur === '$' ? { dol: c.price } : { dengi: c.price }, if: () => age >= c.age && S.rank >= c.rank, cost: 0.5,
-        fx: s => { s.car = { id: c.id, cond: 100, fuel: 100 }; log(`Купил: ${c.name}.`); setTimeout(() => toast(`${VTYPE[c.t][0].toUpperCase() + VTYPE[c.t].slice(1)} твой! Открылись новые задания`), 900); return c.cur === '$' ? { dol: -c.price } : { dengi: -c.price }; },
+        img: 'veh_' + c.id, req: c.cur === '$' ? { dol: c.price } : { dengi: c.price }, if: () => age >= c.age && S.rank >= c.rank, cost: 0.5,
+        fx: s => { s.car = { id: c.id, cond: 100, fuel: 100 }; log(`Купил: ${c.name}.`); if (typeof __TEST === 'undefined') setTimeout(() => card([c.name, 'Теперь твой'], null, 2600, 'veh_' + c.id), 250); setTimeout(() => toast(`${VTYPE[c.t][0].toUpperCase() + VTYPE[c.t].slice(1)} твой! Открылись новые задания`), 3200); return c.cur === '$' ? { dol: -c.price } : { dengi: -c.price }; },
         txt: `${c.name}! ${c.desc} Теперь по городу быстрее, и все видят, кто едет.` }));
       if (!S.car && age < 18) a.push({ t: age < 16 ? `Тебе ${age}. Мотоцикл — с 16, машина — с 18` : `Тебе ${age}. Машину продадут с 18 — пока мотоциклы`, cost: 0, txt: 'Продавец смотрит на тебя поверх очков: «Права покажи, юноша».' });
       break;

@@ -528,3 +528,8 @@ label.btn { display: flex; justify-content: center; cursor: pointer; }
 .veh span { color: #7ae0d0; font-size: 12px; letter-spacing: 1px; }
 .veh em { font-style: normal; color: #d8d0c0; font-size: 13px; }
 .veh i { position: absolute; left: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, #f07a30, #40d0c0); }
+
+/* картинки транспорта */
+.btn.withimg > span:first-child { display: flex; align-items: center; gap: 10px; }
+.vthumb { flex: none; width: 64px; height: 36px; border-radius: 4px; background: #111 center / cover no-repeat; image-rendering: pixelated; border: 1px solid rgba(64, 208, 192, .35); }
+.veh .vimg { height: 120px; margin: -10px -12px 8px; background: #111 center / cover no-repeat; image-rendering: pixelated; }

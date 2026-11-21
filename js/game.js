@@ -237,7 +237,7 @@ function choiceBtn(c, i) {
   const lock = c.req && !Object.entries(c.req).every(([k, v]) => k === 'dengi' ? S.st.dengi >= v : stat(k) >= v);
   const reqTxt = c.req ? ` <span class="ch lo">нужно: ${Object.entries(c.req).map(([k, v]) => NAMES[k] + ' ' + v).join(', ')}</span>` : '';
   const badge = c.chk ? (c.mini ? '<span class="ch mg">▶ игра</span> ' : '') + chanceBadge(chance(c.chk)) + ` <span class="ch">${NAMES[c.chk[0]]}</span>` : '';
-  return `<button class="btn" data-i="${i}" ${lock ? 'disabled' : ''}><span>${T(c.t)}</span><span>${lock ? reqTxt : badge}</span></button>`;
+  return `<button class="btn${c.img ? ' withimg' : ''}" data-i="${i}" ${lock ? 'disabled' : ''}><span>${c.img ? `<i class="vthumb" style="background-image:url(img/${c.img}.jpg)"></i>` : ''}${T(c.t)}</span><span>${lock ? reqTxt : badge}</span></button>`;
 }
 function bindChoices(list, fn) {
   document.querySelectorAll('.choices .btn[data-i]').forEach(b => b.onclick = () => { AUDIO.click(); fn(list[+b.dataset.i]); });

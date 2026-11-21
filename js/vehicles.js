@@ -72,7 +72,9 @@ function vehHtml(S) {
   const age = heroAge(S);
   if (!S.car || !CAR[S.car.id]) return `<div class="veh"><span>🚲 Возраст: ${age}</span><em>${age < 16 ? 'Мопед — сейчас, мотоцикл — с 16, машина — с 18. Копи и иди в автомагазин.' : age < 18 ? 'Мотоцикл уже продадут. Машину — с 18.' : 'Можно покупать что угодно — были бы деньги.'}</em></div>`;
   const c = CAR[S.car.id], fuel = S.car.fuel ?? 100;
-  return `<div class="veh"><span>${c.t === 'car' ? '🚗' : '🏍'} ${c.name} · возраст ${age}</span>
+  return `<div class="veh"><div class="vimg" style="background-image:url(img/veh_${c.id}.jpg)"></div><span>${c.t === 'car' ? '🚗' : '🏍'} ${c.name} · возраст ${age}</span>
     <em>Состояние ${S.car.cond}% · бак ${fuel}%${!carGo() ? ' — <b>стоит</b>: ' + (fuel <= 0 ? 'на заправку' : 'в СТО') : ''}</em>
     <i style="width:${fuel}%"></i></div>`;
 }
+
+if (typeof SCENE_IMG !== 'undefined') CARS.forEach(c => SCENE_IMG['veh_' + c.id] = 1);   // картинка транспорта на карточке покупки

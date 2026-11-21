@@ -106,7 +106,7 @@ if (typeof SQ_NICKS !== 'undefined') SQ_NICKS.push('Турбо', 'Кирпич',
 // ---- оружие в кармане: патруль может обыскать ----
 const wpnHeavy = S => S.wear && ITEM[S.wear.wpn] && (ITEM[S.wear.wpn].wp || {}).heat >= 10;
 const wpnLose = s => { const id = s.wear.wpn; s.wear.wpn = 'w_none'; s.owned = s.owned.filter(x => x !== id); };
-def('e_obysk', { random: S => wpnHeavy(S), weight: 2.5, title: 'Обыск', bg: 'noch',
+def('e_obysk', { random: S => wpnHeavy(S), weight: 2.5, title: 'Обыск', bg: 't_e_patrul',
   lines: S => ['Из-за угла выкатывается «луноход». Двое в шинелях идут прямо к тебе.',
     ['militsioner', 'Стоять. Руки из карманов. Что там у тебя?', 'angry'],
     `В кармане — ${ITEM[S.wear.wpn].name.toLowerCase()}. С этим можно уехать надолго.`],
