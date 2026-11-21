@@ -4,7 +4,9 @@
 const W = 40, H = 60, CELL = 8;   // 320×480 в координатах SVG
 
 // id, название района, группировка, центр (x,y в старых клетках 20×30), цвет, описание, значок
-const DISTRICTS = [
+// Город: Казань (играбельно) или Москва (в разработке — только просмотр карты по ?city=moscow)
+const CITY = (() => { try { const q = new URLSearchParams(location.search || '').get('city'); return q === 'moscow' ? 'moscow' : 'kazan'; } catch (e) { return 'kazan'; } })();
+const KZN_DISTRICTS = [
   { id: 'socgorod', name: 'Соцгород',    gang: 'Соцгород',     x: 8, y: 2,  color: '#8a6438', desc: 'Авиастроительный. Заводские пацаны, держатся особняком.', icon: 'zavod' },
   { id: 'zhilka',   name: 'Жилка',       gang: 'Жилка',        x: 5, y: 6.5,  color: '#7a3e3e', desc: 'Жилплощадка. Старые бараки, злые и многочисленные.' },
   { id: 'kinoplenka', name: 'Кинопленка', gang: 'Кинопленка',  x: 9.5, y: 7,  color: '#3d607a', desc: 'Московский район, у фабрики кинопленки.', icon: 'zavod' },
@@ -20,6 +22,23 @@ const DISTRICTS = [
   { id: 'gryaz',    name: 'Грязь',       gang: 'Грязь',        x: 6, y: 23, color: '#5a5a30', desc: 'Низина у озера. Название говорит само за себя.' },
   { id: 'mirny',    name: 'Мирный',      gang: 'Мирный',       x: 11, y: 27, color: '#45457a', desc: 'Посёлок на юге. Далеко, но если придут — придут все.' },
 ];
+// Москва середины 80-х: районы и группировки (люберы, солнцевские, ореховские, измайловские…); казанские — на Рижском рынке
+const MSK_DISTRICTS = [
+  { id: 'dolgo',      name: 'Долгопрудный', gang: 'Долгопрудненские', x: 8,  y: 2.5, color: '#6a5a3a', desc: 'Север за МКАД. Аэродром, дачи, свои законы.' },
+  { id: 'koptevo',    name: 'Коптево',      gang: 'Коптевские',     x: 7.5, y: 8.5, color: '#7a3e3e', desc: 'Пятиэтажки у Окружной дороги. Злые и голодные.' },
+  { id: 'medvedkovo', name: 'Медведково',   gang: 'Медведковские',  x: 13, y: 7.5,  color: '#557a3d', desc: 'Новостройки на Яузе. Молодые, дерзкие.' },
+  { id: 'balashikha', name: 'Балашиха',     gang: 'Балашихинские',  x: 18.5, y: 9, color: '#7a6630', desc: 'Подмосковье на востоке. Заводы и частный сектор.' },
+  { id: 'rizhsky',    name: 'Рижский рынок', gang: 'Казанские',     x: 9.5, y: 11, color: '#9a3030', desc: 'Кооперативный рынок. Его держат приезжие из Казани.', icon: 'rynok' },
+  { id: 'bauman',     name: 'Бауманская',   gang: 'Бауманские',     x: 12.5, y: 12, color: '#3d607a', desc: 'Старая Москва за Садовым. Рестораны, подпольные катраны.' },
+  { id: 'izmailovo',  name: 'Измайлово',    gang: 'Измайловские',   x: 17, y: 13,   color: '#2e5f96', desc: 'Огромный парк, вернисаж, гостиница. Спортсмены.' },
+  { id: 'center',     name: 'Центр',        gang: null,             x: 10, y: 14.5, color: '#6a665c', desc: 'Кремль, Красная площадь, Арбат. Здесь хозяин — милиция.', icon: 'kreml' },
+  { id: 'taganka',    name: 'Таганка',      gang: 'Таганские',      x: 13, y: 16,   color: '#653f7a', desc: 'Таганская площадь, театр, коммуналки. Старые воры.' },
+  { id: 'solntsevo',  name: 'Солнцево',     gang: 'Солнцевские',    x: 4,  y: 19,   color: '#9a6230', desc: 'Юго-запад, только что вошёл в Москву. Скоро о нём узнает весь мир.' },
+  { id: 'lyubertsy',  name: 'Люберцы',      gang: 'Люберецкие',     x: 18, y: 20,   color: '#2e7a66', desc: 'Любера: клетчатые штаны, качалки в подвалах. Едут в центр бить «неформалов».', icon: 'zavod' },
+  { id: 'orekhovo',   name: 'Орехово',      gang: 'Ореховские',     x: 12, y: 22.5, color: '#7a2e66', desc: 'Орехово-Борисово, спальный юг. Самые жёсткие.' },
+  { id: 'podolsk',    name: 'Подольск',     gang: 'Подольские',     x: 10, y: 27.5, color: '#45457a', desc: 'Юг за МКАД. Тихие, но держат трассу на Симферополь.' },
+];
+const DISTRICTS = CITY === 'moscow' ? MSK_DISTRICTS : KZN_DISTRICTS;
 const DIST = Object.fromEntries(DISTRICTS.map(d => [d.id, d]));
 
 // детерминированный «шум» — чтобы карта была одинаковой каждый раз
@@ -27,7 +46,17 @@ const hash = (x, y) => { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
 const kazankaY = gx => 23 - (gx - 6) * 0.2 + Math.sin(gx * 0.45) * 1.3;   // Казанка: с северо-востока к устью у Кремля
 const kazankaW = gx => gx < 14 ? 2.2 : gx < 22 ? 1.6 : 1.2;                // у устья — широкая (подпор Куйбышевского водохранилища)
 const volgaEdge = gy => 6 + Math.round(Math.sin(gy * 0.25)) + (gy > 30 ? (gy - 30) * 0.18 : 0) + (gy > 48 ? (gy - 48) * 0.5 : 0);   // Волга забирает юго-запад
+// --- Москва: Москва-река (с северо-запада, петли у Крылатского и Лужников, под Кремлём, на юго-восток) и Яуза с севера
+const MOSKVA_PTS = [[0, 17], [4, 20], [3, 24], [7, 27], [11, 27.5], [12, 31], [14.5, 34], [17, 33], [18, 31], [21, 31.2], [24, 30.6], [25.5, 32.5], [26, 35.5], [25, 38], [28, 40], [31, 41], [30, 44], [34, 45.5], [37, 48], [40, 50]];
+const YAUZA_PTS = [[27, 10], [25, 17], [27, 22], [25.5, 27], [25.5, 32]];
+const segDist = (px, py, pts) => { let m = 1e9; for (let i = 1; i < pts.length; i++) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], dx = x1 - x0, dy = y1 - y0, l = dx * dx + dy * dy;
+  const t = l ? Math.max(0, Math.min(1, ((px - x0) * dx + (py - y0) * dy) / l)) : 0; m = Math.min(m, Math.hypot(px - x0 - t * dx, py - y0 - t * dy)); } return m; };
+const MKAD = [20.5, 30.5, 18.6];   // центр и радиус кольцевой (в клетках)
+const MSK_TOWNS = [[17, 6, 5.5], [37.5, 18.5, 5], [37, 41, 5.5], [21, 56, 6]];   // Долгопрудный, Балашиха, Люберцы, Подольск
+const mskLand = (gx, gy) => Math.hypot(gx + 0.5 - MKAD[0], gy + 0.5 - MKAD[1]) <= MKAD[2] || MSK_TOWNS.some(([x, y, r]) => Math.hypot(gx + 0.5 - x, gy + 0.5 - y) <= r);
+const mskWater = (gx, gy) => segDist(gx + 0.5, gy + 0.5, MOSKVA_PTS) < 1.05 || segDist(gx + 0.5, gy + 0.5, YAUZA_PTS) < 0.55;
 function isWater(gx, gy) {
+  if (CITY === 'moscow') return mskWater(gx, gy);
   if (gx < volgaEdge(gy)) return true;                                                                    // Волга
   if (Math.abs(gy - kazankaY(gx)) < kazankaW(gx)) return true;                                            // Казанка
   if ((gx - 15) ** 2 / 2.6 + (gy - 31) ** 2 / 12 < 1) return true;                                         // Нижний Кабан
@@ -35,16 +64,18 @@ function isWater(gx, gy) {
   return false;
 }
 const BRIDGES = [9, 18, 29];   // мосты через Казанку: дамба у устья, Ленинский, Ново-Савиновский
-const isBridge = (gx, gy) => BRIDGES.includes(gx) && Math.abs(gy - kazankaY(gx)) < kazankaW(gx) + 0.2;
+const isBridge = (gx, gy) => CITY === 'moscow' ? mskWater(gx, gy) && (gx % 6 === 0 || gy % 7 === 0)   // в Москве мосты на каждой большой улице
+  : BRIDGES.includes(gx) && Math.abs(gy - kazankaY(gx)) < kazankaW(gx) + 0.2;
 
 // Клетки → район: ближайший центр (с шумом для неровных границ) по ту же сторону Казанки
 const CELLS = [];
 for (let gy = 0; gy < H; gy++) for (let gx = 0; gx < W; gx++) {
   if (isWater(gx, gy) && !isBridge(gx, gy)) { CELLS.push(null); continue; }
+  if (CITY === 'moscow' && !mskLand(gx, gy)) { CELLS.push(null); continue; }   // лесопарковый пояс за МКАД
   const north = gy < kazankaY(gx);
   let best = null, bd = 1e9;
   for (const d of DISTRICTS) {
-    if ((d.y * 2 + 1 < kazankaY(d.x * 2 + 1)) !== north) continue;   // по свою сторону Казанки
+    if (CITY === 'kazan' && (d.y * 2 + 1 < kazankaY(d.x * 2 + 1)) !== north) continue;   // в Казани — по свою сторону Казанки
     const dd = (d.x * 2 + 1 - gx) ** 2 + (d.y * 2 + 1 - gy) ** 2 + hash(gx, gy) * 9;
     if (dd < bd) { bd = dd; best = d.id; }
   }
@@ -58,7 +89,7 @@ for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
   const a = cellAt(x, y); if (!a) continue;
   for (const [dx, dy] of [[1, 0], [0, 1]]) { const b = cellAt(x + dx, y + dy); if (b && b !== a) { NEIGHBORS[a].add(b); NEIGHBORS[b].add(a); } }
 }
-[['kinoplenka', 'center'], ['savinovo', 'borisk'], ['zhilka', 'center']].forEach(([a, b]) => { NEIGHBORS[a].add(b); NEIGHBORS[b].add(a); });
+[['kinoplenka', 'center'], ['savinovo', 'borisk'], ['zhilka', 'center'], ['dolgo', 'koptevo'], ['dolgo', 'medvedkovo'], ['balashikha', 'izmailovo'], ['balashikha', 'medvedkovo'], ['lyubertsy', 'izmailovo'], ['lyubertsy', 'orekhovo'], ['podolsk', 'orekhovo'], ['podolsk', 'solntsevo']].forEach(([a, b]) => { if (NEIGHBORS[a] && NEIGHBORS[b]) { NEIGHBORS[a].add(b); NEIGHBORS[b].add(a); } });
 
 // Центр района по клеткам (для подписи)
 const CENTROID = {};
@@ -90,18 +121,18 @@ const MG = 6;   // ширина каймы в клетках
 // Трассы на выезд продолжают городские улицы: колонка (v) или ряд дорожной сетки. Москва — через мост над Волгой.
 const pickLine = (cands, ok) => cands.find(ok) ?? cands[0];
 const EXT = {
-  east: { v: false, line: pickLine([28, 21, 35, 14, 42], r => cellAt(W - 1, r) && !isWater(W - 1, r)), label: 'Оренбург →' },
-  north: { v: true, line: pickLine([24, 18, 30, 12], c => cellAt(c, 0) && !isWater(c, 0)), label: '↑ Арск' },
-  south: { v: true, line: pickLine([18, 24, 12, 30], c => cellAt(c, H - 1) && !isWater(c, H - 1)), label: '↓ Ульяновск' },
-  west: { v: false, line: 14, label: '← Москва' },
+  east: { v: false, line: pickLine([28, 21, 35, 14, 42], r => cellAt(W - 1, r) && !isWater(W - 1, r)), label: CITY === 'moscow' ? 'Горький →' : 'Оренбург →' },
+  north: { v: true, line: pickLine([24, 18, 30, 12], c => cellAt(c, 0) && !isWater(c, 0)), label: CITY === 'moscow' ? '↑ Ленинград' : '↑ Арск' },
+  south: { v: true, line: pickLine([18, 24, 12, 30], c => cellAt(c, H - 1) && !isWater(c, H - 1)), label: CITY === 'moscow' ? '↓ Тула' : '↓ Ульяновск' },
+  west: { v: false, line: 14, label: CITY === 'moscow' ? '← Минск' : '← Москва' },
 };
 const westLand = r => { for (let x = 0; x < W; x++) if (cellAt(x, r) && !isWater(x, r)) return x; return 0; };
 const RAIL_X = (W + 3) * CELL + 4;   // железная дорога за восточной окраиной
 const onExtCell = (gx, gy) => (gy < 0 && gx === EXT.north.line) || (gy >= H && gx === EXT.south.line) || (gx >= W && gy === EXT.east.line) || (gx < westLand(EXT.west.line) && gy === EXT.west.line);
 const ROADS = [   // [выход из клетки города, направление, подпись]
   { from: [33, 26], to: [W + MG, 22], label: '→ Оренбург' },
-  { from: [22, 2], to: [24, -MG], label: '↑ Арск' },
-  { from: [22, 57], to: [20, H + MG], label: '↓ Ульяновск' },
+  { from: [22, 2], to: [24, -MG], label: CITY === 'moscow' ? '↑ Ленинград' : '↑ Арск' },
+  { from: [22, 57], to: [20, H + MG], label: CITY === 'moscow' ? '↓ Тула' : '↓ Ульяновск' },
   { from: [8, 26], to: [-MG, 30], label: '← Москва' },
 ];
 function drawOutskirts(svg) {

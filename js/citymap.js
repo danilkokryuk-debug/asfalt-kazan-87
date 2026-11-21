@@ -4,7 +4,7 @@
 const CITY_K = 5;                      // пикселей на единицу SVG: хватает для приближения ×6
 const CITY_CACHE = {};
 function cityRng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-const DTYPE = { center: 'center', socgorod: 'zavod', kinoplenka: 'zavod', tyap: 'zavod', borisk: 'chastny', gryaz: 'chastny', mirny: 'chastny', novotat: 'sloboda' };
+const DTYPE = { dolgo: 'chastny', balashikha: 'zavod', lyubertsy: 'zavod', podolsk: 'chastny', izmailovo: 'micro', rizhsky: 'center', bauman: 'center', taganka: 'center', center: 'center', socgorod: 'zavod', kinoplenka: 'zavod', tyap: 'zavod', borisk: 'chastny', gryaz: 'chastny', mirny: 'chastny', novotat: 'sloboda' };
 
 function cityImage(winter) {
   const key = winter ? 'w' : 's';
@@ -55,7 +55,7 @@ function cityImage(winter) {
 
   // ---------- 1. земля, лес, поля, дачи за городом ----------
   rect(X0, Y0, WU, HU, P.forest);
-  const volgaOut = (gx, gy) => gx < volgaEdge(Math.max(0, Math.min(H - 1, gy))) + (gy >= H ? (gy - H) * 0.8 : 0) && gx >= -MG && !(gy < -2 && gx < 2);
+  const volgaOut = (gx, gy) => CITY === 'kazan' && gx < volgaEdge(Math.max(0, Math.min(H - 1, gy))) + (gy >= H ? (gy - H) * 0.8 : 0) && gx >= -MG && !(gy < -2 && gx < 2);
   const water = (gx, gy) => (gx >= 0 && gy >= 0 && gx < W && gy < H) ? isWater(gx, gy) && !isBridge(gx, gy) : volgaOut(gx, gy);
   for (let gy = -MG; gy < H + MG; gy++) for (let gx = -MG; gx < W + MG; gx++) {
     if (gx >= 0 && gy >= 0 && gx < W && gy < H) continue;
@@ -167,8 +167,16 @@ function cityImage(winter) {
       if (t === 'sloboda' && R() < 0.5) { const xx = x0 + bw / 2 - 2, yy = y0 + bh / 2 - 2; if (ok(xx, yy, 4, 4)) box(xx, yy, 4, 4, 2.5, '#2e6a5a', { dome: '#3a8a6a' }); }  // мечеть
     }
   }
+  // ---------- 3в. Москва: МКАД и Садовое кольцо ----------
+  if (CITY === 'moscow') {
+    const ring = (cx, cy, r, w, col, edge) => { c.lineWidth = w + 1.4; c.strokeStyle = edge; c.beginPath(); c.arc(cx, cy, r, 0, 7); c.stroke();
+      c.lineWidth = w; c.strokeStyle = col; c.beginPath(); c.arc(cx, cy, r, 0, 7); c.stroke();
+      for (let a = 0; a < 6.3; a += 0.02) markOcc(cx + Math.cos(a) * r - w / 2, cy + Math.sin(a) * r - w / 2, w, w); };
+    ring(MKAD[0] * U, MKAD[1] * U, (MKAD[2] - 0.3) * U, 5, P.road, P.walk);              // МКАД
+    ring(21 * U, 29.6 * U, 4.6 * U, 3.4, P.road, P.walk);                               // Садовое кольцо
+  }
   // ---------- 4. Кремль на мысу у Казанки ----------
-  const [kx, ky] = [100, 230];   // мыс у устья Казанки
+  const [kx, ky] = CITY === 'moscow' ? [178, 250] : [100, 230];   // Кремль: у Москвы-реки / на мысу у устья Казанки
   const KX = kx - 18, KY = ky - 30;
   markOcc(KX - 3, KY - 12, 32, 36);
   // ---------- 3б. дозастройка: в городе не должно быть пустырей ----------
@@ -218,9 +226,16 @@ function cityImage(winter) {
 function shade(hex, k) { return '#' + [1, 3, 5].map(i => Math.max(0, Math.min(255, Math.round(parseInt(hex.substr(i, 2), 16) * k))).toString(16).padStart(2, '0')).join(''); }
 
 // Названия улиц — видны при приближении
-const STREETS = [
+const KZN_STREETS = [
   { x: 12, y: 27, v: true, n: 'ул. Баумана' }, { x: 18, y: 12, v: true, n: 'ул. Декабристов' }, { x: 26, y: 28, v: false, n: 'ул. Гвардейская' },
   { x: 18, y: 34, v: true, n: 'ул. Хади Такташа' }, { x: 22, y: 42, v: false, n: 'ул. Павлюхина' }, { x: 26, y: 49, v: false, n: 'Оренбургский тракт' },
   { x: 24, y: 7, v: false, n: 'пр. Ибрагимова' }, { x: 36, y: 24, v: true, n: 'Сибирский тракт' }, { x: 18, y: 3, v: true, n: 'ул. Копылова' },
   { x: 10, y: 35, v: false, n: 'ул. Тукая' }, { x: 32, y: 21, v: false, n: 'ул. Николая Ершова' },
 ];
+const MSK_STREETS = [
+  { x: 18, y: 22, v: true, n: 'ул. Горького' }, { x: 12, y: 16, v: true, n: 'Ленинградский пр-т' }, { x: 24, y: 18, v: true, n: 'пр-т Мира' },
+  { x: 8, y: 28, v: false, n: 'Кутузовский пр-т' }, { x: 15, y: 28, v: false, n: 'Калининский пр-т' }, { x: 18, y: 40, v: true, n: 'Ленинский пр-т' },
+  { x: 24, y: 46, v: true, n: 'Варшавское ш.' }, { x: 32, y: 35, v: false, n: 'Рязанский пр-т' }, { x: 32, y: 28, v: false, n: 'ш. Энтузиастов' },
+  { x: 22, y: 21, v: false, n: 'Садовое кольцо' }, { x: 30, y: 49, v: false, n: 'МКАД' },
+];
+const STREETS = CITY === 'moscow' ? MSK_STREETS : KZN_STREETS;

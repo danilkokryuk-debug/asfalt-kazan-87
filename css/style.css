@@ -777,3 +777,7 @@ body:has(#top.hidden) #pager, body:has(.card) #pager { display: none; }
 .st-parts span { color: var(--dim); white-space: nowrap; } .st-parts b { font-weight: normal; color: #e8dcc0; }
 .st-parts .bar { height: 4px; background: rgba(255, 255, 255, .08); border-radius: 2px; overflow: hidden; } .st-parts .bar i { display: block; height: 100%; background: #d8a441; }
 .stbox .sub { margin-top: 8px; } .stbox .lo { color: var(--bad); }
+
+/* ---- 1.7.0: города ---- */
+.item.city.dev, .item.city.soon { opacity: .85; } .item.city.dev b { color: #d8a441; }
+.item.city .fam-b { margin-top: 8px; }
