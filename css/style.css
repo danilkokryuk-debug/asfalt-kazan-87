@@ -562,3 +562,8 @@ label.btn { display: flex; justify-content: center; cursor: pointer; }
 .win.man::before { content: ""; position: absolute; inset: 0; background: rgba(255, 210, 130, .15); }
 .win.cop::before { content: ""; position: absolute; inset: 0; background: rgba(120, 160, 255, .18); }
 @keyframes popUp { from { transform: translateY(100%); } }
+
+/* экран «Дела» */
+.item.biz { align-items: center; }
+.item.biz .bimg { flex: none; width: 70px; height: 44px; border-radius: 4px; background: #111 center / cover no-repeat; image-rendering: pixelated; }
+.item.biz .btn { width: auto; flex: none; padding: 8px 10px; font-size: 12px; }

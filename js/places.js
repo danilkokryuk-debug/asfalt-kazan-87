@@ -35,6 +35,10 @@ const CARS = [
   { id: 'volga', t: 'car', name: 'ГАЗ-24 «Волга»', price: 4000, rank: 4, age: 18, speed: 0.6, yaz: 2, use: 15, tank: 12, seats: 4, desc: 'Чёрная. На такой ездят серьёзные люди.' },
   { id: 'bmw', t: 'car', name: 'BMW «пятёрка»', price: 600, cur: '$', rank: 4, age: 18, speed: 0.5, yaz: 3, use: 14, tank: 14, desc: 'Пригнана из Германии. Акула на асфальте.' },
   { id: 'mers', t: 'car', name: 'Мерседес-«шестисотый»', price: 1200, cur: '$', rank: 5, age: 18, speed: 0.45, yaz: 3, use: 16, tank: 16, seats: 4, desc: 'Девяносто первый. Весь город оборачивается.' },
+  // воровские тачки — только для авторов
+  { id: 'bumer', t: 'car', name: 'BMW 750 «Бумер»', price: 2000, cur: '$', rank: 5, age: 18, speed: 0.42, yaz: 4, use: 18, tank: 18, seats: 4, elite: true, desc: 'Чёрный, длинный, с двенадцатью цилиндрами. Гаишники отворачиваются сами.' },
+  { id: 'kruzak', t: 'car', name: 'Toyota Land Cruiser «Крузак»', price: 1800, cur: '$', rank: 5, age: 18, speed: 0.44, yaz: 4, use: 20, tank: 20, seats: 6, elite: true, desc: 'Японский танк. Пятеро пацанов и ящик чего угодно — влезает всё.' },
+  { id: 'gelik', t: 'car', name: 'Мерседес G-класс «Гелик»', price: 2600, cur: '$', rank: 5, age: 18, speed: 0.4, yaz: 5, use: 22, tank: 22, seats: 4, elite: true, desc: 'Квадратный, чёрный, бронированный. Если он подъехал — разговор окончен.' },
 ];
 const VTYPE = { moped: 'мопед', moto: 'мотоцикл', car: 'машина' };
 // Возраст героя: в сентябре 1987-го ему 15, дальше — по календарю

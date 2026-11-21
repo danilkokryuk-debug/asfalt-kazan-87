@@ -246,6 +246,7 @@ function drawMapSvg(svg, control, homeId, selectedId, onTap, atId, jobs) {
   cart.innerHTML = '<rect width="78" height="16" rx="2" fill="rgba(18,14,11,.78)" stroke="#d8c49a" stroke-width=".7"/><text x="6" y="7" class="cartT">КАЗАНЬ · 1987</text><text x="6" y="12.5" class="cartS">план города · масштаб условный</text>';
   svg.appendChild(cart);
 
+  if (city) mapTraffic(svg);
   // Тап по карте → район (координаты с учётом масштаба)
   svg.onclick = e => {
     if (svg._dragged) return;
@@ -315,3 +316,48 @@ function applyView(svg) {
   svg.style.setProperty('--inv', Math.max(0.45, 1 / Math.pow(s, 0.62)).toFixed(3));
   svg.classList && svg.classList.toggle('z2', mapView.s >= 2.2); }   // ближе — видны названия улиц
 function zoomBy(k) { mapView.s *= k; if (k === 0) mapView = { s: 1, x: 0, y: 0 }; mapView.s = Math.max(1, Math.min(6, mapView.s || 1)); const svg = document.getElementById('map'); if (svg) applyView(svg); }
+
+// Живой город: машины ездят по улицам, по Волге идут теплоходы. Ночью у машин горят фары.
+function mapTraffic(svg) {
+  if (typeof __TEST !== 'undefined' || !svg.appendChild) return;
+  const g = svgEl('g', { class: 'traffic', 'pointer-events': 'none' }); svg.appendChild(g);
+  const night = S && (S.min >= 20 * 60 || S.min < 7 * 60);
+  const COLS = ['#e8e4d8', '#c8402f', '#2e5f96', '#d8a441', '#3a6a3a', '#202020', '#9aa4ae', '#f07a30'];
+  const land = (x, y) => { const gx = Math.floor(x / CELL), gy = Math.floor(y / CELL); return cellAt(gx, gy) && !isWater(gx, gy) || isBridge(gx, gy); };
+  const spawn = c => {
+    for (let k = 0; k < 30; k++) {
+      c.v = Math.random() < 0.5; c.dir = Math.random() < 0.5 ? 1 : -1;
+      const line = c.v ? 6 * (1 + Math.floor(Math.random() * 6)) : 7 * (1 + Math.floor(Math.random() * 8));
+      const lane = c.dir > 0 ? 4.6 : 2.6;
+      c.x = c.v ? line * CELL + lane : Math.random() * W * CELL; c.y = c.v ? Math.random() * H * CELL : line * CELL + lane;
+      if (land(c.x, c.y)) return;
+    }
+  };
+  const cars = Array.from({ length: 34 }, () => {
+    const c = { sp: 0.06 + Math.random() * 0.08 }; spawn(c);
+    c.el = svgEl('g', {}); const col = COLS[Math.floor(Math.random() * COLS.length)];
+    c.el.innerHTML = (night ? `<path d="M-0.6 -1.4 L-1.6 -5 L1.6 -5 L0.6 -1.4Z" fill="rgba(255,230,150,.28)"/>` : '') +
+      `<rect x="-0.85" y="-1.5" width="1.7" height="3" rx=".45" fill="${col}" stroke="rgba(0,0,0,.6)" stroke-width=".25"/><rect x="-0.6" y="-0.75" width="1.2" height=".8" fill="rgba(20,30,40,.85)"/>` +
+      (night ? `<rect x="-0.7" y="1.25" width="1.4" height=".25" fill="#ff4030"/>` : '');
+    g.appendChild(c.el); return c;
+  });
+  // теплоходы на Волге
+  const boats = Array.from({ length: 3 }, (_, i) => { const b = { y: 40 + i * 150, x: -22 + i * 6, sp: 0.03 + i * 0.01 };
+    b.el = svgEl('g', {}); b.el.innerHTML = '<rect x="-1.3" y="-3.5" width="2.6" height="7" rx="1.2" fill="#e8e4dc"/><rect x="-0.8" y="-1.5" width="1.6" height="2.5" fill="#c8402f"/><path d="M0 3.5 L-1.6 8 M0 3.5 L1.6 8" stroke="rgba(200,220,235,.35)" stroke-width=".4"/>';
+    g.appendChild(b.el); return b; });
+  let last = performance.now();
+  const step = t => {
+    if (!document.body.contains(svg)) return;
+    const dt = Math.min(50, t - last) / 16.7; last = t;
+    if (!document.hidden) {
+      for (const c of cars) {
+        if (c.v) c.y += c.dir * c.sp * dt * 3; else c.x += c.dir * c.sp * dt * 3;
+        if (!land(c.x, c.y) || c.x < 0 || c.y < 0 || c.x > W * CELL || c.y > H * CELL) spawn(c);
+        c.el.setAttribute('transform', `translate(${c.x.toFixed(2)} ${c.y.toFixed(2)}) rotate(${c.v ? (c.dir > 0 ? 180 : 0) : (c.dir > 0 ? 90 : -90)})`);
+      }
+      for (const b of boats) { b.y -= b.sp * dt * 3; if (b.y < -40) b.y = H * CELL + 30; b.el.setAttribute('transform', `translate(${b.x} ${b.y.toFixed(2)})`); }
+    }
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
