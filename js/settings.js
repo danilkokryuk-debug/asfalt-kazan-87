@@ -1,3 +1,4 @@
+const APP_VER = '1.9.1';   // версия игры: меняется с каждым обновлением (и VERSION в sw.js)
 // Настройки игрока: хранятся отдельно от сохранений и действуют во всех режимах.
 const SET_DEF = { tspeed: 'normal', speed: 'normal', vol: 0.8, music: 0.5, font: 'normal', skipMini: false, theme: 'classic', tutorial: true };
 const SET = (() => { try { return { ...SET_DEF, ...JSON.parse(localStorage.getItem('asfalt_settings') || '{}') }; } catch (e) { return { ...SET_DEF }; } })();
@@ -37,7 +38,7 @@ function settingsScreen(back) {
   probe.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);visibility:hidden';
   document.body.appendChild(probe); const ps = getComputedStyle(probe);
   $('#scrinfo').textContent = `Экран ${screen.width}×${screen.height} · окно ${innerWidth}×${innerHeight} · игра ${Math.round(document.body.getBoundingClientRect().height)} · `
-    + `вырез ${parseInt(ps.paddingTop)}/${parseInt(ps.paddingBottom)} · ${matchMedia('(display-mode: standalone)').matches || navigator.standalone ? 'приложение' : 'браузер'} · ${navigator.standalone ? 'st' : '-'} · v1.9.0`;
+    + `вырез ${parseInt(ps.paddingTop)}/${parseInt(ps.paddingBottom)} · ${matchMedia('(display-mode: standalone)').matches || navigator.standalone ? 'приложение' : 'браузер'} · ${navigator.standalone ? 'st' : '-'} · v${APP_VER}`;
   probe.remove();
   document.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
     const v = b.dataset.v; SET[b.dataset.k] = v === 'true' ? true : v === 'false' ? false : v;

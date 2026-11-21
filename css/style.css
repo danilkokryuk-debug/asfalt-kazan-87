@@ -814,3 +814,22 @@ body:has(#top.hidden) #pager, body:has(.card) #pager { display: none; }
 .mskintro.rev .mi-y, .mskintro.rev .mi-t, .mskintro.rev .mi-tap { opacity: 1; }
 .mskintro.rev .mi-skip { display: none; }
 .mskintro.out { opacity: 0; }
+/* ролик: целиком, без обрезки и растягивания (на телефоне — по ширине, сверху и снизу — размытый кадр) */
+.mskintro video { object-fit: contain; image-rendering: pixelated; opacity: 0; transition: opacity .5s; position: relative; z-index: 1; }
+.mskintro.play video { opacity: 1; }
+.mskintro .mi-back { position: absolute; inset: -20px; background-size: cover; background-position: center; filter: brightness(.45); transform: scale(1.1); }
+.mskintro .mi-load { position: absolute; color: #8a8478; letter-spacing: .3em; font-size: 13px; z-index: 1; }
+.mskintro.play .mi-load { display: none; }
+.mskintro .mi-vign, .mskintro .mi-skip { z-index: 2; }
+.mskintro .mi-title { z-index: 3; }
+@media (max-aspect-ratio: 1/1) { .mskintro video { width: 132%; height: auto; max-width: none; } }   /* телефон: чуть крупнее, края уходят за экран */
+/* версия внизу меню и экран обновлений */
+.stats.verlink { cursor: pointer; opacity: .8; }
+.stats.verlink u { color: #d8b060; }
+.nw-tabs { margin: 8px 0 12px; }
+.nw h3 { margin: 18px 0 4px; }
+.nw-ver.old { opacity: .8; }
+.nw-item { margin: 10px 0; padding: 10px; border: 1px solid rgba(255,255,255,.08); border-radius: 8px; background: rgba(0,0,0,.25); }
+.nw-img { width: 100%; aspect-ratio: 16 / 9; background-size: cover; background-position: center; image-rendering: pixelated; border-radius: 6px; margin-bottom: 8px; }
+.nw textarea { width: 100%; min-height: 80px; box-sizing: border-box; font: inherit; background: #141210; color: #eee; border: 1px solid #444; border-radius: 6px; padding: 8px; }
+.nw-wish { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.07); overflow-wrap: anywhere; }

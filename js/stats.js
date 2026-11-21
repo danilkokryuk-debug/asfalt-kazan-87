@@ -23,7 +23,6 @@ async function statsPing() {
   const el = document.getElementById('stats'); if (el) el.innerHTML = statsHtml();
 }
 function statsHtml() {
-  if (PSTATS.players == null) return '';
-  return `👥 Игроков: <b>${PSTATS.players}</b> · сегодня: <b>${PSTATS.today ?? '—'}</b> · сейчас: <b>${Math.max(1, PSTATS.now || 0)}</b>`;
+  return `Версия ${typeof APP_VER !== 'undefined' ? APP_VER : ''}`;   // внизу меню — версия игры, а не число игроков
 }
 if (typeof __TEST === 'undefined') { statsPing(); setInterval(statsPing, 300000); }

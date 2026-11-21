@@ -27,7 +27,7 @@ function citiesScreen(forNewGame) {
   if (CITY !== 'kazan' && !kazanDone()) return cityPreview();   // Москва закрыта — только посмотреть карту
   if (CITY === 'moscow') {
     if (!splashDone) { ts(...a); $('#main').onclick = () => { $('#main').onclick = null; splashDone = true; AUDIO.start();
-      const go = () => titleScreen(true); metaGet().mskIntro ? go() : mskIntro(go); }; return mskTitle(); }
+      const go = () => titleScreen(true); mskIntro(go); /* ролик — при каждом входе в Москву */ }; return mskTitle(); }
     ts(...a); mskTitle(); const c = $('#cities'); if (!c) { const b = document.createElement('button'); b.className = 'btn'; b.id = 'cities'; b.textContent = '🏙 Города'; $('#play').after(b); b.onclick = () => { AUDIO.click(); citiesScreen(false); }; }
     return;
   }
