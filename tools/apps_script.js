@@ -25,6 +25,10 @@ function setup() { PL(); WS(); const l = SS().getSheetByName('Лист1'); if (l
 function doGet(e) {
   const p = (e && e.parameter) || {};
   if (p.a === 'wishes') return out(WS().getDataRange().getValues().slice(1).reverse().slice(0, 60).map(r => ({ created_at: r[0], nick: r[1], text: r[2] })));
+  if (p.a === 'delreq' && NICK_RE.test(p.nick || '')) {   // заявка на удаление с сайта (privacy.html) — разбирает разработчик
+    sheet('Запросы на удаление', ['Когда', 'Ник', 'Такой ник есть']).appendRow([new Date(), safe(p.nick), rowOf(PL(), 0, p.nick, true) ? 'да' : 'нет']);
+    return out('ok');
+  }
   if (p.a === 'free') return out(NICK_RE.test(p.nick || '') && !rowOf(PL(), 0, p.nick, true));
   return out({ ok: 1 });
 }
@@ -59,6 +63,12 @@ function doPost(e) {
       const n = ws.getDataRange().getValues().slice(1).filter(r => r[3] === h && new Date(r[0]).getTime() > day).length;
       if (n >= 3) return out('limit');
       ws.appendRow([new Date(), me.data[0], safe(t), h]);
+      return out('ok');
+    }
+    if (b.a === 'delete') {   // удалить аккаунт: строку игрока и все его пожелания
+      const ws = WS(), v = ws.getDataRange().getValues();
+      for (let i = v.length - 1; i >= 1; i--) if (v[i][3] === h) ws.deleteRow(i + 1);
+      if (me) pl.deleteRow(me.row);
       return out('ok');
     }
     return out('bad');

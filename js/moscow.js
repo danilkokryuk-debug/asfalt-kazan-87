@@ -78,9 +78,9 @@ if (MSK) {
   );
 
   // ---------- общие тексты: казанские слова в московской игре ----------
-  const MSK_WORDS = [['в Казани', 'в Москве'], ['по Казани', 'по Москве'], ['Казани', 'Москвы'], ['Казань', 'Москва'], ['Казанке', 'Яузе'], ['Казанку', 'Яузу'], ['Казанка', 'Яуза'], ['моталк', 'бригад']];
+  const MSK_WORDS = [['в Казани', 'в Москве'], ['по Казани', 'по Москве'], ['Казани', 'Москвы'], ['Казань', 'Москва'], ['Казанке', 'Яузе'], ['Казанку', 'Яузу'], ['Казанка', 'Яуза'], ['моталк', 'бригад'], ['Моталк', 'Бригад']];
   const fixText = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n;
-    while ((n = w.nextNode())) { let t = n.nodeValue; if (!/Казан[ьиекуа]|моталк/.test(t) || (n.parentNode.closest && n.parentNode.closest('[data-raw]'))) continue; t = t.replace(/(из|до) Казани/g, '$1 @@KZ@@');   // «приехал из Казани» — это про героя, не трогаем
+    while ((n = w.nextNode())) { let t = n.nodeValue; if (!/Казан[ьиекуа]|[мМ]оталк/.test(t) || (n.parentNode.closest && n.parentNode.closest('[data-raw]'))) continue; t = t.replace(/(из|до) Казани/g, '$1 @@KZ@@');   // «приехал из Казани» — это про героя, не трогаем
       MSK_WORDS.forEach(([a, b]) => t = t.split(a).join(b)); n.nodeValue = t.split('@@KZ@@').join('Казани'); } };
   const obs = () => { const m = document.getElementById('main'); if (m) new MutationObserver(() => fixText(m)).observe(m, { childList: true, subtree: true }); };
   document.getElementById('main') ? obs() : document.addEventListener('DOMContentLoaded', obs);

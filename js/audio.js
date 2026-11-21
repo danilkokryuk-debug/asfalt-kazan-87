@@ -412,6 +412,8 @@ const AUDIO = (() => {
   };
 
   return {
+    pause() { if (ctx && ctx.state === 'running') ctx.suspend(); },     // игра свёрнута (Android, iPhone)
+    resume() { if (ctx && ctx.state !== 'running') ctx.resume(); },
     start() { init(); unmuteIOS(); if (ctx && ctx.state !== 'running') ctx.resume(); startMusic(); if (on) setAmb(ambWant); },   // iPhone: после звонка звук бывает 'interrupted'
     track(name) { if (TRACKS[name]) want = name; },
     // кассета: { bpm, prog: [[MIDI, 'm'|'M'] ×4], style: 'ballad'|'disco'|'rock'|'dvor', mot: [8 индексов] }

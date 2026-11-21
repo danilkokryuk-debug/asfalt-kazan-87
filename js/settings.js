@@ -1,6 +1,6 @@
-const APP_VER = '1.9.2';   // версия игры: меняется с каждым обновлением (и VERSION в sw.js)
+const APP_VER = '1.10.0';   // версия игры: меняется с каждым обновлением (и VERSION в sw.js)
 // Настройки игрока: хранятся отдельно от сохранений и действуют во всех режимах.
-const SET_DEF = { tspeed: 'normal', speed: 'normal', vol: 0.8, music: 0.5, font: 'normal', skipMini: false, theme: 'classic', tutorial: true };
+const SET_DEF = { tspeed: 'normal', speed: 'normal', vol: 0.8, music: 0.5, font: 'normal', skipMini: false, theme: 'classic', tutorial: true, vibro: true };
 const SET = (() => { try { return { ...SET_DEF, ...JSON.parse(localStorage.getItem('asfalt_settings') || '{}') }; } catch (e) { return { ...SET_DEF }; } })();
 const SPEED = { slow: 1.7, normal: 1, fast: 0.4, instant: 0 };
 const THEMES = { classic: 'Классика', vhs: 'Видеокассета', gazeta: 'Газета', tetrad: 'Тетрадь в клетку' };
@@ -29,6 +29,7 @@ function settingsScreen(back) {
     ${slider('vol', 'Громкость')}${slider('music', 'Музыка')}
     <label>Мини-игры</label>${seg('skipMini', { false: 'Играть', true: 'Пропускать (бросок)' })}
     <label>Подсказки для новичка</label>${seg('tutorial', { true: 'Показывать', false: 'Выключить' })}
+    ${navigator.vibrate ? `<label>Вибрация на ударах</label>${seg('vibro', { true: 'Включена', false: 'Выключена' })}` : ''}
     <div class="choices"><button class="btn" id="tr">Сбросить обучение (показать заново)</button>
     <button class="btn main" id="bk">Готово</button></div>
     <p class="note">Настройки общие для всех сохранений.</p>

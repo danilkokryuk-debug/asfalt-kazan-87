@@ -82,6 +82,11 @@ statsHtml = () => `${accNick() ? `👤 ${escH(accNick())} · ` : ''}Версия
 // ---------------- «Что нового» и «Что будет дальше» ----------------
 // Новое обновление — новая запись В НАЧАЛО списка. img — картинка из img/ (без .jpg).
 const NEWS = [
+  { ver: '1.10.0', title: 'Android', items: [
+    { t: 'Готовимся к Play Маркету', d: 'Кнопка «Назад» на Android закрывает окна и экраны, а не всю игру. Звук молчит, пока игра свёрнута.' },
+    { t: 'Вибрация', d: 'Удары и громкие события теперь отдаются в руку. Выключается в настройках.' },
+    { t: 'Твои данные', d: 'В настройках можно удалить ник и все свои данные с сервера одной кнопкой.' },
+  ] },
   { ver: '1.9.2', title: 'Пожелания игроков', items: [
     { t: 'Пиши, что добавить', d: 'Во вкладке «Что будет дальше» теперь можно оставить пожелание к следующему обновлению — его увидят все игроки.' },
     { t: 'Ники на сервере', d: 'Ник проверяется сразу при вводе: занятый взять нельзя.' },
@@ -135,3 +140,22 @@ async function wishLoad() {
   el.innerHTML = !list ? '<div class="sub">Нет связи с сервером.</div>' : !list.length ? '<div class="sub">Пока пусто — будь первым.</div>'
     : list.map(w => `<div class="nw-wish"><b>${escH(w.nick)}</b> <span class="ch">${new Date(w.created_at).toLocaleDateString('ru-RU')}</span><div>${escH(w.text)}</div></div>`).join('');
 }
+
+// ---------------- удаление аккаунта (требование Google Play) ----------------
+// В настройках: «Удалить ник и мои данные» — стирает строку игрока и его пожелания на сервере и ник на устройстве.
+// Сохранения игры остаются на устройстве (их на сервер мы не отправляем).
+{ const ss = settingsScreen; settingsScreen = (...a) => { ss(...a);
+  const tr = $('#tr'); if (!tr || !accNick()) return;
+  const box = document.createElement('div'); box.className = 'choices';
+  box.innerHTML = `<p class="note">Твой ник: <b>${escH(accNick())}</b>. Можно удалить его вместе с данными на сервере (прогресс и пожелания). Сохранения на телефоне останутся. <a href="privacy.html" target="_blank" rel="noopener">Конфиденциальность</a></p>
+    <button class="btn" id="accdel">Удалить ник и мои данные</button>`;
+  tr.parentElement.after(box);
+  $('#accdel').onclick = async () => {
+    if (!confirm(`Удалить ник «${accNick()}» и все твои данные на сервере? Это нельзя отменить.`)) return;
+    $('#accdel').disabled = true;
+    const r = ACC_ON ? await accPost({ a: 'delete', secret: accSecret() }) : 'ok';
+    if (r !== 'ok') { $('#accdel').disabled = false; return toast('Нет связи с сервером. Попробуй позже.'); }
+    ['asfalt_nick', 'asfalt_id', 'asfalt_nick_pending'].forEach(k => accSet(k, null));
+    toast('Ник и данные удалены'); titleScreen();
+  };
+}; }

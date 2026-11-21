@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Асфальт — конфиденциальность</title>
+<style>
+  :root { --bg: #1b1814; --paper: #e8e2d4; --dim: #a39a88; --accent: #d8b060; --line: #3a342c; }
+  body { margin: 0; background: var(--bg); color: var(--paper); font: 16px/1.55 "PT Mono", "Courier New", monospace; }
+  main { max-width: 720px; margin: 0 auto; padding: 24px 16px 60px; }
+  h1 { color: #e83e2c; letter-spacing: .12em; margin: 0 0 4px; }
+  h2 { color: var(--accent); font-size: 18px; margin: 28px 0 8px; }
+  p, li { color: var(--paper); } .dim { color: var(--dim); font-size: 14px; }
+  input, button { font: inherit; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--line); background: #141210; color: var(--paper); }
+  button { background: #7a2a20; border-color: #a33; cursor: pointer; } form { display: flex; gap: 8px; flex-wrap: wrap; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body><main>
+<h1>АСФАЛЬТ</h1>
+<p class="dim">Политика конфиденциальности игры «Асфальт. Казань-87» · действует с 22 ноября 2026 года</p>
+
+<h2>Коротко</h2>
+<p>Игра не просит имя, почту, телефон, геолокацию и не показывает рекламу. Мы храним только ник, который ты сам придумал, и немного игровой статистики.</p>
+
+<h2>Что мы собираем</h2>
+<ul>
+  <li><b>Ник</b> — придуманное тобой имя в игре. Его видят другие игроки рядом с твоими пожеланиями.</li>
+  <li><b>Скрытый код устройства</b> — случайная строка, которую игра создаёт сама, чтобы узнавать тебя. На сервере хранится только её хэш (необратимый отпечаток).</li>
+  <li><b>Игровой прогресс</b> — версия игры, город, дата в игре, ранг, пройденные кампании, число концовок, время последнего входа.</li>
+  <li><b>Пожелания</b> — тексты, которые ты сам отправил во вкладке «Что будет дальше». Они видны всем игрокам.</li>
+</ul>
+<p>Сохранения игры, настройки и всё остальное хранятся только на твоём устройстве и на сервер не отправляются.</p>
+
+<h2>Зачем</h2>
+<p>Чтобы ник не повторялся, чтобы показывать пожелания игроков и чтобы разработчик видел, как идёт игра (сколько людей дошло до Москвы и т. п.). Данные не продаются и не передаются третьим лицам, не используются для рекламы.</p>
+
+<h2>Где хранятся</h2>
+<p>В таблице Google (сервисы Google LLC), доступ к которой есть только у разработчика. Передача идёт по защищённому соединению (HTTPS).</p>
+
+<h2>Возрастное ограничение</h2>
+<p>Игра рассчитана на игроков от 16 лет и не предназначена для детей.</p>
+
+<h2 id="delete">Как удалить свои данные</h2>
+<p><b>В игре:</b> Меню → Настройки → «Удалить ник и мои данные». Ник, прогресс и твои пожелания будут удалены с сервера сразу.</p>
+<p><b>Без игры</b> (например, если ты её уже удалил): впиши свой ник ниже. Мы удалим все данные этого ника в течение 30 дней.</p>
+<form id="f"><input id="nick" maxlength="16" placeholder="Твой ник" required><button>Запросить удаление</button></form>
+<p id="msg" class="dim"></p>
+
+<h2>Изменения</h2>
+<p>Если политика изменится, новая версия появится на этой странице.</p>
+</main>
+<script>
+const URL_ = 'https://script.google.com/macros/s/AKfycby28fGg770Z6YurJk4niwqqM3aRfuRbIzk85fA5-2ZIyzBP4YJ1duplLlieDA6oLYo/exec';
+document.getElementById('f').onsubmit = async e => {
+  e.preventDefault(); const m = document.getElementById('msg'), n = document.getElementById('nick').value.trim();
+  if (!/^[A-Za-zА-Яа-яЁё0-9_.-]{3,16}$/.test(n)) { m.textContent = 'Ник — от 3 до 16 букв или цифр.'; return; }
+  m.textContent = 'Отправляю…';
+  try { const r = await (await fetch(URL_ + '?' + new URLSearchParams({ a: 'delreq', nick: n }))).json();
+    m.textContent = r === 'ok' ? 'Запрос принят. Данные этого ника будут удалены в течение 30 дней.' : 'Не получилось. Попробуй позже.'; }
+  catch (x) { m.textContent = 'Нет связи. Попробуй позже.'; }
+};
+</script>
+</body>
+</html>

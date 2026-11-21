@@ -1,1 +1,14 @@
 .claude/
+store/_sheet.jpg
+store/promo/_tmp/
+store/promo/_sheet.jpg
+store/promo/voice.wav
+android-app/node_modules/
+android-app/www/
+android-app/android/.gradle/
+android-app/android/app/build/
+android-app/android/build/
+android-app/android/local.properties
+android-app/signing/
+*.keystore
+*.jks
