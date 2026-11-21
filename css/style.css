@@ -764,3 +764,16 @@ body:has(#top.hidden) #pager, body:has(.card) #pager { display: none; }
 .sp-banner em { font-size: 11px; font-style: normal; color: #f0c8ff; }
 @keyframes spBan { from { opacity: .82; } to { opacity: 1; } }
 .btn.job.special { border-color: #ff4a8a !important; background: linear-gradient(90deg, rgba(200, 40, 90, .45), rgba(120, 50, 220, .4)) !important; box-shadow: 0 0 16px rgba(255, 60, 140, .6) !important; }
+
+/* ---- 1.6.0: статус ---- */
+.stbox { margin: 0 0 12px; padding: 10px 12px; border-radius: 8px; background: linear-gradient(180deg, rgba(48, 36, 18, .92), rgba(26, 20, 12, .92)); border: 1px solid rgba(232, 200, 120, .35); }
+.st-h { display: flex; align-items: baseline; gap: 10px; } .st-h span { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--dim); }
+.st-h b { font-size: 20px; color: #e8c878; font-weight: normal; } .st-h em { font-style: normal; color: #f4ecdc; font-size: 14px; }
+.st-bar { position: relative; height: 6px; margin: 6px 0 8px; background: rgba(255, 255, 255, .08); border-radius: 3px; }
+.st-bar i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #8a6a20, #e8c878); }
+.st-bar u { position: absolute; top: -3px; width: 2px; height: 12px; background: #c8402f; }
+.st-parts { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
+.st-parts > div { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 6px; font-size: 11px; }
+.st-parts span { color: var(--dim); white-space: nowrap; } .st-parts b { font-weight: normal; color: #e8dcc0; }
+.st-parts .bar { height: 4px; background: rgba(255, 255, 255, .08); border-radius: 2px; overflow: hidden; } .st-parts .bar i { display: block; height: 100%; background: #d8a441; }
+.stbox .sub { margin-top: 8px; } .stbox .lo { color: var(--bad); }

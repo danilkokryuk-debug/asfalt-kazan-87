@@ -1,6 +1,6 @@
 // Известность: чем выше звание и авторитет, тем больше тебя знают — и тем крупнее решения, которые на тебя сваливаются.
 // Люди сами приходят за помощью, судом, интервью; за тобой начинают следить; младшие повторяют за тобой.
-const fame = S => Math.max(0, Math.min(100, Math.round(S.rank * 14 + (S.st.avt || 0) * 0.35 + (S.flags.deputat ? 15 : 0) + (S.flags.gazeta ? 8 : 0))));
+const fame = S => Math.max(0, Math.min(100, Math.round(S.rank * 14 + (S.st.avt || 0) * 0.35 + (S.flags.deputat ? 15 : 0) + (S.flags.gazeta ? 8 : 0) + (typeof statusScore === 'function' ? Math.round(statusScore(S) * 0.2) : 0))));   // статус: как живёшь — так и знают
 const FAME_TIERS = [[0, 'Никто тебя не знает'], [15, 'Знают во дворе'], [35, 'Знают на районе'], [55, 'Знает весь город'], [75, 'Легенда Казани']];
 const fameTier = S => FAME_TIERS.reduce((a, t, i) => fame(S) >= t[0] ? i : a, 0);
 const fameHtml = S => { const f = fame(S), t = fameTier(S); return `<div class="fame"><span>Известность</span><b>${'★'.repeat(t)}${'☆'.repeat(4 - t)}</b><em>${FAME_TIERS[t][1]}</em><i style="width:${f}%"></i></div>`; };
