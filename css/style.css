@@ -173,7 +173,6 @@ label { font-size: 13px; color: var(--dim); }
   background: linear-gradient(180deg, rgba(24, 20, 26, .94), rgba(14, 12, 16, .96));
   color: #f2eadb; border: 1px solid rgba(255, 255, 255, .1); border-radius: 12px;
   box-shadow: 0 10px 28px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .06);
-  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   font-size: 16px; line-height: 1.6; letter-spacing: .2px; cursor: pointer; animation: sayIn .35s ease-out; }
 .say.narr { color: #cfc5b2; font-style: italic; background: linear-gradient(180deg, rgba(18, 16, 20, .9), rgba(10, 9, 12, .94)); }
 .say.narr::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 2px; background: rgba(232, 200, 120, .45); }
@@ -281,7 +280,7 @@ label { font-size: 13px; color: var(--dim); }
 .logo .s { color: var(--gold); letter-spacing: 4px; text-shadow: 2px 2px 0 #000; }
 @keyframes neon { 0%, 100% { opacity: 1; } 92% { opacity: 1; } 93% { opacity: .4; } 94% { opacity: 1; } 96% { opacity: .6; } }
 .tapstart { text-align: center; color: var(--paper); letter-spacing: 3px; margin: 30vh 0 20px; animation: blink 1.6s infinite; text-shadow: 2px 2px 0 #000; }
-.menu-btns .btn { background: rgba(26, 22, 18, .82); backdrop-filter: blur(2px); }
+.menu-btns .btn { background: rgba(26, 22, 18, .82); }
 .menu .note { color: #b8ad98; }
 /* Вступление: «кадры» как в боевике, без текста */
 .photo-art { background-size: cover; background-position: center; image-rendering: pixelated; }
@@ -325,7 +324,7 @@ label { font-size: 13px; color: var(--dim); }
 .logo .s { opacity: .9; }
 .tapstart { animation: softPulse 2.4s ease-in-out infinite; color: rgba(240, 232, 216, .85); font-size: 13px; }
 @keyframes softPulse { 50% { opacity: .35; } }
-.menu-btns .btn { background: rgba(18, 16, 20, .62); border-color: rgba(255, 255, 255, .12); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.menu-btns .btn { background: rgba(18, 16, 20, .86); border-color: rgba(255, 255, 255, .12); }
 .menu-btns .btn.main { background: rgba(200, 64, 47, .85); border-color: transparent; }
 .cardart.photo-art { animation: artIn 1.2s forwards, kenburns 8s ease-out forwards; }
 /* Время и задания */
@@ -601,3 +600,40 @@ label.btn { display: flex; justify-content: center; cursor: pointer; }
 .fam-b .btn { width: auto; flex: none; padding: 8px 10px; font-size: 13px; }
 .fface { width: 52px; height: 52px; flex: none; border-radius: 8px; background: #222 center / cover no-repeat; border: 2px solid rgba(232, 200, 120, .45); image-rendering: pixelated; }
 .fface.kid { display: grid; place-items: center; font-size: 28px; background: rgba(240, 140, 160, .12); }
+
+/* ===== Производительность (1.2.1): анимируем только transform/opacity — это делает видеокарта, без перерисовки ===== */
+/* снег, листья, пыль: узор на слое-псевдоэлементе, слой едет вниз ровно на высоту плитки — бесшовно */
+.wx-winter, .wx-autumn, .snowfall, .fx-dust { background-image: none !important; animation: none !important; overflow: hidden; }
+.wx-winter::before, .wx-autumn::before, .snowfall::before, .fx-dust::before { content: ""; position: absolute; left: 0; right: 0; top: -260px; bottom: -260px;
+  will-change: transform; pointer-events: none; }
+.wx-winter::before { background-image: radial-gradient(2px 2px at 20px 30px, #fff, transparent), radial-gradient(2px 2px at 80px 120px, #fff, transparent),
+  radial-gradient(3px 3px at 150px 60px, #fff, transparent), radial-gradient(2px 2px at 220px 160px, #fff, transparent), radial-gradient(2px 2px at 300px 90px, #fff, transparent);
+  background-size: 340px 200px; animation: fallA 6s linear infinite; }
+.wx-autumn::before { background-image: radial-gradient(3px 2px at 40px 20px, #c8702a, transparent), radial-gradient(3px 2px at 190px 80px, #a8502a, transparent),
+  radial-gradient(3px 2px at 290px 140px, #d8902a, transparent); background-size: 340px 200px; animation: fallA 9s linear infinite; }
+.snowfall::before { background-image: radial-gradient(1.5px 1.5px at 30px 40px, #fff, transparent), radial-gradient(2px 2px at 120px 160px, #fff, transparent),
+  radial-gradient(1.5px 1.5px at 210px 80px, #fff, transparent), radial-gradient(2px 2px at 300px 220px, #fff, transparent), radial-gradient(1px 1px at 360px 20px, #fff, transparent);
+  background-size: 380px 260px; animation: fallB 12s linear infinite; }
+.fx-dust::before { background-image: radial-gradient(1px 1px at 20px 30px, #ffe8c0, transparent), radial-gradient(1.5px 1.5px at 90px 120px, #ffe8c0, transparent),
+  radial-gradient(1px 1px at 160px 60px, #ffe8c0, transparent), radial-gradient(1px 1px at 240px 150px, #ffe8c0, transparent), radial-gradient(1.5px 1.5px at 310px 40px, #ffe8c0, transparent);
+  background-size: 340px 210px; animation: riseD 18s linear infinite; }
+@keyframes fallA { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, 200px, 0); } }
+@keyframes fallB { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, 260px, 0); } }
+@keyframes riseD { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, -210px, 0); } }
+/* фото-фон сцены больше не «плывёт» перерисовкой огромной картинки — стоит, а живость дают слои fx */
+.stage.ph { animation: none !important; background-position: 50% 60% !important; }
+.menuart.photo-art, .cardart.photo-art { will-change: transform; }
+/* ночь 18+: размытие постоянное, мерцает только яркость слоя (дёшево) */
+.card .photo-art[style*="t_n_okno"] { filter: blur(16px) saturate(1.4); animation: nGlow2 3s ease-in-out infinite alternate !important; }
+@keyframes nGlow2 { from { opacity: .8; } to { opacity: 1; } }
+/* холст с машинами и прохожими поверх карты */
+.trafcv { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+.zoom { z-index: 2; }
+#map { transition: none; }
+/* ничего не вылезает за края: длинные подписи на кнопках переносятся, текст не выходит за экран */
+.btn > span { min-width: 0; }
+.btn .ch { white-space: normal; text-align: right; max-width: 60%; overflow-wrap: anywhere; }
+.menu-btns .btn.main { flex-wrap: wrap; }
+.item > div { min-width: 0; overflow-wrap: anywhere; }
+.scene, .sheet { overflow-wrap: break-word; }
+.tabs { flex-wrap: wrap; overflow-x: visible; } .tabs button { flex: 1 0 auto; }

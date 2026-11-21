@@ -73,7 +73,7 @@ function mechActions(S, d) {
     a.push({ t: 'Жвачка «Turbo» с вкладышем (1 р.)', req: { dengi: 1 }, fx: s => { s._t = buyGum().txt; return { dengi: -1 }; }, txt: s => s._t });
   }
   const g = S.ctrl[d];
-  if (g && g !== S.gang && S.rank >= 2) a.push({ t: `Переговоры со старшими «${DIST[g].gang}» (${repWord(repOf(S, g))})`, chk: ['yaz', 5 + Math.max(0, -repOf(S, g) / 20 | 0)],
+  if (g && g !== S.gang && S.rank >= 2 && !(typeof era90 === 'function' && era90(S))) a.push({ t: `Переговоры со старшими «${DIST[g].gang}» (${repWord(repOf(S, g))})`, chk: ['yaz', 5 + Math.max(0, -repOf(S, g) / 20 | 0)],
     ok: { txt: 'Посидели, поговорили. Друг друга поняли.', fx: s => { repAdd(g, 15); return { avt: 2 }; } },
     no: { txt: 'Разговора не вышло. Ушли злые.', fx: s => { repAdd(g, -5); } } });
   return a;

@@ -340,7 +340,6 @@ function zoomBy(k) { mapView.s *= k; if (k === 0) mapView = { s: 1, x: 0, y: 0 }
 // по Волге идут теплоходы, по железке за окраиной — поезд. Ночью у машин фары и стоп-огни.
 function mapTraffic(svg) {
   if (typeof __TEST !== 'undefined' || !svg.appendChild) return;
-  const g = svgEl('g', { class: 'traffic', 'pointer-events': 'none' }); svg.appendChild(g);
   const night = S && (S.min >= 20 * 60 || S.min < 7 * 60);
   const COLS = ['#e8e4d8', '#c8402f', '#2e5f96', '#d8a441', '#3a6a3a', '#202020', '#9aa4ae', '#f07a30'];
   const CW = W * CELL, CH = H * CELL, X0 = -MG * CELL, X1 = (W + MG) * CELL, Y1 = (H + MG) * CELL, wl = westLand(EXT.west.line) * CELL;
@@ -367,14 +366,7 @@ function mapTraffic(svg) {
       if (ok(c)) return;
     }
   };
-  const cars = Array.from({ length: 40 }, () => {
-    const c = { sp: 0.06 + Math.random() * 0.08 }; spawnCar(c);
-    c.el = svgEl('g', {}); const col = COLS[Math.floor(Math.random() * COLS.length)];
-    c.el.innerHTML = (night ? `<path d="M-0.6 -1.4 L-1.6 -5 L1.6 -5 L0.6 -1.4Z" fill="rgba(255,230,150,.28)"/>` : '') +
-      `<rect x="-0.85" y="-1.5" width="1.7" height="3" rx=".45" fill="${col}" stroke="rgba(0,0,0,.6)" stroke-width=".25"/><rect x="-0.6" y="-0.75" width="1.2" height=".8" fill="rgba(20,30,40,.85)"/>` +
-      (night ? `<rect x="-0.7" y="1.25" width="1.4" height=".25" fill="#ff4030"/>` : '');
-    g.appendChild(c.el); return c;
-  });
+  const cars = Array.from({ length: 40 }, () => { const c = { sp: 0.06 + Math.random() * 0.08, col: COLS[Math.floor(Math.random() * COLS.length)] }; spawnCar(c); return c; });
   // прохожие на тротуарах
   const PCOL = ['#3a3a44', '#6a3a2a', '#2a3a5a', '#7a6a4a', '#5a2a3a', '#2a4a3a', '#8a8a90'];
   const spawnMan = m => {
@@ -385,41 +377,58 @@ function mapTraffic(svg) {
       if (m.x >= 0 && m.y >= 0 && m.x < CW && m.y < CH && land(m.x, m.y)) return;
     }
   };
-  const men = Array.from({ length: 140 }, () => {
-    const m = { sp: 0.008 + Math.random() * 0.01, ph: Math.random() * 6 }; spawnMan(m);
-    m.el = svgEl('g', {}); m.el.innerHTML = `<ellipse cx=".25" cy=".55" rx=".7" ry=".3" fill="rgba(0,0,0,.3)"/><circle r=".7" fill="${PCOL[Math.floor(Math.random() * PCOL.length)]}" stroke="rgba(0,0,0,.55)" stroke-width=".18"/><circle cy="-.45" r=".36" fill="#e0b890"/>`;
-    g.appendChild(m.el); return m;
-  });
-  // теплоходы на Волге
-  const boats = Array.from({ length: 3 }, (_, i) => { const b = { y: 40 + i * 150, x: -22 + i * 6, sp: 0.03 + i * 0.01 };
-    b.el = svgEl('g', {}); b.el.innerHTML = '<rect x="-1.3" y="-3.5" width="2.6" height="7" rx="1.2" fill="#e8e4dc"/><rect x="-0.8" y="-1.5" width="1.6" height="2.5" fill="#c8402f"/><path d="M0 3.5 L-1.6 8 M0 3.5 L1.6 8" stroke="rgba(200,220,235,.35)" stroke-width=".4"/>';
-    g.appendChild(b.el); return b; });
-  // поезд: тепловоз и вагоны
+  const men = Array.from({ length: 140 }, () => { const m = { sp: 0.008 + Math.random() * 0.01, ph: Math.random() * 6, col: PCOL[Math.floor(Math.random() * PCOL.length)] }; spawnMan(m); return m; });
+  const boats = Array.from({ length: 3 }, (_, i) => ({ y: 40 + i * 150, x: -22 + i * 6, sp: 0.03 + i * 0.01 }));
   const train = { y: X0 - 60, sp: 0.22, wait: 0 };
-  train.el = svgEl('g', {});
-  train.el.innerHTML = '<rect x="-1.4" y="0" width="2.8" height="6" rx=".6" fill="#2e6a4a" stroke="#111" stroke-width=".2"/><rect x="-1" y=".6" width="2" height="1.2" fill="#d8e0e8"/>' +
-    Array.from({ length: 6 }, (_, i) => `<rect x="-1.3" y="${6.6 + i * 5.6}" width="2.6" height="5" fill="${['#6a3a2a', '#3a4a5a', '#5a5a4a'][i % 3]}" stroke="#111" stroke-width=".2"/>`).join('') +
-    (night ? '<path d="M-0.8 0 L-2.5 -7 L2.5 -7 L0.8 0Z" fill="rgba(255,230,150,.3)"/>' : '');
-  g.appendChild(train.el);
+  // Рисуем на отдельном холсте поверх карты: SVG с огромной картинкой города не перерисовывается каждый кадр (иначе лаги на телефоне)
+  const wrap = svg.parentNode, cv = document.createElement('canvas'); cv.className = 'trafcv'; wrap.insertBefore(cv, svg.nextSibling);
+  const ctx = cv.getContext('2d'); if (!ctx) return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); };
+  const draw = t => {
+    const cw = svg.clientWidth, ch = svg.clientHeight; if (!cw) return;
+    if (cv.width !== Math.round(cw * dpr) || cv.height !== Math.round(ch * dpr)) { cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr); }
+    const vb = svg.viewBox.baseVal, k = Math.min(cw / vb.width, ch / vb.height);   // как preserveAspectRatio="xMidYMid meet"
+    const ox = (cw - vb.width * k) / 2 - vb.x * k, oy = (ch - vb.height * k) / 2 - vb.y * k;
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.setTransform(k * dpr, 0, 0, k * dpr, ox * dpr, oy * dpr);
+    const vx0 = vb.x - 10, vy0 = vb.y - 10, vx1 = vb.x + vb.width + 10, vy1 = vb.y + vb.height + 10, vis = (x, y) => x > vx0 && x < vx1 && y > vy0 && y < vy1;
+    ctx.lineWidth = .18; ctx.strokeStyle = 'rgba(0,0,0,.55)';
+    for (const m of men) { const y = m.y + Math.sin(t / 180 + m.ph) * 0.12; if (!vis(m.x, y)) continue;
+      ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(m.x + .25, y + .55, .7, .3, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = m.col; ctx.beginPath(); ctx.arc(m.x, y, .7, 0, 7); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#e0b890'; ctx.beginPath(); ctx.arc(m.x, y - .45, .36, 0, 7); ctx.fill(); }
+    ctx.lineWidth = .25; ctx.strokeStyle = 'rgba(0,0,0,.6)';
+    for (const c of cars) { if (!vis(c.x, c.y)) continue;
+      ctx.save(); ctx.translate(c.x, c.y); ctx.rotate((c.v ? (c.dir > 0 ? 180 : 0) : (c.dir > 0 ? 90 : -90)) * Math.PI / 180);
+      if (night) { ctx.fillStyle = 'rgba(255,230,150,.28)'; ctx.beginPath(); ctx.moveTo(-.6, -1.4); ctx.lineTo(-1.6, -5); ctx.lineTo(1.6, -5); ctx.lineTo(.6, -1.4); ctx.fill(); }
+      ctx.fillStyle = c.col; rr(-.85, -1.5, 1.7, 3, .45); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = 'rgba(20,30,40,.85)'; ctx.fillRect(-.6, -.75, 1.2, .8);
+      if (night) { ctx.fillStyle = '#ff4030'; ctx.fillRect(-.7, 1.25, 1.4, .25); }
+      ctx.restore(); }
+    for (const b of boats) { if (!vis(b.x, b.y)) continue; ctx.save(); ctx.translate(b.x, b.y);
+      ctx.fillStyle = '#e8e4dc'; rr(-1.3, -3.5, 2.6, 7, 1.2); ctx.fill(); ctx.fillStyle = '#c8402f'; ctx.fillRect(-.8, -1.5, 1.6, 2.5);
+      ctx.strokeStyle = 'rgba(200,220,235,.35)'; ctx.lineWidth = .4; ctx.beginPath(); ctx.moveTo(0, 3.5); ctx.lineTo(-1.6, 8); ctx.moveTo(0, 3.5); ctx.lineTo(1.6, 8); ctx.stroke(); ctx.restore(); }
+    // поезд едет вниз, тепловоз впереди
+    ctx.save(); ctx.translate(RAIL_X, train.y); ctx.rotate(Math.PI); ctx.lineWidth = .2; ctx.strokeStyle = '#111';
+    if (night) { ctx.fillStyle = 'rgba(255,230,150,.3)'; ctx.beginPath(); ctx.moveTo(-.8, 0); ctx.lineTo(-2.5, -7); ctx.lineTo(2.5, -7); ctx.lineTo(.8, 0); ctx.fill(); }
+    ctx.fillStyle = '#2e6a4a'; rr(-1.4, 0, 2.8, 6, .6); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#d8e0e8'; ctx.fillRect(-1, .6, 2, 1.2);
+    for (let i = 0; i < 6; i++) { ctx.fillStyle = ['#6a3a2a', '#3a4a5a', '#5a5a4a'][i % 3]; ctx.fillRect(-1.3, 6.6 + i * 5.6, 2.6, 5); ctx.strokeRect(-1.3, 6.6 + i * 5.6, 2.6, 5); }
+    ctx.restore();
+  };
   let last = performance.now(), frame = 0;
   const step = t => {
     if (!document.body.contains(svg)) return;
-    const dt = Math.min(50, t - last) / 16.7; last = t;
-    if (!document.hidden) {
-      for (const c of cars) {
-        if (c.v) c.y += c.dir * c.sp * dt * 3; else c.x += c.dir * c.sp * dt * 3;
-        if (!ok(c)) spawnCar(c);
-        c.el.setAttribute('transform', `translate(${c.x.toFixed(2)} ${c.y.toFixed(2)}) rotate(${c.v ? (c.dir > 0 ? 180 : 0) : (c.dir > 0 ? 90 : -90)})`);
-      }
-      if ((frame = (frame + 1) % 2) === 0) for (const m of men) {   // прохожие обновляются через кадр — экономим батарею
-        if (m.v) m.y += m.dir * m.sp * dt * 6; else m.x += m.dir * m.sp * dt * 6;
-        if (!(m.x >= 0 && m.y >= 0 && m.x < CW && m.y < CH && land(m.x, m.y)) || Math.random() < 0.0008 * dt) spawnMan(m);
-        m.el.setAttribute('transform', `translate(${m.x.toFixed(2)} ${(m.y + Math.sin(t / 180 + m.ph) * 0.12).toFixed(2)})`);
-      }
-      for (const b of boats) { b.y -= b.sp * dt * 3; if (b.y < -40) b.y = H * CELL + 30; b.el.setAttribute('transform', `translate(${b.x} ${b.y.toFixed(2)})`); }
+    const dt = Math.min(50, t - last) / 16.7;
+    if (!document.hidden && t - last >= 31) {   // 30 кадров в секунду — плавно и бережёт батарею
+      last = t;
+      for (const c of cars) { if (c.v) c.y += c.dir * c.sp * dt * 3; else c.x += c.dir * c.sp * dt * 3; if (!ok(c)) spawnCar(c); }
+      for (const m of men) { if (m.v) m.y += m.dir * m.sp * dt * 3; else m.x += m.dir * m.sp * dt * 3;
+        if (!(m.x >= 0 && m.y >= 0 && m.x < CW && m.y < CH && land(m.x, m.y)) || Math.random() < 0.0008 * dt) spawnMan(m); }
+      for (const b of boats) { b.y -= b.sp * dt * 3; if (b.y < -40) b.y = H * CELL + 30; }
       if (train.wait > 0) train.wait -= dt; else { train.y += train.sp * dt * 3; if (train.y > Y1 + 10) { train.y = X0 - 60; train.wait = 600; } }
-      train.el.setAttribute("transform", `translate(${RAIL_X} ${train.y.toFixed(2)}) rotate(180)`);   // тепловоз впереди
-    }
+      draw(t);
+    } else if (document.hidden) last = t;
     requestAnimationFrame(step);
   };
   requestAnimationFrame(step);

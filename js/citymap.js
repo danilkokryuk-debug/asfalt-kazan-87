@@ -206,7 +206,12 @@ function cityImage(winter) {
   // ---------- 5. дома рисуем от дальних к ближним ----------
   boxes.sort((a, b) => (a.y + a.d) - (b.y + b.d)).forEach(drawBox);
   // лёгкая виньетка за городом — внешний мир темнее
-  const url = cv.toDataURL('image/jpeg', 0.86);
+  let url = cv.toDataURL('image/jpeg', 0.86);
+  try {   // blob-ссылка вместо мегабайтной строки в DOM: карта перестраивается быстрее, картинка декодируется один раз
+    const b = atob(url.split(',')[1]), u8 = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u8[i] = b.charCodeAt(i);
+    url = URL.createObjectURL(new Blob([u8], { type: 'image/jpeg' }));
+    const im = new Image(); im.src = url; (CITY_CACHE.keep = CITY_CACHE.keep || []).push(im); im.decode && im.decode().catch(() => {});
+  } catch (e) {}
   cv.width = cv.height = 1;                                                       // освободить память (iPhone)
   return (CITY_CACHE[key] = url);
 }

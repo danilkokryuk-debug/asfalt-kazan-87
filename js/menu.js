@@ -32,6 +32,7 @@ function titleScreen(epic) {
     .sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
   const last = saves[0];
   const MODE = { campaign: 'Кампания', career: 'Карьера', surv: 'Выживание' };
+  if (!splashDone) ['chase', 'dvor'].forEach(n => { const s = typeof sceneImg === 'function' && sceneImg(n); if (s) (new Image()).src = s; });   // вступление грузится заранее
   $('#main').innerHTML = `<div class="menu">
     ${artHtml('kazan', 'menuart')}<div class="snowfall"></div>
     <div class="logo${epic ? ' epic' : ''}"><h1>АСФАЛЬТ</h1><div class="s">КАЗАНЬ · 1987</div></div>
@@ -48,6 +49,7 @@ function titleScreen(epic) {
   // первый тап нужен iPhone, чтобы разрешить звук; дальше — вступление
   if (!splashDone) { $('#main').onclick = () => { $('#main').onclick = null; splashDone = true; AUDIO.start(); playIntro(() => titleScreen(true)); }; return; }
   AUDIO.track('theme');
+  const last0 = last; setTimeout(() => { if (typeof cityImage === 'function' && $('.menu')) try { cityImage(season(last0 ? last0.day : 1) === 'winter'); } catch (e) {} }, 700);   // карта готова до входа в игру
   const resume = s => { AUDIO.start(); S = s; view = 'map'; S.cur || S.res ? render() : toMap(); };
   if ($('#cont')) $('#cont').onclick = () => resume(last);
   $('#play').onclick = () => { AUDIO.click(); playScreen(); };

@@ -67,6 +67,7 @@ function economyWeek(S) {
   // точки под угрозой
   if (S.points && S.points.length && Math.random() < 0.15) S.flags.point_threat = rnd(S.points.length);
   if (typeof vlWeek === 'function') vlWeek(S, w);
+  if (typeof clanWeek === 'function') clanWeek(S, w);
   if (typeof theftWeek === 'function') theftWeek(S, w);
   S.week = w;
   const sum = a => a.reduce((x, y) => x + y[1], 0);

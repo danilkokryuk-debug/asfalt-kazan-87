@@ -386,9 +386,9 @@ function renderMap() {
     `<span class="lg${g === S.gang ? ' mine' : ''}"><i style="background:${DIST[g].color}"></i>${DIST[g].gang} ${n}</span>`).join('');
   $('#main').innerHTML = `<div id="mapwrap"><svg id="map"></svg>
       <div class="zoom"><button data-z="1.4">+</button><button data-z="0.7">−</button><button data-z="0">⟲</button></div></div>
-    <div class="legend">${legend}</div>
+    <div class="legend">${typeof clanOn === 'function' && clanOn(S) ? clanLegend(S) : legend}</div>
     <div class="sheet"><h3>${d.name}${S.at === d.id ? ' · ты здесь' : ''}</h3>
-    <div class="sub">${owner ? 'Моталка «' + owner.gang + '»' : 'Центр'} — ${rel}. ${d.desc}</div>
+    <div class="sub">${typeof clanOn === 'function' && clanOn(S) ? clanSheet(S, d.id) : `${owner ? 'Моталка «' + owner.gang + '»' : 'Центр'} — ${rel}.`} ${d.desc}</div>
     ${S.mode === 'career' ? `<div class="result ok">Цель: ${goalOf(S).text} (до ${dateStr(goalOf(S).until)})</div>` : ''}
     <div class="choices">
       ${S.ap > 0 ? jobsHtml(d.id) : ''}
@@ -403,7 +403,7 @@ function renderMap() {
   $('#sleep').onclick = () => { AUDIO.click(); sleep(); };
 }
 function renderMap_(sel) {
-  drawMapSvg($('#map'), S.ctrl, S.home, sel, id => { selDist = id; AUDIO.click(); renderMap(); }, S.at, S.jobs);
+  drawMapSvg($('#map'), typeof mapControl === 'function' ? mapControl(S) : S.ctrl, S.home, sel, id => { selDist = id; AUDIO.click(); renderMap(); }, S.at, S.jobs);
   document.querySelectorAll('[data-job]').forEach(b => b.onclick = () => { AUDIO.click(); walkTo(S.at, b.closest('.sheet') ? (selDist || S.at) : S.at, () => takeJob(+b.dataset.job)); });
   document.querySelectorAll('.zoom button').forEach(b => b.onclick = e => { e.stopPropagation(); zoomBy(+b.dataset.z); });
 }

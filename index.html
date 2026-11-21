@@ -59,6 +59,7 @@
 <script src="js/nineties.js"></script>
 <script src="js/family.js"></script>
 <script src="js/cars.js"></script>
+<script src="js/clans.js"></script>
 <script src="js/songs.js"></script>
 <script src="js/stats.js"></script>
 <script>
@@ -73,7 +74,13 @@
   }
   fitScreen(); addEventListener('resize', fitScreen); addEventListener('orientationchange', () => setTimeout(fitScreen, 300));
   boot();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js');
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    const had = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register('sw.js');
+    // скачалась новая версия: на заставке — перезапуск сразу, в игре — подсказка (сохранение не теряется)
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (!had) return;
+      if (typeof splashDone !== 'undefined' && !splashDone) location.reload(); else if (typeof toast === 'function') toast('Скачано обновление — перезапусти игру'); });
+  }
 </script>
 </body>
 </html>
