@@ -172,11 +172,13 @@ function cityImage(winter) {
     const ring = (cx, cy, r, w, col, edge) => { c.lineWidth = w + 1.4; c.strokeStyle = edge; c.beginPath(); c.arc(cx, cy, r, 0, 7); c.stroke();
       c.lineWidth = w; c.strokeStyle = col; c.beginPath(); c.arc(cx, cy, r, 0, 7); c.stroke();
       for (let a = 0; a < 6.3; a += 0.02) markOcc(cx + Math.cos(a) * r - w / 2, cy + Math.sin(a) * r - w / 2, w, w); };
-    ring(MKAD[0] * U, MKAD[1] * U, (MKAD[2] - 0.3) * U, 5, P.road, P.walk);              // МКАД
-    ring(21 * U, 29.6 * U, 4.6 * U, 3.4, P.road, P.walk);                               // Садовое кольцо
+    c.lineJoin = 'round';
+    for (const [w, col] of [[6.4, P.walk], [5, P.road]]) { c.lineWidth = w; c.strokeStyle = col; c.beginPath(); MKAD_PTS.forEach(([x, y], i) => i ? c.lineTo(x * U, y * U) : c.moveTo(x * U, y * U)); c.closePath(); c.stroke(); }   // МКАД
+    for (let i = 0; i < MKAD_PTS.length; i++) { const [x0, y0] = MKAD_PTS[i], [x1, y1] = MKAD_PTS[(i + 1) % MKAD_PTS.length]; for (let t = 0; t <= 1; t += 0.05) markOcc((x0 + (x1 - x0) * t) * U - 2.5, (y0 + (y1 - y0) * t) * U - 2.5, 5, 5); }
+    ring(20.4 * U, 28.9 * U, 3.2 * U, 3.2, P.road, P.walk);                              // Садовое кольцо
   }
   // ---------- 4. Кремль на мысу у Казанки ----------
-  const [kx, ky] = CITY === 'moscow' ? [178, 250] : [100, 230];   // Кремль: у Москвы-реки / на мысу у устья Казанки
+  const [kx, ky] = CITY === 'moscow' ? [168, 251] : [100, 230];   // Кремль: у Москвы-реки / на мысу у устья Казанки
   const KX = kx - 18, KY = ky - 30;
   markOcc(KX - 3, KY - 12, 32, 36);
   // ---------- 3б. дозастройка: в городе не должно быть пустырей ----------
@@ -205,12 +207,13 @@ function cityImage(winter) {
     for (let k = 0; k < 4; k++) { const f = list[Math.floor(R() * list.length)]; if (FILL[f](gx * U + R() * 4, gy * U + R() * 4)) break; }
   }
   for (let i = 0; i < 2600; i++) { const x = R() * OW, y = R() * OH; if (landP(x, y) && freeA(x - 0.7, y - 0.7, 1.4, 1.4)) tree(x, y, 0.6 + R() * 0.5); }   // остатки — деревья и кусты
-  c.fillStyle = winter ? '#e8e4dc' : '#d8d0c0'; c.strokeStyle = '#e8e2d4'; c.lineWidth = 1.1;
+  const MSKK = CITY === 'moscow';   // московский Кремль — красный кирпич, а не белый камень
+  c.fillStyle = winter ? '#e8e4dc' : '#d8d0c0'; c.strokeStyle = MSKK ? '#a8382a' : '#e8e2d4'; c.lineWidth = MSKK ? 1.6 : 1.1;
   c.beginPath(); c.moveTo(KX, KY + 6); c.lineTo(KX + 14, KY); c.lineTo(KX + 26, KY + 4); c.lineTo(KX + 24, KY + 18); c.lineTo(KX + 4, KY + 20); c.closePath();
   c.fillStyle = winter ? '#dfe4e8' : '#5a6a48'; c.fill(); c.stroke();
-  for (const [tx, ty] of [[KX, KY + 6], [KX + 14, KY], [KX + 26, KY + 4], [KX + 24, KY + 18], [KX + 4, KY + 20]]) box(tx - 1.2, ty - 1.2, 2.4, 2.4, 3, '#e8e2d4', { dome: '#2e6a4a' });
+  for (const [tx, ty] of [[KX, KY + 6], [KX + 14, KY], [KX + 26, KY + 4], [KX + 24, KY + 18], [KX + 4, KY + 20]]) box(tx - 1.2, ty - 1.2, 2.4, 2.4, MSKK ? 4 : 3, MSKK ? '#b0402e' : '#e8e2d4', { dome: MSKK ? '#3a6a4a' : '#2e6a4a' });
   box(KX + 8, KY + 7, 5, 6, 3, '#f0ece2', { dome: '#d8a441' });                // собор
-  box(KX + 16, KY + 9, 2.4, 2.4, 9, '#c8402f');                                  // башня Сююмбике
+  box(KX + 16, KY + 9, 2.4, 2.4, 9, MSKK ? '#f0ece2' : '#c8402f', MSKK ? { dome: '#e8b830' } : undefined);   // Иван Великий / башня Сююмбике
   // ---------- 5. дома рисуем от дальних к ближним ----------
   boxes.sort((a, b) => (a.y + a.d) - (b.y + b.d)).forEach(drawBox);
   // лёгкая виньетка за городом — внешний мир темнее

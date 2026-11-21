@@ -29,8 +29,12 @@ const GOALS = [
   { id: 'starsh', text: 'Стать старшим до осени 1988 года', until: dayNum(1988, 9, 1), ok: S => S.rank >= 4 },
   { id: 'land', text: 'Твоя моталка держит 5 районов — до лета 1988', until: dayNum(1988, 6, 1), ok: S => myLand(S).length >= 5 },
   { id: 'money', text: 'Накопить 1500 рублей до конца 1988 года', until: dayNum(1988, 12, 31), ok: S => S.st.dengi >= 1500 },
+  { id: 'mvd5', text: 'Дослужиться до майора милиции до осени 1989', until: dayNum(1989, 9, 1), ok: S => !!(S.lad && S.lad.mvd && S.lad.mvd.lvl >= 5) },
+  { id: 'gov5', text: 'Подняться во власти на пятую ступень до осени 1989', until: dayNum(1989, 9, 1), ok: S => !!(S.lad && S.lad.gov && S.lad.gov.lvl >= 4) },
 ];
-const goalOf = S => GOALS.find(g => g.id === S.goal);
+// при позднем старте (ползунок года) срок цели считается от года появления
+const goalOf = S => { const g = GOALS.find(x => x.id === S.goal) || GOALS[0]; if (!S.goalShift) return g;
+  const until = g.until + S.goalShift; return { ...g, until, text: g.text.replace(/ (до|—) .*$/, '') + ' — до ' + dateStr(until) }; };
 
 function rollFate() {
   const app = {}; for (const k of Object.keys(LOOKS)) app[k] = pick(Object.keys(LOOKS[k]));
@@ -44,6 +48,7 @@ function rollFate() {
     fam: pick(['mother', 'full', 'drunk']), trait: pick(TRAITS).id, goal: pick(GOALS).id };
 }
 
+let FATE_YEAR = 1987;   // ползунок «год появления» в Карьере
 function careerNew(mode = 'career') {
   if (typeof mode !== 'string') mode = 'career';
   const surv = mode === 'surv';
@@ -59,6 +64,8 @@ function careerNew(mode = 'career') {
       <div class="result">Черта: <b>${tr.name}</b> — ${tr.desc}</div>
       <div class="result ok">Цель: <b>${surv ? 'Дожить до Нового года, не пришиваясь ни к кому' : goalOf(f).text}</b></div>
       <p class="note">${surv ? 'Каждый день трясут всё чаще. Пришьёшься — проиграл. Смерть или тюрьма — конец.' : 'Смерть или тюрьма — конец забега. Задания берёшь у старших на вкладке «Задания».'}</p>
+      ${surv ? '' : `<div class="yr"><div>Год, в котором ты появишься: <b id="yrv">${FATE_YEAR}</b></div><input type="range" id="yr" min="1987" max="1998" step="1" value="${FATE_YEAR}">
+        <div class="sub">${FATE_YEAR > 1987 ? 'Годы до этого игра проживёт за тебя сама. Кем ты станешь — заранее не знаешь: авторитетом, ментом, чиновником, работягой или бродягой.' : 'С самого начала: сентябрь 1987-го.'}</div></div>`}
       <div class="result">Код судьбы: <b>${fateCode(f.seed)}</b>${daily ? ' · <b>вызов дня</b> — у всех сегодня эта судьба' : ''}</div>
       <div class="choices">
         <button class="btn main" id="go">Начать жизнь</button>
@@ -70,6 +77,7 @@ function careerNew(mode = 'career') {
     $('#rr').onclick = () => { rerolls--; daily = null; f = rollFateSeeded((Math.random() * 2 ** 31) >>> 0); AUDIO.click(); draw(); };
     $('#dl').onclick = () => { daily = new Date().toLocaleDateString('ru-RU'); f = rollFateSeeded(todaySeed() * (surv ? 7 : 3)); AUDIO.click(); draw(); };
     $('#cd').onclick = () => { const c = prompt('Код судьбы (например КЗН-1A2B3C):'); const s = c && codeSeed(c); if (s) { daily = null; f = rollFateSeeded(s); AUDIO.ok(); draw(); } };
+    if ($('#yr')) $('#yr').oninput = e => { FATE_YEAR = +e.target.value; $('#yrv').textContent = FATE_YEAR; }, $('#yr').onchange = () => { AUDIO.click(); draw(); };
     $('#back').onclick = titleScreen;
     $('#go').onclick = () => { surv ? startSurv(f) : startCareer(f); S.seed = f.seed; S.daily = daily; save('auto'); };
   };

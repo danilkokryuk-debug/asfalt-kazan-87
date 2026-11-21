@@ -24,19 +24,23 @@ const KZN_DISTRICTS = [
 ];
 // Москва середины 80-х: районы и группировки (люберы, солнцевские, ореховские, измайловские…); казанские — на Рижском рынке
 const MSK_DISTRICTS = [
-  { id: 'dolgo',      name: 'Долгопрудный', gang: 'Долгопрудненские', x: 8,  y: 2.5, color: '#6a5a3a', desc: 'Север за МКАД. Аэродром, дачи, свои законы.' },
-  { id: 'koptevo',    name: 'Коптево',      gang: 'Коптевские',     x: 7.5, y: 8.5, color: '#7a3e3e', desc: 'Пятиэтажки у Окружной дороги. Злые и голодные.' },
-  { id: 'medvedkovo', name: 'Медведково',   gang: 'Медведковские',  x: 13, y: 7.5,  color: '#557a3d', desc: 'Новостройки на Яузе. Молодые, дерзкие.' },
-  { id: 'balashikha', name: 'Балашиха',     gang: 'Балашихинские',  x: 18.5, y: 9, color: '#7a6630', desc: 'Подмосковье на востоке. Заводы и частный сектор.' },
-  { id: 'rizhsky',    name: 'Рижский рынок', gang: 'Казанские',     x: 9.5, y: 11, color: '#9a3030', desc: 'Кооперативный рынок. Его держат приезжие из Казани.', icon: 'rynok' },
-  { id: 'bauman',     name: 'Бауманская',   gang: 'Бауманские',     x: 12.5, y: 12, color: '#3d607a', desc: 'Старая Москва за Садовым. Рестораны, подпольные катраны.' },
-  { id: 'izmailovo',  name: 'Измайлово',    gang: 'Измайловские',   x: 17, y: 13,   color: '#2e5f96', desc: 'Огромный парк, вернисаж, гостиница. Спортсмены.' },
-  { id: 'center',     name: 'Центр',        gang: null,             x: 10, y: 14.5, color: '#6a665c', desc: 'Кремль, Красная площадь, Арбат. Здесь хозяин — милиция.', icon: 'kreml' },
-  { id: 'taganka',    name: 'Таганка',      gang: 'Таганские',      x: 13, y: 16,   color: '#653f7a', desc: 'Таганская площадь, театр, коммуналки. Старые воры.' },
-  { id: 'solntsevo',  name: 'Солнцево',     gang: 'Солнцевские',    x: 4,  y: 19,   color: '#9a6230', desc: 'Юго-запад, только что вошёл в Москву. Скоро о нём узнает весь мир.' },
-  { id: 'lyubertsy',  name: 'Люберцы',      gang: 'Люберецкие',     x: 18, y: 20,   color: '#2e7a66', desc: 'Любера: клетчатые штаны, качалки в подвалах. Едут в центр бить «неформалов».', icon: 'zavod' },
-  { id: 'orekhovo',   name: 'Орехово',      gang: 'Ореховские',     x: 12, y: 22.5, color: '#7a2e66', desc: 'Орехово-Борисово, спальный юг. Самые жёсткие.' },
-  { id: 'podolsk',    name: 'Подольск',     gang: 'Подольские',     x: 10, y: 27.5, color: '#45457a', desc: 'Юг за МКАД. Тихие, но держат трассу на Симферополь.' },
+  { id: 'dolgo',      name: 'Долгопрудный', gang: 'Долгопрудненские', x: 6.2,  y: 3.4,  color: '#6a5a3a', desc: 'Север за МКАД. Аэродром, дачи, свои законы.' },
+  { id: 'tushino',    name: 'Тушино',       gang: 'Тушинские',      x: 6.5,  y: 8.6,  color: '#5a7a6a', desc: 'Северо-запад у канала. Аэродром, «Динамо», парашютисты.' },
+  { id: 'koptevo',    name: 'Коптево',      gang: 'Коптевские',     x: 9.5,  y: 10,   color: '#7a3e3e', desc: 'Пятиэтажки у Окружной дороги. Злые и голодные.' },
+  { id: 'medvedkovo', name: 'Медведково',   gang: 'Медведковские',  x: 12,   y: 7,    color: '#557a3d', desc: 'Новостройки на Яузе. Молодые, дерзкие.' },
+  { id: 'balashikha', name: 'Балашиха',     gang: 'Балашихинские',  x: 18.6, y: 11.6, color: '#7a6630', desc: 'Подмосковье на востоке. Заводы и частный сектор.' },
+  { id: 'rizhsky',    name: 'Рижский рынок', gang: 'Казанские',     x: 10.8, y: 12.2, color: '#9a3030', desc: 'Кооперативный рынок. Его держат приезжие из Казани.', icon: 'rynok' },
+  { id: 'kuntsevo',   name: 'Кунцево',      gang: 'Кунцевские',     x: 3.6,  y: 14.4, color: '#4a6a8a', desc: 'Запад, правительственные дачи и хрущёвки по соседству.' },
+  { id: 'bauman',     name: 'Бауманская',   gang: 'Бауманские',     x: 12.5, y: 13.4, color: '#3d607a', desc: 'Старая Москва за Садовым. Рестораны, подпольные катраны.' },
+  { id: 'izmailovo',  name: 'Измайлово',    gang: 'Измайловские',   x: 15.8, y: 12.4, color: '#2e5f96', desc: 'Огромный парк, вернисаж, гостиница. Спортсмены.' },
+  { id: 'center',     name: 'Центр',        gang: null,             x: 10.2, y: 14.5, color: '#6a665c', desc: 'Кремль, Красная площадь, Арбат. Здесь хозяин — милиция и власть.', icon: 'kreml' },
+  { id: 'perovo',     name: 'Перово',       gang: 'Перовские',      x: 16,   y: 15.2, color: '#8a5a2a', desc: 'Восток за Окружной. Железная дорога, гаражи, депо.' },
+  { id: 'taganka',    name: 'Таганка',      gang: 'Таганские',      x: 12,   y: 15.6, color: '#653f7a', desc: 'Таганская площадь, театр, коммуналки. Старые воры.' },
+  { id: 'solntsevo',  name: 'Солнцево',     gang: 'Солнцевские',    x: 3.2,  y: 21,   color: '#9a6230', desc: 'Юго-запад, только что вошёл в Москву. Скоро о нём узнает весь мир.' },
+  { id: 'chertanovo', name: 'Чертаново',    gang: 'Чертановские',   x: 9.6,  y: 22.4, color: '#6a3a5a', desc: 'Спальный юг: бесконечные многоэтажки и пустыри.' },
+  { id: 'lyubertsy',  name: 'Люберцы',      gang: 'Люберецкие',     x: 18.6, y: 18.6, color: '#2e7a66', desc: 'Любера: клетчатые штаны, качалки в подвалах. Едут в центр бить «неформалов».', icon: 'zavod' },
+  { id: 'orekhovo',   name: 'Орехово',      gang: 'Ореховские',     x: 13.4, y: 21.6, color: '#7a2e66', desc: 'Орехово-Борисово, спальный юг. Самые жёсткие.' },
+  { id: 'podolsk',    name: 'Подольск',     gang: 'Подольские',     x: 7.6,  y: 28,   color: '#45457a', desc: 'Юг за МКАД. Тихие, но держат трассу на Симферополь.' },
 ];
 const DISTRICTS = CITY === 'moscow' ? MSK_DISTRICTS : KZN_DISTRICTS;
 const DIST = Object.fromEntries(DISTRICTS.map(d => [d.id, d]));
@@ -46,15 +50,20 @@ const hash = (x, y) => { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
 const kazankaY = gx => 23 - (gx - 6) * 0.2 + Math.sin(gx * 0.45) * 1.3;   // Казанка: с северо-востока к устью у Кремля
 const kazankaW = gx => gx < 14 ? 2.2 : gx < 22 ? 1.6 : 1.2;                // у устья — широкая (подпор Куйбышевского водохранилища)
 const volgaEdge = gy => 6 + Math.round(Math.sin(gy * 0.25)) + (gy > 30 ? (gy - 30) * 0.18 : 0) + (gy > 48 ? (gy - 48) * 0.5 : 0);   // Волга забирает юго-запад
-// --- Москва: Москва-река (с северо-запада, петли у Крылатского и Лужников, под Кремлём, на юго-восток) и Яуза с севера
-const MOSKVA_PTS = [[0, 17], [4, 20], [3, 24], [7, 27], [11, 27.5], [12, 31], [14.5, 34], [17, 33], [18, 31], [21, 31.2], [24, 30.6], [25.5, 32.5], [26, 35.5], [25, 38], [28, 40], [31, 41], [30, 44], [34, 45.5], [37, 48], [40, 50]];
-const YAUZA_PTS = [[27, 10], [25, 17], [27, 22], [25.5, 27], [25.5, 32]];
+// --- Москва по реальным координатам: МКАД, Москва-река, Яуза. geo(широта, долгота) → клетки сетки
+const geo = (la, lo) => [4 + (lo - 37.37) / 0.473 * 31.5, 10 + (55.911 - la) / 0.337 * 40];
+const MKAD_PTS = [[55.911, 37.586], [55.896, 37.68], [55.871, 37.724], [55.833, 37.834], [55.781, 37.843], [55.732, 37.84], [55.69, 37.833], [55.652, 37.799], [55.62, 37.735],
+  [55.578, 37.633], [55.574, 37.595], [55.588, 37.52], [55.62, 37.47], [55.66, 37.432], [55.7, 37.393], [55.745, 37.37], [55.795, 37.373], [55.836, 37.393], [55.872, 37.448], [55.89, 37.52]].map(([a, b]) => geo(a, b));
+const MOSKVA_PTS = [[55.86, 37.36], [55.83, 37.42], [55.8, 37.395], [55.775, 37.43], [55.76, 37.41], [55.745, 37.49], [55.752, 37.54], [55.73, 37.56], [55.712, 37.555], [55.72, 37.585],
+  [55.735, 37.603], [55.749, 37.62], [55.748, 37.645], [55.73, 37.66], [55.705, 37.66], [55.69, 37.675], [55.67, 37.69], [55.655, 37.735], [55.635, 37.79], [55.62, 37.86], [55.6, 37.92]].map(([a, b]) => geo(a, b));
+const YAUZA_PTS = [[55.9, 37.7], [55.86, 37.675], [55.82, 37.69], [55.79, 37.7], [55.77, 37.685], [55.747, 37.645]].map(([a, b]) => geo(a, b));
 const segDist = (px, py, pts) => { let m = 1e9; for (let i = 1; i < pts.length; i++) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], dx = x1 - x0, dy = y1 - y0, l = dx * dx + dy * dy;
   const t = l ? Math.max(0, Math.min(1, ((px - x0) * dx + (py - y0) * dy) / l)) : 0; m = Math.min(m, Math.hypot(px - x0 - t * dx, py - y0 - t * dy)); } return m; };
-const MKAD = [20.5, 30.5, 18.6];   // центр и радиус кольцевой (в клетках)
-const MSK_TOWNS = [[17, 6, 5.5], [37.5, 18.5, 5], [37, 41, 5.5], [21, 56, 6]];   // Долгопрудный, Балашиха, Люберцы, Подольск
-const mskLand = (gx, gy) => Math.hypot(gx + 0.5 - MKAD[0], gy + 0.5 - MKAD[1]) <= MKAD[2] || MSK_TOWNS.some(([x, y, r]) => Math.hypot(gx + 0.5 - x, gy + 0.5 - y) <= r);
-const mskWater = (gx, gy) => segDist(gx + 0.5, gy + 0.5, MOSKVA_PTS) < 1.05 || segDist(gx + 0.5, gy + 0.5, YAUZA_PTS) < 0.55;
+const inPoly = (x, y, P) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const [xi, yi] = P[i], [xj, yj] = P[j];
+  if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
+const MSK_TOWNS = [[12.4, 7, 5], [37.4, 23, 4.2], [37.4, 37.4, 4.4], [6.4, 42, 4.6], [15.2, 56, 5]];   // Долгопрудный, Балашиха, Люберцы, Солнцево, Подольск
+const mskLand = (gx, gy) => inPoly(gx + 0.5, gy + 0.5, MKAD_PTS) || MSK_TOWNS.some(([x, y, r]) => Math.hypot(gx + 0.5 - x, gy + 0.5 - y) <= r);
+const mskWater = (gx, gy) => segDist(gx + 0.5, gy + 0.5, MOSKVA_PTS) < 0.95 || segDist(gx + 0.5, gy + 0.5, YAUZA_PTS) < 0.5;
 function isWater(gx, gy) {
   if (CITY === 'moscow') return mskWater(gx, gy);
   if (gx < volgaEdge(gy)) return true;                                                                    // Волга
@@ -89,7 +98,7 @@ for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
   const a = cellAt(x, y); if (!a) continue;
   for (const [dx, dy] of [[1, 0], [0, 1]]) { const b = cellAt(x + dx, y + dy); if (b && b !== a) { NEIGHBORS[a].add(b); NEIGHBORS[b].add(a); } }
 }
-[['kinoplenka', 'center'], ['savinovo', 'borisk'], ['zhilka', 'center'], ['dolgo', 'koptevo'], ['dolgo', 'medvedkovo'], ['balashikha', 'izmailovo'], ['balashikha', 'medvedkovo'], ['lyubertsy', 'izmailovo'], ['lyubertsy', 'orekhovo'], ['podolsk', 'orekhovo'], ['podolsk', 'solntsevo']].forEach(([a, b]) => { if (NEIGHBORS[a] && NEIGHBORS[b]) { NEIGHBORS[a].add(b); NEIGHBORS[b].add(a); } });
+[['kinoplenka', 'center'], ['savinovo', 'borisk'], ['zhilka', 'center'], ['dolgo', 'tushino'], ['solntsevo', 'kuntsevo'], ['solntsevo', 'chertanovo'], ['podolsk', 'chertanovo'], ['dolgo', 'koptevo'], ['dolgo', 'medvedkovo'], ['balashikha', 'izmailovo'], ['balashikha', 'medvedkovo'], ['lyubertsy', 'izmailovo'], ['lyubertsy', 'orekhovo'], ['podolsk', 'orekhovo'], ['podolsk', 'solntsevo']].forEach(([a, b]) => { if (NEIGHBORS[a] && NEIGHBORS[b]) { NEIGHBORS[a].add(b); NEIGHBORS[b].add(a); } });
 
 // Центр района по клеткам (для подписи)
 const CENTROID = {};

@@ -781,3 +781,15 @@ body:has(#top.hidden) #pager, body:has(.card) #pager { display: none; }
 /* ---- 1.7.0: города ---- */
 .item.city.dev, .item.city.soon { opacity: .85; } .item.city.dev b { color: #d8a441; }
 .item.city .fam-b { margin-top: 8px; }
+
+/* ---- 1.8.0: карьерные лестницы, год появления, судьба ---- */
+.ldbox { margin: 0 0 12px; padding: 10px 12px; border-radius: 8px; background: rgba(24, 28, 36, .92); border: 1px solid rgba(120, 150, 200, .3); }
+.ld-h { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--dim); margin-bottom: 6px; }
+.ld-row { display: grid; grid-template-columns: 92px 1fr; gap: 2px 10px; align-items: center; padding: 5px 0; border-top: 1px solid rgba(255, 255, 255, .06); font-size: 13px; }
+.ld-row:first-of-type { border-top: 0; } .ld-row span { color: var(--dim); font-size: 12px; } .ld-row b { font-weight: normal; color: #e8dcc0; }
+.ld-row .bar { grid-column: 2; height: 4px; background: rgba(255, 255, 255, .08); border-radius: 2px; overflow: hidden; } .ld-row .bar i { display: block; height: 100%; background: #6a9ad8; }
+.ld-row em { grid-column: 2; font-style: normal; font-size: 11px; color: var(--dim); } .ld-row .btn { padding: 7px 10px; font-size: 12px; }
+.yr { margin: 10px 0; padding: 10px 12px; border-radius: 8px; background: rgba(40, 30, 18, .9); border: 1px solid rgba(232, 200, 120, .3); }
+.yr b { color: #e8c878; font-size: 18px; } .yr input[type=range] { width: 100%; margin: 8px 0 4px; accent-color: #c8402f; }
+.fate-tl { margin: 12px 0; padding-left: 14px; border-left: 2px solid rgba(200, 64, 47, .6); display: flex; flex-direction: column; gap: 10px; }
+.fate-i { font-size: 14px; line-height: 1.5; color: #e8dcc0; position: relative; } .fate-i::before { content: ''; position: absolute; left: -20px; top: 6px; width: 9px; height: 9px; border-radius: 50%; background: #c8402f; }
