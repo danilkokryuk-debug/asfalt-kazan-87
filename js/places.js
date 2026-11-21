@@ -155,7 +155,7 @@ function placeActions(S, p) {
           fx: s => { s.car.cond = 100; return { dengi: -fix }; }, txt: 'Михалыч копается под капотом, ругается и в конце вытирает руки: «Едет».' });
         a.push({ t: 'Тонировка и магнитола (40 р.)', if: () => !S.car.tuned, req: { dengi: 40 }, cost: 0.5,
           fx: s => { s.car.tuned = true; return { dengi: -40, avt: 3 }; }, txt: 'Стёкла чёрные, в магнитоле «Модерн Толкинг». Солидно.' });
-        a.push({ t: `Продать ${c.name} (за полцены)`, cost: 0.25, fx: s => { const half = Math.round(c.price / 2); s.car = null; return c.cur === '$' ? { dol: half } : { dengi: half }; }, txt: 'Михалыч пересчитывает деньги и хлопает по капоту: «Прощай, ласточка».' });
+        a.push({ t: `Продать ${c.name} (${S.car.st || S.car.hot ? "краденую — за копейки" : "за полцены"})`, cost: 0.25, fx: s => { const half = Math.round(c.price * (s.car.st || s.car.hot ? 0.1 : 0.5)); s.car = null; return c.cur === '$' ? { dol: half } : { dengi: half }; }, txt: 'Михалыч пересчитывает деньги и хлопает по капоту: «Прощай, ласточка».' });
       }
       a.push({ t: 'Подработать в мастерской', cost: 1, chk: ['um', 4], ok: { txt: 'Перебрал карбюратор. Михалыч доволен и платит.', fx: { dengi: 5, um: 0 } }, no: { txt: 'Уронил ключ в двигатель. Михалыч выгоняет тебя.' } });
       break;
@@ -180,11 +180,11 @@ function placeActions(S, p) {
       break;
     }
     case 'bank': {
-      const pct = Math.max(1, Math.round((S.bank || 0) * 0.01));
+      const pct = Math.max(1, Math.round(Math.min(S.bank || 0, 2000) * 0.0025));
       a.push({ t: 'Положить на книжку 10 р.', req: { dengi: 10 }, cost: 0.25, fx: s => { s.bank = (s.bank || 0) + 10; return { dengi: -10 }; }, txt: 'Кассирша ставит штамп. На книжке деньги не отберёт шпана.' });
       a.push({ t: `Положить всё (${S.st.dengi} р.)`, if: () => S.st.dengi > 0, cost: 0.25, fx: s => { s.bank = (s.bank || 0) + s.st.dengi; return { dengi: -s.st.dengi }; }, txt: 'Все наличные — на сберкнижку. Спокойнее.' });
       a.push({ t: `Снять всё (${S.bank || 0} р.)`, if: () => (S.bank || 0) > 0, cost: 0.25, fx: s => { const v = s.bank; s.bank = 0; return { dengi: v }; }, txt: 'Кассирша долго пересчитывает. Деньги в кармане.' });
-      a.push({ t: `Справка: на книжке ${S.bank || 0} р., +1% в неделю (≈${pct} р.)`, cost: 0, txt: 'Хранить деньги в сберегательной кассе выгодно и надёжно!' });
+      a.push({ t: `Справка: на книжке ${S.bank || 0} р., +0,25% в неделю (≈${pct} р.)`, cost: 0, txt: 'Хранить деньги в сберегательной кассе выгодно и надёжно!' });
       break;
     }
     case 'police':

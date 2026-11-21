@@ -807,7 +807,7 @@ function locActions(S, d) {
 // Новый день: раз в неделю — карманные деньги
 function onNewDay(S) {
   hairDay(S); typeof carDay === 'function' && carDay(S);
-  if (S.day % 7 === 0) { economyWeek(S); typeof bizWeek === 'function' && bizWeek(S); carWeek(S); if (S.bank) S.bank += Math.max(1, Math.round(S.bank * 0.01)); S.squad.forEach(m => m.loyal = Math.max(0, m.loyal - 4)); }
+  if (S.day % 7 === 0) { economyWeek(S); typeof bizWeek === 'function' && bizWeek(S); carWeek(S); if (S.bank) S.bank += Math.max(1, Math.round(Math.min(S.bank, 2000) * 0.0025)); S.squad.forEach(m => m.loyal = Math.max(0, m.loyal - 4)); }
   if (S.mode === 'career') careerDay(S);
   if (S.mode === 'surv') survDay(S);
 }

@@ -415,7 +415,7 @@ function renderHero() {
   $('#main').innerHTML = `<div class="scene"><div class="herohead"><canvas class="sprite" id="spr"></canvas><div>
     <h2>${S.name}${S.nick ? ' «' + S.nick + '»' : ''}</h2>
     <div class="sub">${lookText(S.app)}.<br>Район: ${DIST[S.home].name}.<br>Моталка: ${g}.<br>Ранг: <b>${RANKS[S.rank]}</b></div></div></div>
-    ${typeof goalsHtml === 'function' ? goalsHtml() : ''}${typeof vlHtml === 'function' ? vlHtml(S) : ''}${typeof famHtml === 'function' ? famHtml(S) : ''}${typeof fameHtml === 'function' ? fameHtml(S) : ''}${typeof natHtml === 'function' ? natHtml(S) : ''}${typeof vehHtml === 'function' ? vehHtml(S) : ''}${typeof bizHtml === 'function' ? bizHtml(S) : ''}${typeof socialHtml === 'function' ? socialHtml(S) : ''}
+    ${typeof goalsHtml === 'function' ? goalsHtml() : ''}${typeof vlHtml === 'function' ? vlHtml(S) : ''}${typeof famHtml === 'function' ? famHtml(S) : ''}${typeof brigHtml === 'function' ? brigHtml(S) : ''}${typeof fameHtml === 'function' ? fameHtml(S) : ''}${typeof natHtml === 'function' ? natHtml(S) : ''}${typeof vehHtml === 'function' ? vehHtml(S) : ''}${typeof bizHtml === 'function' ? bizHtml(S) : ''}${typeof socialHtml === 'function' ? socialHtml(S) : ''}
     ${walletHtml()}
     <div class="grid">
       ${Object.keys(STATS).map(k => `<div class="stat">${NAMES[k]}<span class="v">${S.st[k]}${gear(k) ? ' +' + gear(k) : ''}</span>${bar(S.st[k], 10)}</div>`).join('')}

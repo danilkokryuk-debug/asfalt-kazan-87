@@ -222,10 +222,10 @@ if (typeof TASKS !== 'undefined') JOBS_EXTRA.forEach(t => { TASKS.push(t); TPL[t
 
 // Каждый игровой час: шанс нового маячка (до 4), у каждого свой срок жизни
 function jobsHour() {
-  S.jobs = S.jobs || [];
+  S.jobs = (S.jobs || []).filter(jobStillOk);   // продал машину — задания «с машиной» пропадают
   if (S.jobs.length >= 4 || Math.random() > 0.35) return;
   if (typeof specialHour === 'function') specialHour();   // особое задание — крайне редко
-  const pool = TASKS.filter(t => !t.special && (!t.veh || (typeof vehOk === 'function' && vehOk(S, t.veh))) && (!t.rare || Math.random() < t.rare) && S.rank >= (t.min || 0) && S.rank <= (t.max ?? 9) && !S.jobs.some(j => j.id === t.id) && jobEraOk(S, t)
+  const pool = TASKS.filter(t => !t.special && (!t.veh || (typeof vehOk === 'function' && vehOk(S, t.veh))) && (!t.rare || Math.random() < t.rare) && S.rank >= (t.min || 0) && S.rank <= (t.max ?? 9) && !S.jobs.some(j => j.id === t.id) && jobEraOk(S, t) && !(S.jobLast && S.day - (S.jobLast[t.id] ?? -99) < 14)
     && (t.id.startsWith('j_') || (t.id === 'prish' ? S.mode === 'career' && !S.gang : S.gang && S.mode !== 'surv')));
   // в Карьере без моталки — сначала приглашение пришиться
   if (S.mode === 'career' && !S.gang && !S.jobs.some(j => j.id === 'prish')) { S.jobs.push({ uid: Date.now() % 1e9 + rnd(1000), id: 'prish', p: {}, d: S.home, until: now() + 2880 }); return; }
@@ -237,8 +237,9 @@ function jobsHour() {
 }
 function takeJob(uid) {
   const j = S.jobs.find(x => x.uid === uid); if (!j) return;
+  if (!jobStillOk(j)) { S.jobs = S.jobs.filter(x => x !== j); if (typeof toast === 'function') toast('Для этого задания нужен транспорт'); return render(); }
   S.jobs = S.jobs.filter(x => x !== j);
-  S.at = j.d; S.kt = { id: j.id, p: j.p };
+  S.at = j.d; S.kt = { id: j.id, p: j.p }; (S.jobLast = S.jobLast || {})[j.id] = S.day;   // то же задание — не чаще раза в две недели
   advanceTime(ACT_MIN);
   play('k_task');
 }
@@ -252,7 +253,10 @@ function jobsHtml(d) {
 function jobEraOk(S, t) {
   const e = typeof era90 === 'function' && era90(S);
   if (t.era90 && !e) return false;
+  if (t.once && S.jobLast && S.jobLast[t.id] != null) return false;   // сюжетные задания — один раз
   if (e && typeof PRE90 !== 'undefined' && PRE90.includes(t.id)) return false;
   if (t.age && typeof heroAge === 'function') { const a = heroAge(S); if (a < t.age[0] || a > t.age[1]) return false; }
   return true;
 }
+
+const jobStillOk = j => !!TPL[j.id] && (!TPL[j.id].veh || (typeof vehOk === 'function' && vehOk(S, TPL[j.id].veh)));

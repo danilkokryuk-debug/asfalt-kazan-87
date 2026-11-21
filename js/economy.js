@@ -3,7 +3,7 @@
 // --- Справочник ----------------------------------------------------------------------------
 const DUES = [0, 2, 5, 10, 25, 40];          // взнос в общак в неделю по рангу
 const SHARE = [1, 0.3, 0.35, 0.45, 0.6, 0.8]; // какую долю добычи с заданий оставляешь себе
-const CAP = [0, 10, 30, 60, 120, 220];        // потолок дохода с точек в неделю по рангу
+const CAP = [0, 8, 20, 35, 55, 80];   // баланс 1.3.0: автосимуляция показала 33 тыс. к 1990-му        // потолок дохода с точек в неделю по рангу
 const SQUAD_PAY = 2;                          // содержание одного из скорлупы в неделю
 const RATE_BUY = 4, RATE_SELL = 3;            // фарца: продаёт 1$ за 4 р., покупает за 3 р.
 
@@ -68,6 +68,8 @@ function economyWeek(S) {
   if (S.points && S.points.length && Math.random() < 0.15) S.flags.point_threat = rnd(S.points.length);
   if (typeof vlWeek === 'function') vlWeek(S, w);
   if (typeof clanWeek === 'function') clanWeek(S, w);
+  if (typeof brigWeek === 'function') brigWeek(S, w);
+  if (typeof pagerWeek === 'function') pagerWeek(S);
   if (typeof theftWeek === 'function') theftWeek(S, w);
   S.week = w;
   const sum = a => a.reduce((x, y) => x + y[1], 0);

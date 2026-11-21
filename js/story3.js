@@ -2,7 +2,7 @@
 // Кончается всё одинаково — стрелкой в августе 1998-го. Но кем ты к ней придёшь и кто нажмёт на курок — решаешь ты.
 // Потом — титры с картинками: что стало с теми, кто остался.
 const HN = S => S.nick || S.name;
-const KILLER = S => S.flags.red_roof ? 'garipov' : (S.flags.ildar_envy || S.flags.ildar_blackmail || S.flags.ildar_exposed) && !S.flags.ildar_dead ? 'ildar'
+let KILLER = S => S.flags.red_roof ? 'garipov' : (S.flags.ildar_envy || S.flags.ildar_blackmail || S.flags.ildar_exposed) && !S.flags.ildar_dead ? 'ildar'
   : S.flags.krest_vrag && !S.flags.krest_down ? 'krest' : S.flags.moskva_war ? 'moskvich' : 'zima';
 
 // ===== финал главы 6: криминальные пути больше не конец — начинается бригада =====

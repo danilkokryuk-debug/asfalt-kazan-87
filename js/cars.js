@@ -38,7 +38,7 @@ function carPlaceActs(S, p) {
     if (x.hot) { const fee = Math.round(rub(c) * 0.04); a.push({ t: `Перебить номера на ${c.name} (${fee} р.)`, req: { dengi: fee }, cost: 1,
       fx: s => { GAR(s)[i].hot = 0; GAR(s)[i].num = 1; return { dengi: -fee, sovest: -2 }; }, txt: 'Новые номера на кузове и двигателе, новый техпаспорт. Теперь её можно продать как свою.' }); }
     if (!S.car && !x.broken && ageOf(S) >= c.age) a.push({ t: `Сесть за руль: ${c.name}${x.hot ? ' (краденая!)' : ''}`, cost: 0.25,
-      fx: s => { s.car = { id: c.id, cond: 70, fuel: 30, hot: !!x.hot }; GAR(s).splice(i, 1); return x.hot ? { mil: 5 } : {}; }, txt: x.hot ? 'Ездить на краденой — до первого гаишника.' : 'Теперь это твоя машина.' });
+      fx: s => { s.car = { id: c.id, cond: 70, fuel: 30, hot: !!x.hot, st: x.legal ? 0 : 1 }; GAR(s).splice(i, 1); return x.hot ? { mil: 5 } : {}; }, txt: x.hot ? 'Ездить на краденой — до первого гаишника.' : 'Теперь это твоя машина.' });
   });
   if (p.k === 'auto') {
     g.forEach((x, i) => { const c = CAR[x.id]; if (x.hot || x.broken) return;
@@ -49,10 +49,10 @@ function carPlaceActs(S, p) {
     });
     if (S.rank >= 1 && g.length < garCap(S) && sinceF(S, 'perekup') >= 7) theftPool(S).slice(-3).forEach(c => a.push({
       t: `Перекуп: битая ${c.name} за ${payTxt(c, 0.3, { cmkt: { n: 0 } })}`, req: cPay(c, 0.3, { cmkt: { n: 0 } }), cost: 0.5,
-      fx: s => { s.flags.perekup = s.day; GAR(s).push({ id: c.id, broken: 1 }); const r = cPay(c, 0.3, { cmkt: { n: 0 } }); return r.dol ? { dol: -r.dol } : { dengi: -r.dengi }; },
+      fx: s => { s.flags.perekup = s.day; GAR(s).push({ id: c.id, broken: 1, legal: 1 }); const r = cPay(c, 0.3, { cmkt: { n: 0 } }); return r.dol ? { dol: -r.dol } : { dengi: -r.dengi }; },
       txt: 'Мятое крыло, разбитая фара, «не на ходу». Починишь в СТО — продашь дороже. Если повезёт.' }));
-    if (S.car) { const c = CAR[S.car.id]; a.push({ t: `Продать свою ${c.name} (≈${payTxt(c, S.car.hot ? 0.1 : 0.55, S)})`, cost: 0.5,
-      fx: s => { const r = cPay(c, s.car.hot ? 0.1 : 0.55, s); s.car = null; sold(s); return r; }, txt: 'Ключи в чужой ладони. Немного жаль.' }); }
+    if (S.car) { const c = CAR[S.car.id], k = S.car.hot || S.car.st ? 0.1 : 0.55; a.push({ t: `Продать свою ${c.name} (≈${payTxt(c, k, S)})`, cost: 0.5,
+      fx: s => { const r = cPay(c, k, s); s.car = null; sold(s); return r; }, txt: 'Ключи в чужой ладони. Немного жаль.' }); }
     a.push({ t: `Справка: гараж ${g.length}/${garCap(S)}, цены на рынке ${Math.round(mkF(S) * 100)}%`, cost: 0, txt: () => CMKT(S).n ? 'Рынок завален машинами — цены упали. Подожди неделю-другую.' : 'Рынок голодный: сейчас продашь дороже всего.' });
   }
   return a;

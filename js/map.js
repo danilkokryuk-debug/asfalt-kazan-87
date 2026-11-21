@@ -416,6 +416,23 @@ function mapTraffic(svg) {
     for (let i = 0; i < 6; i++) { ctx.fillStyle = ['#6a3a2a', '#3a4a5a', '#5a5a4a'][i % 3]; ctx.fillRect(-1.3, 6.6 + i * 5.6, 2.6, 5); ctx.strokeRect(-1.3, 6.6 + i * 5.6, 2.6, 5); }
     ctx.restore();
   };
+  // погода дня: зимой чаще снег, осенью и весной — дождь, летом изредка
+  const ssn = typeof season === 'function' && S ? season() : 'summer', wr = ((S ? S.day : 1) * 7919 % 100) / 100;
+  const wx = ssn === 'winter' ? (wr < 0.65 ? 'snow' : null) : ssn === 'summer' ? (wr < 0.12 ? 'rain' : null) : (wr < 0.45 ? 'rain' : null);
+  const drops = wx ? Array.from({ length: wx === 'snow' ? 90 : 120 }, () => ({ x: Math.random(), y: Math.random(), v: 0.6 + Math.random() * 0.8, r: Math.random() })) : [];
+  const weather = () => {
+    if (!wx) return; const cw = svg.clientWidth, ch = svg.clientHeight;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (wx === 'rain') { ctx.fillStyle = 'rgba(40,60,80,.10)'; ctx.fillRect(0, 0, cw, ch); ctx.strokeStyle = 'rgba(190,210,230,.45)'; ctx.lineWidth = 1; ctx.beginPath(); }
+    else ctx.fillStyle = 'rgba(255,255,255,.85)';
+    for (const d of drops) {
+      d.y += (wx === 'snow' ? 0.0025 : 0.03) * d.v; d.x += wx === 'snow' ? Math.sin((d.y + d.r) * 9) * 0.0008 : -0.004 * d.v;
+      if (d.y > 1) { d.y = -0.02; d.x = Math.random(); } if (d.x < 0) d.x += 1;
+      const x = d.x * cw, y = d.y * ch;
+      if (wx === 'snow') ctx.fillRect(x, y, 1 + d.r * 1.6, 1 + d.r * 1.6); else { ctx.moveTo(x, y); ctx.lineTo(x - 3 * d.v, y + 12 * d.v); }
+    }
+    if (wx === 'rain') ctx.stroke();
+  };
   let last = performance.now(), frame = 0;
   const step = t => {
     if (!document.body.contains(svg)) return;
@@ -427,7 +444,7 @@ function mapTraffic(svg) {
         if (!(m.x >= 0 && m.y >= 0 && m.x < CW && m.y < CH && land(m.x, m.y)) || Math.random() < 0.0008 * dt) spawnMan(m); }
       for (const b of boats) { b.y -= b.sp * dt * 3; if (b.y < -40) b.y = H * CELL + 30; }
       if (train.wait > 0) train.wait -= dt; else { train.y += train.sp * dt * 3; if (train.y > Y1 + 10) { train.y = X0 - 60; train.wait = 600; } }
-      draw(t);
+      draw(t); weather();
     } else if (document.hidden) last = t;
     requestAnimationFrame(step);
   };

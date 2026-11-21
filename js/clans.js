@@ -44,7 +44,7 @@ function clanSheet(S, d) {
 // действия на районе в девяностых
 function clanActs(S, d) {
   if (!clanOn(S)) return []; const c = S.clan[d], a = [];
-  if (c === 'me') return [{ t: 'Объехать свои точки, собрать долю', fx: s => ({ dengi: 10 + clanCount(s, 'me') * 4, avt: 1 }), txt: 'Ларьки, кафе, автосервис. Конверты в бардачке.' }];
+  if (c === 'me') return [{ t: 'Объехать свои точки, собрать долю', fx: s => ({ dengi: 6 + clanCount(s, 'me'), avt: 1 }), txt: 'Ларьки, кафе, автосервис. Конверты в бардачке.' }];
   const rel = S.crel[c], nm = CLANS[c].name;
   if (rel !== 'soyuz') a.push({ t: `Переговоры: «${nm}»`, chk: ['yaz', 6 + (rel === 'voyna' ? 2 : 0)],
     ok: { txt: rel === 'voyna' ? 'Мир. Стрелку отменили, все живы.' : 'Ударили по рукам: теперь вы союзники.', fx: s => { s.crel[c] = rel === 'voyna' ? 'mir' : 'soyuz'; vlAdd(s, 2); return {}; } },
@@ -65,7 +65,7 @@ def('cl_otzhat', { mode: 'any', repeat: true, title: 'Передел', bg: 't_9_
 function clanWeek(S, w) {
   if (!era90(S)) return; clanInit(S);
   const mine = DISTRICTS.filter(d => S.clan[d.id] === 'me');
-  if (mine.length) { const inc = mine.length * 12; S.st.dengi += inc; w.inc.push([`Свои районы (${mine.length})`, inc]); }
+  if (mine.length) { const inc = mine.length * 6; S.st.dengi += inc; w.inc.push([`Свои районы (${mine.length})`, inc]); }
   for (const c of ['hasan', 'baron', 'tatarin']) if (S.crel[c] === 'voyna' && mine.length && Math.random() < 0.3) {
     const d = pick(mine); if ((S.st.avt || 0) / 10 + S.vl / 5 > 12 + rnd(12)) { w.warn.push(`«${CLANS[c].name}» полезли на ${d.name} — отбились.`); continue; }
     S.clan[d.id] = c; vlAdd(S, -3); w.warn.push(`«${CLANS[c].name}» отжали ${d.name}!`);
