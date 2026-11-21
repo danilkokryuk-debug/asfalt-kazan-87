@@ -58,7 +58,7 @@ function applyFx(fx) {
     else if (k === 'unflag') [].concat(v).forEach(f => delete S.flags[f]);
     else if (k === 'join') { S.gang = v === true ? S.home : v; log(`Пришился к моталке «${DIST[S.gang].gang}».`); out.push(`<b>Ты теперь в «${DIST[S.gang].gang}»</b>`); }
     else if (k === 'leave') { log(`Отшился от «${DIST[S.gang].gang}».`); S.gang = null; S.rank = 0; }
-    else if (k === 'rank') { S.rank = v; log(`Новый ранг: ${RANKS[v]}.`); out.push(`<b>Ранг: ${RANKS[v]}</b>`); AUDIO.ok(); }
+    else if (k === 'rank') { if (v > S.rank && typeof toast === 'function') setTimeout(() => toast(`${RANKS[v]}: открылись новые задания`), 1200); S.rank = v; log(`Новый ранг: ${RANKS[v]}.`); out.push(`<b>Ранг: ${RANKS[v]}</b>`); AUDIO.ok(); }
     else if (k === 'nick') { S.nick = v; log(`Теперь тебя зовут «${v}».`); out.push(`Погоняло: «${v}»`); }
     else if (k === 'ctrl') for (const [d, o] of Object.entries(v)) { S.ctrl[d] = o; out.push(`${DIST[d].name} теперь под «${DIST[o].gang}»`); }
     else if (k === 'ap') S.ap = Math.max(0, S.ap + v);
@@ -411,6 +411,7 @@ function renderHero() {
   $('#main').innerHTML = `<div class="scene"><div class="herohead"><canvas class="sprite" id="spr"></canvas><div>
     <h2>${S.name}${S.nick ? ' «' + S.nick + '»' : ''}</h2>
     <div class="sub">${lookText(S.app)}.<br>Район: ${DIST[S.home].name}.<br>Моталка: ${g}.<br>Ранг: <b>${RANKS[S.rank]}</b></div></div></div>
+    ${typeof fameHtml === 'function' ? fameHtml(S) : ''}
     ${walletHtml()}
     <div class="grid">
       ${Object.keys(STATS).map(k => `<div class="stat">${NAMES[k]}<span class="v">${S.st[k]}${gear(k) ? ' +' + gear(k) : ''}</span>${bar(S.st[k], 10)}</div>`).join('')}
@@ -504,6 +505,7 @@ function renderMenu() {
     <button class="btn" id="sv">Сохранения (5 слотов)</button>
     <button class="btn" id="st">Настройки</button>
     <button class="btn" id="snd">Музыка: ${AUDIO.musicOn() ? 'вкл' : 'выкл'}</button>
+    <button class="btn" id="mag">📼 Магнитофон</button>
     ${S.mode === 'career' ? '<button class="btn" id="jr">Журнал</button>' : ''}
     <button class="btn" id="ach">Достижения</button>
     <button class="btn" id="ng">В главное меню</button></div>
@@ -513,7 +515,8 @@ function renderMenu() {
   $('#sv').onclick = () => { AUDIO.click(); slotsScreen(back); };
   $('#st').onclick = () => { AUDIO.click(); settingsScreen(back); };
   $('#ach').onclick = () => { AUDIO.click(); achScreen(back); };
-  $('#snd').onclick = () => { AUDIO.toggleMusic(); renderMenu(); };
+  $('#snd').onclick = () => { AUDIO.toggleMusic(); typeof songCue === 'function' && songCue(songPlace()); renderMenu(); };
+  $('#mag').onclick = () => { AUDIO.click(); magScreen(() => { view = 'menu'; render(); }); };
   if ($('#jr')) $('#jr').onclick = () => { view = 'log'; render(); };
   $('#ng').onclick = () => { save('auto'); titleScreen(); };
 }
@@ -532,7 +535,7 @@ function render() {
   const inScene = S.cur || S.res;
   $('#nav').classList.toggle('hidden', !!inScene);
   if (view === 'tasks') view = 'map';   // задания теперь маячки на карте
-  checkAch();
+  checkAch(); typeof fameCheck === 'function' && fameCheck();
   setTimeout(() => tutorial(S.cur || S.res ? 'scene' : view), 450);
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.v === view));
   const BG_TRACK = { kuhnya: 'dom', shkola: 'dom', dk: 'disco', otdel: 'trevoga', pustyr: 'trevoga', noch: 'noch', ostanovka: 'noch' };
@@ -540,6 +543,7 @@ function render() {
   const tape = !ev && S.tape && TAPE[S.tape];   // кассета играет везде, кроме сцен
   if (tape && AUDIO.tape) AUDIO.tape(tape.spec);
   else AUDIO.track(ev && ev.fight && S.fight ? 'fight' : ev ? BG_TRACK[T(ev.bg)] || 'dvor' : view === 'ward' ? 'disco' : season() === 'winter' ? 'zima' : 'dvor');
+  if (typeof songCue === 'function') songCue(songPlace());   // настоящие песни с телефона, если добавлены
   if (AUDIO.ambience) AUDIO.ambience(ev ? T(ev.bg) || 'dvor' : view === 'map' ? (season() === 'winter' ? 'pustyr' : 'dvor') : null);
   if (inScene) renderScene();
   else ({ map: renderMap, hero: renderHero, ward: renderWardrobe, log: renderLog, tasks: renderTasks, menu: renderMenu, place: renderPlace })[view]();

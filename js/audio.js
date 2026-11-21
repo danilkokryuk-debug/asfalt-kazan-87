@@ -3,7 +3,7 @@ const AUDIO = (() => {
   let ctx = null, master, mus, musFx, amb, dly, nbuf, timer = null;
   let on = (() => { try { return localStorage.getItem('asfalt_music') !== '0'; } catch (e) { return true; } })();
   let cur = 'theme', want = 'theme', s = 0, bar = 0, vi = 0, fill = false, nextT = 0;
-  let tapeSpec = null, retape = false;
+  let tapeSpec = null, retape = false, ducked = false;   // ducked — играет настоящая песня с телефона, своя музыка молчит
   let MUSV = 0.12, VOL = 0.5; const AMBV = 0.55, NB = 6;   // музыка тише эффектов; меняются в настройках
   const R = Math.random, rnd = n => Math.floor(R() * n), pick = a => a[rnd(a.length)];
   const hz = m => 440 * Math.pow(2, (m - 69) / 12);       // MIDI → Гц
@@ -263,7 +263,7 @@ const AUDIO = (() => {
   }
   function startMusic() {
     if (!ctx || timer || !on) return;
-    mus.gain.setTargetAtTime(MUSV, ctx.currentTime, 0.3);
+    mus.gain.setTargetAtTime(ducked ? 0 : MUSV, ctx.currentTime, 0.3);
     nextT = ctx.currentTime + 0.05; timer = setInterval(tick, 25);
   }
   function stopMusic() { clearInterval(timer); timer = null; if (ctx) mus.gain.setTargetAtTime(0, ctx.currentTime, 0.15); }
@@ -372,8 +372,9 @@ const AUDIO = (() => {
     // all, music: 0..1 из настроек
     setVolume(all, music) {
       VOL = 0.5 * all; MUSV = 0.12 * 2 * music;
-      if (ctx) { master.gain.setTargetAtTime(VOL, ctx.currentTime, 0.05); if (on) mus.gain.setTargetAtTime(MUSV, ctx.currentTime, 0.05); }
+      if (ctx) { master.gain.setTargetAtTime(VOL, ctx.currentTime, 0.05); if (on) mus.gain.setTargetAtTime(ducked ? 0 : MUSV, ctx.currentTime, 0.05); }
     },
+    duck(d) { ducked = !!d; if (ctx && on) mus.gain.setTargetAtTime(ducked ? 0 : MUSV, ctx.currentTime, 0.5); },
     ambience(bg) { ambWant = AMB_OF[bg] || null; if (on) setAmb(ambWant); },   // null или неизвестный фон — тишина
     sfx(name) { if (ctx && SFX[name]) SFX[name](ctx.currentTime); },
     // мягкий деревянный клик и тихий колокольчик вместо писка

@@ -229,7 +229,8 @@ function jobsHour() {
   // в Карьере без моталки — сначала приглашение пришиться
   if (S.mode === 'career' && !S.gang && !S.jobs.some(j => j.id === 'prish')) { S.jobs.push({ uid: Date.now() % 1e9 + rnd(1000), id: 'prish', p: {}, d: S.home, until: now() + 2880 }); return; }
   if (!pool.length) return;
-  const t = pick(pool), p = t.gen(S); if (!p) return;
+  const tier = pool.filter(t => t.tier);   // задания своего звания — чаще остальных
+  const t = tier.length && Math.random() < 0.55 ? pick(tier) : pick(pool), p = t.gen(S); if (!p) return;
   const d = p.d || pick([S.home, 'center', ...[...NEIGHBORS[S.home]]].filter(x => DIST[x]));
   S.jobs.push({ uid: Date.now() % 1e9 + rnd(1000), id: t.id, p, d, until: now() + 360 + rnd(1440) });
 }

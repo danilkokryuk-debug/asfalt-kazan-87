@@ -41,6 +41,7 @@ function titleScreen(epic) {
       <button class="btn" id="slots">Сохранения</button>
       <button class="btn" id="ach">Достижения и концовки</button>
       <button class="btn" id="chron">Летопись судеб</button>
+      <button class="btn" id="mag">📼 Магнитофон</button>
       <button class="btn" id="set">Настройки</button></div>`}
     <p class="note">16+. Вымышленная история по мотивам событий 1980-х в Казани. Все персонажи вымышлены.</p><div id="stats" class="stats">${typeof statsHtml === 'function' ? statsHtml() : ''}</div></div>`;
   artStart($('#main'));
@@ -54,6 +55,8 @@ function titleScreen(epic) {
   $('#ach').onclick = () => { AUDIO.click(); achScreen(); };
   $('#chron').onclick = () => { AUDIO.click(); chronicle(); };
   $('#set').onclick = () => { AUDIO.click(); settingsScreen(); };
+  $('#mag').onclick = () => { AUDIO.click(); magScreen(); };
+  if (typeof songCue === 'function') songCue('title');
 }
 
 // ===================== СЛОТЫ СОХРАНЕНИЙ ==============================================================

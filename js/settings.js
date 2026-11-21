@@ -12,6 +12,7 @@ function applySet() {
   const meta = document.querySelector('meta[name=theme-color]');
   if (meta && meta.setAttribute) meta.setAttribute('content', { classic: '#1b1814', vhs: '#120a1f', gazeta: '#ece4d0', tetrad: '#f6f8ff' }[SET.theme]);
   if (typeof AUDIO !== 'undefined' && AUDIO.setVolume) AUDIO.setVolume(SET.vol, SET.music);
+  if (typeof PLAYER !== 'undefined' && PLAYER.cur) songFade(songVol(), 0.2);
 }
 
 function settingsScreen(back) {
@@ -37,7 +38,7 @@ function settingsScreen(back) {
   probe.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);visibility:hidden';
   document.body.appendChild(probe); const ps = getComputedStyle(probe);
   $('#scrinfo').textContent = `Экран ${screen.width}×${screen.height} · окно ${innerWidth}×${innerHeight} · игра ${Math.round(document.body.getBoundingClientRect().height)} · `
-    + `вырез ${parseInt(ps.paddingTop)}/${parseInt(ps.paddingBottom)} · ${matchMedia('(display-mode: standalone)').matches || navigator.standalone ? 'приложение' : 'браузер'} · ${navigator.standalone ? 'st' : '-'} · v0.8.7`;
+    + `вырез ${parseInt(ps.paddingTop)}/${parseInt(ps.paddingBottom)} · ${matchMedia('(display-mode: standalone)').matches || navigator.standalone ? 'приложение' : 'браузер'} · ${navigator.standalone ? 'st' : '-'} · v0.8.9`;
   probe.remove();
   document.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
     const v = b.dataset.v; SET[b.dataset.k] = v === 'true' ? true : v === 'false' ? false : v;

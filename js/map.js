@@ -103,6 +103,9 @@ function drawOutskirts(svg) {
     if (!field && h > 0.55) add('#2f4a2a', gx, gy);                         // крона
   }
   for (const c in paths) svg.appendChild(svgEl('path', { d: paths[c].join(''), fill: c, opacity: 0.95 }));
+  drawRoadsOut(svg);
+}
+function drawRoadsOut(svg) {
   // дороги на выезд + подписи
   for (const r of ROADS) {
     const [x0, y0] = r.from, [x1, y1] = r.to;
@@ -124,7 +127,10 @@ function drawMapSvg(svg, control, homeId, selectedId, onTap, atId, jobs) {
     <radialGradient id="fog" cx="50%" cy="50%" r="72%"><stop offset="62%" stop-color="#0c0e14" stop-opacity="0"/><stop offset="100%" stop-color="#0c0e14" stop-opacity=".85"/></radialGradient>`;
   svg.appendChild(defs);
   svg.appendChild(svgEl('rect', { x: -MG * CELL, y: -MG * CELL, width: (W + MG * 2) * CELL, height: (H + MG * 2) * CELL, fill: 'url(#waves)' }));
-  drawOutskirts(svg);
+  // подробный город одной картинкой (citymap.js); без него — простая клеточная карта
+  const city = typeof cityImage === 'function' && cityImage(typeof season === 'function' && season() === 'winter');
+  if (city) { svg.appendChild(svgEl('image', { href: city, x: -MG * CELL, y: -MG * CELL, width: (W + MG * 2) * CELL, height: (H + MG * 2) * CELL, preserveAspectRatio: 'none' })); drawRoadsOut(svg); }
+  else drawOutskirts(svg);
 
   // Суша: один path на цвет (быстро даже на телефоне)
   const paths = {};
@@ -132,6 +138,7 @@ function drawMapSvg(svg, control, homeId, selectedId, onTap, atId, jobs) {
   for (let gy = 0; gy < H; gy++) for (let gx = 0; gx < W; gx++) {
     const id = cellAt(gx, gy); if (!id) continue;
     const X = gx * CELL, Y = gy * CELL;
+    if (city) { if (!isWater(gx, gy)) add(id === 'center' ? '#b8b0a0' : (DIST[control[id]] || DIST[id]).color, X, Y); continue; }   // цвет района — полупрозрачной заливкой
     if (isWater(gx, gy)) { add('#7a6a55', X, Y); add('#5a4a38', X, Y + 3, CELL, 2); continue; }   // мост
     const owner = DIST[control[id]] || DIST[id];
     const base = id === 'center' ? DIST.center.color : owner.color;
@@ -141,7 +148,16 @@ function drawMapSvg(svg, control, homeId, selectedId, onTap, atId, jobs) {
     if (!street && !park) add(lighten(base, 1.25), X + 2, Y + 2, 4, 3);          // крыша дома
     if (park) add('#557a44', X + 2, Y + 2, 3, 3);
   }
-  for (const c in paths) svg.appendChild(svgEl('path', { d: paths[c].join(''), fill: c }));
+  for (const c in paths) svg.appendChild(svgEl('path', { d: paths[c].join(''), fill: c, ...(city ? { 'fill-opacity': 0.2 } : {}) }));
+  // названия улиц — проявляются при приближении
+  if (city && typeof STREETS !== 'undefined') {
+    const g = svgEl('g', { class: 'streets' });
+    for (const s of STREETS) {
+      const x = s.v ? s.x * CELL + 4 : s.x * CELL, y = s.v ? s.y * CELL : s.y * CELL + 4;
+      const t = svgEl('text', { x, y, class: 'street', transform: s.v ? `rotate(90 ${x} ${y})` : '' }); t.textContent = s.n; g.appendChild(t);
+    }
+    svg.appendChild(g);
+  }
 
   // Границы: толстые — между разными владельцами, тонкие — между районами одной моталки
   let thick = '', thin = '';
@@ -152,8 +168,8 @@ function drawMapSvg(svg, control, homeId, selectedId, onTap, atId, jobs) {
     if (r && r !== a) (own(r) !== own(a) ? (thick += `M${(x + 1) * CELL} ${y * CELL}v${CELL}`) : (thin += `M${(x + 1) * CELL} ${y * CELL}v${CELL}`));
     if (b && b !== a) (own(b) !== own(a) ? (thick += `M${x * CELL} ${(y + 1) * CELL}h${CELL}`) : (thin += `M${x * CELL} ${(y + 1) * CELL}h${CELL}`));
   }
-  svg.appendChild(svgEl('path', { d: thin, stroke: 'rgba(0,0,0,.35)', 'stroke-width': 1, 'stroke-dasharray': '2 2', fill: 'none' }));
-  svg.appendChild(svgEl('path', { d: thick, stroke: '#120e0b', 'stroke-width': 2.2, fill: 'none', 'stroke-linecap': 'square' }));
+  svg.appendChild(svgEl('path', { d: thin, stroke: 'rgba(0,0,0,.35)', 'stroke-width': 1, 'stroke-dasharray': '2 2', fill: 'none', 'vector-effect': 'non-scaling-stroke' }));
+  svg.appendChild(svgEl('path', { d: thick, stroke: '#120e0b', 'stroke-width': 2.4, fill: 'none', 'stroke-linecap': 'square', 'vector-effect': 'non-scaling-stroke' }));
 
   // Подсветка выбранного района
   if (selectedId) {
@@ -165,7 +181,7 @@ function drawMapSvg(svg, control, homeId, selectedId, onTap, atId, jobs) {
   // Значки и подписи-плашки
   for (const d of DISTRICTS) {
     const [cx, cy] = CENTROID[d.id];
-    if (d.icon) {
+    if (d.icon && !city) {
       const g = svgEl('g', { transform: `translate(${cx - 7} ${cy - 22})`, opacity: 0.85 });
       ICONS[d.icon].forEach((row, j) => [...row].forEach((ch, i) => { if (ch === '#') g.appendChild(svgEl('rect', { x: i * 3, y: j * 3, width: 3, height: 3, fill: '#1a1612' })); }));
       svg.appendChild(g);
@@ -197,8 +213,9 @@ function drawMapSvg(svg, control, homeId, selectedId, onTap, atId, jobs) {
     const k = slot[p.d] = (slot[p.d] || 0); slot[p.d]++;
     const [cx, cy] = CENTROID[p.d], x = cx + OFF[k % 6][0], y = cy + OFF[k % 6][1];
     PLACE_POS[p.id] = [x, y];
-    svg.appendChild(svgEl('rect', { x: x - 6, y: y - 6, width: 12, height: 12, rx: 2, fill: '#120e0b', stroke: PLACE_COL[p.k], 'stroke-width': 1.2 }));
-    PLACE_ICONS[p.k].forEach((row, j) => [...row].forEach((ch, i) => { if (ch === '#') svg.appendChild(svgEl('rect', { x: x - 4 + i * 1.6, y: y - 4 + j * 1.6, width: 1.6, height: 1.6, fill: PLACE_COL[p.k] })); }));
+    const pg = svgEl('g', { class: 'ov' }); svg.appendChild(pg);
+    pg.appendChild(svgEl('rect', { x: x - 6, y: y - 6, width: 12, height: 12, rx: 2, fill: '#120e0b', stroke: PLACE_COL[p.k], 'stroke-width': 1.2 }));
+    PLACE_ICONS[p.k].forEach((row, j) => [...row].forEach((ch, i) => { if (ch === '#') pg.appendChild(svgEl('rect', { x: x - 4 + i * 1.6, y: y - 4 + j * 1.6, width: 1.6, height: 1.6, fill: PLACE_COL[p.k] })); }));
   }
 
   // Маячки заданий
@@ -207,21 +224,32 @@ function drawMapSvg(svg, control, homeId, selectedId, onTap, atId, jobs) {
     if (!CENTROID[j.d]) continue;
     const k = seenD[j.d] = (seenD[j.d] || 0) + 1;
     const [cx, cy] = CENTROID[j.d], x = cx + 14 + (k - 1) * 9, y = cy - 16;
-    svg.appendChild(svgEl('circle', { cx: x, cy: y, r: 7, fill: '#f0c040', opacity: 0.4, class: 'youpulse' }));
-    svg.appendChild(svgEl('circle', { cx: x, cy: y, r: 4.5, fill: '#f0c040', stroke: '#000', 'stroke-width': 1 }));
-    const t = svgEl('text', { x: x - 1.5, y: y + 0.5, class: 'jobmark' }); t.textContent = '!'; svg.appendChild(t);
+    const jg = svgEl('g', { class: 'ov' }); svg.appendChild(jg);
+    jg.appendChild(svgEl('circle', { cx: x, cy: y, r: 7, fill: '#f0c040', opacity: 0.4, class: 'youpulse' }));
+    jg.appendChild(svgEl('circle', { cx: x, cy: y, r: 4.5, fill: '#f0c040', stroke: '#000', 'stroke-width': 1 }));
+    const t = svgEl('text', { x: x - 1.5, y: y + 0.5, class: 'jobmark' }); t.textContent = '!'; jg.appendChild(t);
   }
 
   for (const [, [x, y]] of Object.entries(EGG_POS)) svg.appendChild(svgEl('circle', { cx: x, cy: y, r: 1.6, class: 'eggspot' }));
   // дымка по краям: мир дальше есть, но туда не попасть
   svg.appendChild(svgEl('rect', { x: -MG * CELL, y: -MG * CELL, width: (W + MG * 2) * CELL, height: (H + MG * 2) * CELL, fill: 'url(#fog)', 'pointer-events': 'none' }));
+  // рамка старой карты, компас и картуш — у карты есть свои края
+  const fx = -MG * CELL, fy = -MG * CELL, fw = (W + MG * 2) * CELL, fh = (H + MG * 2) * CELL;
+  svg.appendChild(svgEl('rect', { x: fx + 2, y: fy + 2, width: fw - 4, height: fh - 4, fill: 'none', stroke: '#d8c49a', 'stroke-width': 1.4, opacity: 0.7, 'pointer-events': 'none' }));
+  svg.appendChild(svgEl('rect', { x: fx + 4.5, y: fy + 4.5, width: fw - 9, height: fh - 9, fill: 'none', stroke: '#d8c49a', 'stroke-width': 0.5, 'stroke-dasharray': '6 2', opacity: 0.55, 'pointer-events': 'none' }));
+  const cmp = svgEl('g', { transform: `translate(${fx + fw - 22} ${fy + 22})`, class: 'compass', 'pointer-events': 'none' });
+  cmp.innerHTML = '<circle r="11" fill="rgba(18,14,11,.7)" stroke="#d8c49a" stroke-width=".8"/><path d="M0 -9 L2.6 0 L0 9 L-2.6 0Z" fill="#d8c49a"/><path d="M0 -9 L2.6 0 L-2.6 0Z" fill="#c8402f"/><text y="-12.5" class="cmpN">С</text>';
+  svg.appendChild(cmp);
+  const cart = svgEl('g', { transform: `translate(${fx + 10} ${fy + fh - 24})`, 'pointer-events': 'none' });
+  cart.innerHTML = '<rect width="78" height="16" rx="2" fill="rgba(18,14,11,.78)" stroke="#d8c49a" stroke-width=".7"/><text x="6" y="7" class="cartT">КАЗАНЬ · 1987</text><text x="6" y="12.5" class="cartS">план города · масштаб условный</text>';
+  svg.appendChild(cart);
 
   // Тап по карте → район (координаты с учётом масштаба)
   svg.onclick = e => {
     if (svg._dragged) return;
     const r = svg.getBoundingClientRect();
     // координаты с учётом каймы внешнего мира вокруг города
-    const sx = (e.clientX - r.left) / r.width * (W + MG * 2) * CELL - MG * CELL, sy = (e.clientY - r.top) / r.height * (H + MG * 2) * CELL - MG * CELL;
+    const vb = svg.viewBox.baseVal, sx = vb.x + (e.clientX - r.left) / r.width * vb.width, sy = vb.y + (e.clientY - r.top) / r.height * vb.height;
     for (const [eid, [x, y]] of Object.entries(EGG_POS)) if (Math.hypot(sx - x, sy - y) < 7 && typeof playEgg === 'function') return playEgg(eid);
     for (const [pid, [x, y]] of Object.entries(PLACE_POS)) if (Math.hypot(sx - x, sy - y) < 9) return openPlace(pid);   // тап по зданию
     const gx = Math.floor(sx / CELL), gy = Math.floor(sy / CELL);
@@ -235,7 +263,7 @@ function enableZoom(svg) {
   const wrap = svg.parentElement; if (!wrap || !wrap.addEventListener || wrap._zoom) return applyView(svg);
   wrap._zoom = true;
   const pts = new Map(); let start = null;
-  const clampV = () => { mapView.s = Math.max(1, Math.min(3.5, mapView.s)); const m = (mapView.s - 1) * 160; mapView.x = Math.max(-m, Math.min(m, mapView.x)); mapView.y = Math.max(-m * 1.5, Math.min(m * 1.5, mapView.y)); };
+  const clampV = () => { mapView.s = Math.max(1, Math.min(6, mapView.s)); const m = (mapView.s - 1) * 160; mapView.x = Math.max(-m, Math.min(m, mapView.x)); mapView.y = Math.max(-m * 1.5, Math.min(m * 1.5, mapView.y)); };
   wrap.addEventListener('pointerdown', e => { pts.set(e.pointerId, [e.clientX, e.clientY]); start = { ...mapView, pts: new Map(pts) }; svg._dragged = false; });
   wrap.addEventListener('pointermove', e => {
     if (!pts.has(e.pointerId)) return;
@@ -275,5 +303,13 @@ function walkTo(from, to, done) {
 }
 
 function applyView(svg) {
-  if (!svg.style) return; svg.style.transform = `translate(${mapView.x}px, ${mapView.y}px) scale(${mapView.s})`; }
-function zoomBy(k) { mapView.s *= k; if (k === 0) mapView = { s: 1, x: 0, y: 0 }; mapView.s = Math.max(1, Math.min(3.5, mapView.s || 1)); const svg = document.getElementById('map'); if (svg) applyView(svg); }
+  if (!svg.setAttribute || !svg.clientWidth) return;
+  const X0 = -MG * CELL, Y0 = -MG * CELL, WU = (W + MG * 2) * CELL, HU = (H + MG * 2) * CELL, s = mapView.s;
+  const vw = WU / s, vh = HU / s;
+  let cx = X0 + WU / 2 - mapView.x / (svg.clientWidth * s) * WU, cy = Y0 + HU / 2 - mapView.y / (svg.clientHeight * s) * HU;
+  cx = Math.max(X0 + vw / 2, Math.min(X0 + WU - vw / 2, cx)); cy = Math.max(Y0 + vh / 2, Math.min(Y0 + HU - vh / 2, cy));
+  mapView.x = (X0 + WU / 2 - cx) * svg.clientWidth * s / WU; mapView.y = (Y0 + HU / 2 - cy) * svg.clientHeight * s / HU;   // упёрлись в край карты
+  svg.setAttribute('viewBox', `${cx - vw / 2} ${cy - vh / 2} ${vw} ${vh}`);
+  svg.style.setProperty('--inv', Math.max(0.45, 1 / Math.pow(s, 0.62)).toFixed(3));
+  svg.classList && svg.classList.toggle('z2', mapView.s >= 2.2); }   // ближе — видны названия улиц
+function zoomBy(k) { mapView.s *= k; if (k === 0) mapView = { s: 1, x: 0, y: 0 }; mapView.s = Math.max(1, Math.min(6, mapView.s || 1)); const svg = document.getElementById('map'); if (svg) applyView(svg); }
