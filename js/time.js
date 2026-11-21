@@ -224,7 +224,7 @@ if (typeof TASKS !== 'undefined') JOBS_EXTRA.forEach(t => { TASKS.push(t); TPL[t
 function jobsHour() {
   S.jobs = S.jobs || [];
   if (S.jobs.length >= 4 || Math.random() > 0.35) return;
-  const pool = TASKS.filter(t => S.rank >= (t.min || 0) && S.rank <= (t.max ?? 9) && !S.jobs.some(j => j.id === t.id)
+  const pool = TASKS.filter(t => (!t.rare || Math.random() < t.rare) && S.rank >= (t.min || 0) && S.rank <= (t.max ?? 9) && !S.jobs.some(j => j.id === t.id)
     && (t.id.startsWith('j_') || (t.id === 'prish' ? S.mode === 'career' && !S.gang : S.gang && S.mode !== 'surv')));
   // в Карьере без моталки — сначала приглашение пришиться
   if (S.mode === 'career' && !S.gang && !S.jobs.some(j => j.id === 'prish')) { S.jobs.push({ uid: Date.now() % 1e9 + rnd(1000), id: 'prish', p: {}, d: S.home, until: now() + 2880 }); return; }

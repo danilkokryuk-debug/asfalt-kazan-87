@@ -211,6 +211,9 @@ function achScreen(back) {
         ${got && !cl ? `<button class="btn main" data-claim="${i.id}">Открыть</button>` : cl ? '<span class="ch hi">✔ твоё</span>' : '<span class="ch">🔒</span>'}</div>`; }).join('')}</div>
     <h2 style="margin-top:20px">Достижения ${m.ach.length}/${ACH.length}</h2>
     <div class="choices">${ACH.map(a => `<div class="item ${m.ach.includes(a.id) ? 'worn' : 'locked'}"><div><b>${m.ach.includes(a.id) ? '★' : '☆'} ${a.name}</b><div class="sub">${a.d}</div></div></div>`).join('')}</div>
+    <h2 style="margin-top:20px">Пасхалки ${typeof eggsFound === 'function' ? eggsFound().length : 0}/${typeof EGGS === 'object' ? Object.keys(EGGS).length : 0}</h2>
+    <p class="sub">Спрятаны на улицах, в заданиях, в сюжете и даже за городом на карте.</p>
+    <div class="choices">${typeof EGGS === 'object' ? Object.entries(EGGS).map(([id, n]) => { const ok = eggsFound().includes(id); return `<div class="item ${ok ? 'worn' : 'locked'}"><b>${ok ? '🔎 ' + n : '???'}</b></div>`; }).join('') : ''}</div>
     <h2 style="margin-top:20px">Концовки ${ALL_ENDS.filter(e => m.ends.some(x => x.startsWith(e))).length}/${ALL_ENDS.length}</h2>
     <div class="choices">${ALL_ENDS.map(e => { const ok = m.ends.some(x => x.startsWith(e)); return `<div class="item ${ok ? 'worn' : 'locked'}"><b>${ok ? e : '???'}</b></div>`; }).join('')}</div>
     <div class="choices"><button class="btn" id="bk">Назад</button></div></div>`;

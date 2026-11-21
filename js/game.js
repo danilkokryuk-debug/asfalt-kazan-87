@@ -163,7 +163,7 @@ function stageStart() {
 }
 // Портреты из Google Flow (img/p_*.jpg). «Чужой» с прозвищем — это уже другой человек, без портрета.
 const PORTRAITS = ['mama', 'ildar', 'bacha', 'natasha', 'garipov', 'sedoy', 'zima', 'starsh', 'zavuch', 'chuzhoy'];
-const faceOf = who => { const [k, label] = (who || '').split(':'); return PORTRAITS.includes(k) && !(k === 'chuzhoy' && label) ? k : ''; };
+const faceOf = who => { const [k, label] = (who || '').split(':'); return PORTRAITS.includes(k) && !label ? k : ''; };   // с прозвищем — уже другой человек
 function setSpeaker(who, emo) {
   const [key, label] = (who || '').split(':');
   const npc = key && key !== 'hero' ? npcOf(key) : null;

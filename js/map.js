@@ -74,6 +74,8 @@ const ICONS = {
 };
 
 let mapView = { s: 1, x: 0, y: 0 }, PLACE_POS = {};
+// Тайные места за городом (пасхалки): еле заметный огонёк, тап — сцена
+const EGG_POS = { m_dacha: [150, -22], m_les: [352, 300], m_volga: [-14, 400], m_moskva: [-40, 236] };
 const ns = 'http://www.w3.org/2000/svg';
 const svgEl = (tag, attrs) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
 const lighten = (hex, k) => '#' + [1, 3, 5].map(i => Math.max(0, Math.min(255, Math.round(parseInt(hex.substr(i, 2), 16) * k))).toString(16).padStart(2, '0')).join('');
@@ -210,6 +212,7 @@ function drawMapSvg(svg, control, homeId, selectedId, onTap, atId, jobs) {
     const t = svgEl('text', { x: x - 1.5, y: y + 0.5, class: 'jobmark' }); t.textContent = '!'; svg.appendChild(t);
   }
 
+  for (const [, [x, y]] of Object.entries(EGG_POS)) svg.appendChild(svgEl('circle', { cx: x, cy: y, r: 1.6, class: 'eggspot' }));
   // дымка по краям: мир дальше есть, но туда не попасть
   svg.appendChild(svgEl('rect', { x: -MG * CELL, y: -MG * CELL, width: (W + MG * 2) * CELL, height: (H + MG * 2) * CELL, fill: 'url(#fog)', 'pointer-events': 'none' }));
 
@@ -219,6 +222,7 @@ function drawMapSvg(svg, control, homeId, selectedId, onTap, atId, jobs) {
     const r = svg.getBoundingClientRect();
     // координаты с учётом каймы внешнего мира вокруг города
     const sx = (e.clientX - r.left) / r.width * (W + MG * 2) * CELL - MG * CELL, sy = (e.clientY - r.top) / r.height * (H + MG * 2) * CELL - MG * CELL;
+    for (const [eid, [x, y]] of Object.entries(EGG_POS)) if (Math.hypot(sx - x, sy - y) < 7 && typeof playEgg === 'function') return playEgg(eid);
     for (const [pid, [x, y]] of Object.entries(PLACE_POS)) if (Math.hypot(sx - x, sy - y) < 9) return openPlace(pid);   // тап по зданию
     const gx = Math.floor(sx / CELL), gy = Math.floor(sy / CELL);
     const id = cellAt(gx, gy); if (id) onTap(id);
