@@ -794,3 +794,23 @@ body:has(#top.hidden) #pager, body:has(.card) #pager { display: none; }
 .fate-tl { margin: 12px 0; padding-left: 14px; border-left: 2px solid rgba(200, 64, 47, .6); display: flex; flex-direction: column; gap: 10px; }
 .fate-i { font-size: 14px; line-height: 1.5; color: #e8dcc0; position: relative; } .fate-i::before { content: ''; position: absolute; left: -20px; top: 6px; width: 9px; height: 9px; border-radius: 50%; background: #c8402f; }
 .item.city .sub.lo { color: var(--bad); } .item.city .sub.hi { color: var(--good); }
+
+/* ---------- Москва: ролик-вступление и заставка ---------- */
+.mskintro { position: fixed; inset: 0; z-index: 9000; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; transition: opacity .7s; }
+.mskintro video { width: 100%; height: 100%; object-fit: cover; }
+.mskintro .mi-vign { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.75)); }
+.mskintro .mi-skip { position: absolute; right: 14px; bottom: calc(18px + env(safe-area-inset-bottom)); padding: 8px 14px; border: 1px solid rgba(255,255,255,.35); border-radius: 18px; background: rgba(0,0,0,.45); color: #eee; font-size: 13px; opacity: 0; transition: opacity .6s; }
+.mskintro .mi-skip.on { opacity: 1; }
+.mskintro .mi-title { position: absolute; inset: 0; opacity: 0; pointer-events: none; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; transition: opacity 1.2s; }
+.mskintro .mi-bg { position: absolute; inset: -6%; background-size: cover; background-position: center; filter: brightness(.55); transform: scale(1.12); transition: transform 9s ease-out; }
+.mskintro .mi-snow { position: absolute; inset: 0; background: linear-gradient(transparent 40%, rgba(0,0,0,.7)); }
+.mskintro h1 { position: relative; margin: 0; font-size: clamp(44px, 14vw, 96px); letter-spacing: .18em; color: #f4efe4; text-shadow: 0 0 24px rgba(200,40,30,.8), 0 4px 0 #6a1410; transform: scale(1.6); opacity: 0; transition: transform 1.1s cubic-bezier(.2,.8,.2,1), opacity .8s; }
+.mskintro .mi-y { position: relative; margin-top: 6px; color: #d8b060; letter-spacing: .4em; font-size: 15px; opacity: 0; transition: opacity .8s .6s; }
+.mskintro .mi-t { position: relative; margin: 18px 24px 0; color: #ddd; font-size: 15px; opacity: 0; transition: opacity .8s 1s; }
+.mskintro .mi-tap { position: relative; margin-top: 34px; color: #aaa; font-size: 13px; opacity: 0; transition: opacity .8s 1.6s; }
+.mskintro.rev .mi-title { opacity: 1; pointer-events: auto; }
+.mskintro.rev .mi-bg { transform: scale(1); }
+.mskintro.rev h1 { transform: scale(1); opacity: 1; }
+.mskintro.rev .mi-y, .mskintro.rev .mi-t, .mskintro.rev .mi-tap { opacity: 1; }
+.mskintro.rev .mi-skip { display: none; }
+.mskintro.out { opacity: 0; }

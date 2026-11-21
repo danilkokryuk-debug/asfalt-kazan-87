@@ -592,7 +592,7 @@ function ending() {
 
 // --- Сохранения -------------------------------------------------------------------
 // У карьеры свои слоты (asfalt_c_*), чтобы не затирать кампанию
-const key = (slot, mode = S && S.mode) => 'asfalt_' + ({ career: 'c_', surv: 's_' }[mode] || '') + slot;
+const key = (slot, mode = S && S.mode) => 'asfalt_' + (CITY === 'moscow' ? 'm_' : '') + ({ career: 'c_', surv: 's_' }[mode] || '') + slot;
 function save(slot) { try { S.savedAt = Date.now(); localStorage.setItem(key(slot), JSON.stringify(S)); } catch (e) {} }
 function loadRaw(slot, mode) { try { return JSON.parse(localStorage.getItem(key(slot, mode))); } catch (e) { return null; } }
 function dropSave(slot, mode) { try { localStorage.removeItem(key(slot, mode)); } catch (e) {} }
