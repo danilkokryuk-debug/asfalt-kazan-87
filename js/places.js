@@ -42,7 +42,7 @@ const CARS = [
 ];
 const VTYPE = { moped: 'мопед', moto: 'мотоцикл', car: 'машина' };
 // Возраст героя: в сентябре 1987-го ему 15, дальше — по календарю
-const heroAge = S => 15 + Math.floor(((S.day || 1) - 1) / 365.25);
+const heroAge = S => (S.age0 || 15) + Math.floor(((S.day || 1) - 1) / 365.25);
 const CAR = Object.fromEntries(CARS.map(c => [c.id, c]));
 const carTxt = c => c.cur === '$' ? `$${c.price}` : `${c.price} р.`;
 

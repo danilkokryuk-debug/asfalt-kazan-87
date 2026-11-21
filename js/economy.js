@@ -40,8 +40,8 @@ def('e_point', {
 // --- Неделя: доходы и обязательные траты -------------------------------------------------------
 function economyWeek(S) {
   const w = { inc: [], out: [], warn: [] };
-  const allowance = S.fam === 'full' ? 5 : S.fam === 'drunk' ? 1 : 2;
-  w.inc.push(['Карманные от семьи', allowance]);
+  const big = typeof heroAge === 'function' && heroAge(S) >= 18, allowance = big ? 0 : S.fam === 'full' ? 5 : S.fam === 'drunk' ? 1 : 2;   // взрослому карманных не дают
+  if (allowance) w.inc.push(['Карманные от семьи', allowance]);
   if (S.points && S.points.length) w.inc.push(['Точки под крышей', pointsSum()]);
   S.st.dengi += w.inc.reduce((a, x) => a + x[1], 0);
 
@@ -66,6 +66,8 @@ function economyWeek(S) {
   if (S.st.lyub > 0 && S.flags.gift !== Math.floor(S.day / 7)) S.st.lyub = Math.max(0, S.st.lyub - 3);
   // точки под угрозой
   if (S.points && S.points.length && Math.random() < 0.15) S.flags.point_threat = rnd(S.points.length);
+  if (typeof vlWeek === 'function') vlWeek(S, w);
+  if (typeof theftWeek === 'function') theftWeek(S, w);
   S.week = w;
   const sum = a => a.reduce((x, y) => x + y[1], 0);
   log(`Неделя: +${sum(w.inc)} р., −${sum(w.out)} р.${w.warn.length ? ' ' + w.warn.join(' ') : ''}`);

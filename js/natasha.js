@@ -15,7 +15,7 @@ function natHtml(S) {
 // Выбор свидания: сначала вехи отношений, потом обычные прогулки
 function natDate() {
   if (!nOk(S)) return;
-  const st = nStage(S), f = S.flags, adult = S.day >= N_ADULT();
+  const st = nStage(S), f = S.flags, adult = typeof adultPair === 'function' ? adultPair(S) : S.day >= N_ADULT();
   let id = null;
   if (st >= 3 && !f.n_para && S.rel.natasha >= 55) id = 'n_para';
   else if (st >= 4 && !f.n_roditeli && S.rel.natasha >= 65) id = 'n_roditeli';

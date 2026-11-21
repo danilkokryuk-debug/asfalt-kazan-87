@@ -225,7 +225,7 @@ function jobsHour() {
   S.jobs = S.jobs || [];
   if (S.jobs.length >= 4 || Math.random() > 0.35) return;
   if (typeof specialHour === 'function') specialHour();   // особое задание — крайне редко
-  const pool = TASKS.filter(t => !t.special && (!t.veh || (typeof vehOk === 'function' && vehOk(S, t.veh))) && (!t.rare || Math.random() < t.rare) && S.rank >= (t.min || 0) && S.rank <= (t.max ?? 9) && !S.jobs.some(j => j.id === t.id)
+  const pool = TASKS.filter(t => !t.special && (!t.veh || (typeof vehOk === 'function' && vehOk(S, t.veh))) && (!t.rare || Math.random() < t.rare) && S.rank >= (t.min || 0) && S.rank <= (t.max ?? 9) && !S.jobs.some(j => j.id === t.id) && jobEraOk(S, t)
     && (t.id.startsWith('j_') || (t.id === 'prish' ? S.mode === 'career' && !S.gang : S.gang && S.mode !== 'surv')));
   // в Карьере без моталки — сначала приглашение пришиться
   if (S.mode === 'career' && !S.gang && !S.jobs.some(j => j.id === 'prish')) { S.jobs.push({ uid: Date.now() % 1e9 + rnd(1000), id: 'prish', p: {}, d: S.home, until: now() + 2880 }); return; }
@@ -246,4 +246,13 @@ function jobsHtml(d) {
   const list = (S.jobs || []).filter(j => j.d === d);
   return list.map(j => { const h = Math.max(1, Math.round((j.until - now()) / 60));
     return `<button class="btn job${TPL[j.id].special ? ' special' : ''}" data-job="${j.uid}"><span>❗ ${TPL[j.id].title(j.p)}</span><span class="ch mid">${h < 24 ? 'ещё ' + h + ' ч' : 'ещё ' + Math.round(h / 24) + ' дн'}</span></button>`; }).join('');
+}
+
+// эпоха и возраст: задания девяностых — только в девяностых, «школьные» — только школьникам
+function jobEraOk(S, t) {
+  const e = typeof era90 === 'function' && era90(S);
+  if (t.era90 && !e) return false;
+  if (e && typeof PRE90 !== 'undefined' && PRE90.includes(t.id)) return false;
+  if (t.age && typeof heroAge === 'function') { const a = heroAge(S); if (a < t.age[0] || a > t.age[1]) return false; }
+  return true;
 }

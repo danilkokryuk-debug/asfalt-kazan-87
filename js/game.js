@@ -415,7 +415,7 @@ function renderHero() {
   $('#main').innerHTML = `<div class="scene"><div class="herohead"><canvas class="sprite" id="spr"></canvas><div>
     <h2>${S.name}${S.nick ? ' «' + S.nick + '»' : ''}</h2>
     <div class="sub">${lookText(S.app)}.<br>Район: ${DIST[S.home].name}.<br>Моталка: ${g}.<br>Ранг: <b>${RANKS[S.rank]}</b></div></div></div>
-    ${typeof goalsHtml === 'function' ? goalsHtml() : ''}${typeof fameHtml === 'function' ? fameHtml(S) : ''}${typeof natHtml === 'function' ? natHtml(S) : ''}${typeof vehHtml === 'function' ? vehHtml(S) : ''}${typeof bizHtml === 'function' ? bizHtml(S) : ''}${typeof socialHtml === 'function' ? socialHtml(S) : ''}
+    ${typeof goalsHtml === 'function' ? goalsHtml() : ''}${typeof vlHtml === 'function' ? vlHtml(S) : ''}${typeof famHtml === 'function' ? famHtml(S) : ''}${typeof fameHtml === 'function' ? fameHtml(S) : ''}${typeof natHtml === 'function' ? natHtml(S) : ''}${typeof vehHtml === 'function' ? vehHtml(S) : ''}${typeof bizHtml === 'function' ? bizHtml(S) : ''}${typeof socialHtml === 'function' ? socialHtml(S) : ''}
     ${walletHtml()}
     <div class="grid">
       ${Object.keys(STATS).map(k => `<div class="stat">${NAMES[k]}<span class="v">${S.st[k]}${gear(k) ? ' +' + gear(k) : ''}</span>${bar(S.st[k], 10)}</div>`).join('')}
@@ -464,16 +464,16 @@ function renderWardrobe() {
       : `<div class="sub">Барахолка у фарцовщика Жоры. У тебя: <b>${S.st.dengi} р.</b> и <b>$${S.st.dol || 0}</b><br>Нажми на вещь — примеришь. Импорт — за доллары, некоторое — только с ранга.</div>`}</div></div>
     <div class="tabs">${Object.entries(SLOTS).map(([k, v]) => `<button class="${k === wardSlot ? 'on' : ''}" data-s="${k}">${v}</button>`).join('')}</div>
     <div class="choices">${list.map((i, n) => {
-      const own = S.owned.includes(i.id), lockR = (i.rank || 0) > S.rank, torn = (S.torn || []).includes(i.id);
+      const own = S.owned.includes(i.id), l90 = typeof lock90 === 'function' && lock90(i), hid = l90 && !era90(S), lockR = (i.rank || 0) > S.rank || l90, torn = (S.torn || []).includes(i.id);
       const rc = repairCost(i), rcOk = (i.cur === '$' ? S.st.dol : S.st.dengi) >= rc;
       const act = own && torn ? `Починить ${i.cur === '$' ? '$' + rc : rc + ' р.'}`
         : own ? (worn(i.id) ? (wardSlot === 'acc' ? 'Снять' : 'Надето') : 'Надеть')
-        : lockR ? `с ранга «${RANKS[i.rank]}»` : `Купить ${priceTxt(i)}`;
+        : hid ? 'в 90-х' : l90 ? `влияние ${i.vl}` : lockR ? `с ранга «${RANKS[i.rank]}»` : `Купить ${priceTxt(i)}`;
       const dis = own && torn ? !rcOk : (!own && (lockR || !canAfford(i))) || (own && worn(i.id) && wardSlot !== 'acc');
       return `<div class="item${worn(i.id) ? ' worn' : ''}${tryOn === i.id ? ' trying' : ''}${lockR && !own ? ' lockedi' : ''}" data-try="${i.id}">
         <canvas class="sprite mini-spr" data-ic="${i.id}"></canvas>
-        <div style="flex:1"><b>${lockR && !own ? '🔒 ' : ''}${i.name}</b>${i.cur === '$' ? ' <span class="ch mid">импорт, $</span>' : ''}${torn ? ' <span class="ch lo">порвано</span>' : ''}${bon(i) ? ` <span class="ch hi">${bon(i)}</span>` : ''}
-        <div class="sub">${i.desc}</div></div><button class="btn" data-i="${n}" ${dis ? 'disabled' : ''}>${act}</button></div>`;
+        <div style="flex:1"><b>${lockR && !own ? '🔒 ' : ''}${hid ? '???' : i.name}</b>${i.cur === '$' ? ' <span class="ch mid">импорт, $</span>' : ''}${torn ? ' <span class="ch lo">порвано</span>' : ''}${bon(i) ? ` <span class="ch hi">${bon(i)}</span>` : ''}
+        <div class="sub">${hid ? 'Неизвестно. Откроется в 90-х.' : l90 ? `Откроется при влиянии в городе ${i.vl} (сейчас ${S.vl || 0}). ${i.desc}` : i.desc}</div></div><button class="btn" data-i="${n}" ${dis ? 'disabled' : ''}>${act}</button></div>`;
     }).join('')}</div></div>`;
   drawHero($('#spr'), S.app, prev, { emo: tr ? 'smile' : null });
   // маленькая иконка вещи на манекене

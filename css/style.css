@@ -588,3 +588,16 @@ label.btn { display: flex; justify-content: center; cursor: pointer; }
 .cr-in p { margin: 6px 0; font-size: 16px; } .cr-in .cr-h { margin-top: 34px; color: #9b8f78; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; }
 .cr-in .cr-note { margin-top: 50px; color: #9b8f78; font-size: 13px; font-style: italic; } .cr-in .cr-end { margin: 80px 0 40vh; font-size: 22px; letter-spacing: 12px; color: #c8402f; }
 .cr-skip { position: absolute; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom)); width: auto; padding: 8px 14px; z-index: 4; opacity: .7; }
+
+/* ---- 90-е: влияние ---- */
+.vlbox { border-color: rgba(200, 64, 47, .45); background: linear-gradient(180deg, rgba(52, 22, 20, .92), rgba(24, 14, 12, .92)); }
+.vlbox b { color: #e86a50; }
+.vlbox i { position: absolute; left: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, #6a1010, #e86a50); }
+/* ---- семья ---- */
+.item.fam { align-items: flex-start; }
+.item.fam .bar { height: 3px; background: rgba(255, 255, 255, .08); border-radius: 2px; margin: 6px 0; }
+.item.fam .bar i { display: block; height: 100%; border-radius: 2px; background: linear-gradient(90deg, #c8402f, #f08ca0); }
+.fam-b { display: flex; flex-wrap: wrap; gap: 6px; }
+.fam-b .btn { width: auto; flex: none; padding: 8px 10px; font-size: 13px; }
+.fface { width: 52px; height: 52px; flex: none; border-radius: 8px; background: #222 center / cover no-repeat; border: 2px solid rgba(232, 200, 120, .45); image-rendering: pixelated; }
+.fface.kid { display: grid; place-items: center; font-size: 28px; background: rgba(240, 140, 160, .12); }
