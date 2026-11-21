@@ -40,7 +40,7 @@ function pagerAct(m, byPhone) {
   if (byPhone && m.call) { const r = m.call; applyFx(r.fx || {}); log(r.txt); toast(r.txt); view = 'map'; return render(); }
   if (k === 'job') { const j = (S.jobs || []).find(x => x.uid === +v); if (!j) { toast('Опоздал — уже без тебя'); view = 'map'; return render(); } return takeJob(j.uid); }
   if (k === 'ev') { advanceTime(ACT_MIN); return play(v); }
-  if (k === 'scr') return ({ fam: () => famScreen(), vl: () => vlScreen(), brig: () => brigScreen(), map: () => { view = 'map'; render(); } })[v]();
+  if (k === 'scr') return ({ fam: () => famScreen(), vl: () => vlScreen(), brig: () => brigScreen(), case: () => caseScreen(), map: () => { view = 'map'; render(); } })[v]();
 }
 // новые задания в девяностых приходят на пейджер
 { const jh = jobsHour; jobsHour = () => { const n0 = (S.jobs || []).length; jh(); const j = (S.jobs || [])[S.jobs.length - 1];

@@ -1,37 +1,41 @@
 // Стилизованная карта Казани: мелкая сетка, неровные границы районов, кварталы, улицы, вода, мосты, значки.
-// shortcut: география условная (не по спутнику), уточнять центры районов при желании.
+// География по настоящей Казани: Волга с запада и юго-запада, Казанка с северо-востока широким устьем у Кремля,
+// озёра Нижний и Средний Кабан южнее центра. Районы — на своих местах (Соцгород на севере, Горки на юго-востоке, Мирный на юге).
 const W = 40, H = 60, CELL = 8;   // 320×480 в координатах SVG
 
 // id, название района, группировка, центр (x,y в старых клетках 20×30), цвет, описание, значок
 const DISTRICTS = [
-  { id: 'socgorod', name: 'Соцгород',    gang: 'Соцгород',     x: 11, y: 2,  color: '#8a6438', desc: 'Авиастроительный. Заводские пацаны, держатся особняком.', icon: 'zavod' },
-  { id: 'zhilka',   name: 'Жилка',       gang: 'Жилка',        x: 5,  y: 4,  color: '#7a3e3e', desc: 'Жилплощадка. Старые бараки, злые и многочисленные.' },
-  { id: 'kinoplenka', name: 'Кинопленка', gang: 'Кинопленка',  x: 5,  y: 8,  color: '#3d607a', desc: 'Московский район, у фабрики кинопленки.', icon: 'zavod' },
-  { id: 'savinovo', name: 'Савиново',    gang: 'Савиново',     x: 15, y: 7,  color: '#557a3d', desc: 'Новостройки за Казанкой. Молодая, дерзкая моталка.' },
-  { id: 'center',   name: 'Центр',       gang: null,           x: 7,  y: 13, color: '#6a665c', desc: 'Кремль, Баумана, ДК, рынок. Ничья земля — здесь милиция.', icon: 'kreml' },
-  { id: 'borisk',   name: 'Борисково',   gang: 'Борисково',    x: 17, y: 13, color: '#7a6630', desc: 'Окраина, частный сектор. Своих не сдают.' },
-  { id: 'novotat',  name: 'Новотатарка', gang: 'Новотатарская', x: 3, y: 16, color: '#653f7a', desc: 'Старая слобода у Кабана. Здесь всё решают по-старому.', icon: 'mechet' },
-  { id: 'tyap',     name: 'Теплоконтроль', gang: 'Тяп-Ляп',    x: 10, y: 16, color: '#9a3030', desc: 'Тяп-Ляп. Самая известная моталка города.', icon: 'zavod' },
-  { id: 'universam', name: 'Универсам',  gang: 'Универсам',    x: 15, y: 18, color: '#2e5f96', desc: 'Дворы вокруг универсама. Дружные, своих не бросают.', icon: 'magazin' },
-  { id: 'taktash',  name: 'Хади Такташ', gang: 'Хади Такташ',  x: 7,  y: 21, color: '#9a6230', desc: 'Улица Хади Такташа. Старые враги Тяп-Ляпа.' },
-  { id: 'pavluha',  name: 'Павлюха',     gang: 'Павлюхина',    x: 11, y: 22, color: '#2e7a66', desc: 'Улица Павлюхина. Хитрые, держат рынок.', icon: 'rynok' },
-  { id: 'perv',     name: 'Перваки',     gang: 'Перваки',      x: 16, y: 24, color: '#7a2e66', desc: 'Первые Горки. Спортсмены, качалки в каждом подвале.' },
-  { id: 'gryaz',    name: 'Грязь',       gang: 'Грязь',        x: 4,  y: 25, color: '#5a5a30', desc: 'Низина у озера. Название говорит само за себя.' },
-  { id: 'mirny',    name: 'Мирный',      gang: 'Мирный',       x: 11, y: 28, color: '#45457a', desc: 'Посёлок на юге. Далеко, но если придут — придут все.' },
+  { id: 'socgorod', name: 'Соцгород',    gang: 'Соцгород',     x: 8, y: 2,  color: '#8a6438', desc: 'Авиастроительный. Заводские пацаны, держатся особняком.', icon: 'zavod' },
+  { id: 'zhilka',   name: 'Жилка',       gang: 'Жилка',        x: 5, y: 6.5,  color: '#7a3e3e', desc: 'Жилплощадка. Старые бараки, злые и многочисленные.' },
+  { id: 'kinoplenka', name: 'Кинопленка', gang: 'Кинопленка',  x: 9.5, y: 7,  color: '#3d607a', desc: 'Московский район, у фабрики кинопленки.', icon: 'zavod' },
+  { id: 'savinovo', name: 'Савиново',    gang: 'Савиново',     x: 15, y: 4.5,  color: '#557a3d', desc: 'Новостройки за Казанкой. Молодая, дерзкая моталка.' },
+  { id: 'center',   name: 'Центр',       gang: null,           x: 5.5, y: 13, color: '#6a665c', desc: 'Кремль, Баумана, ДК, рынок. Ничья земля — здесь милиция.', icon: 'kreml' },
+  { id: 'borisk',   name: 'Борисково',   gang: 'Борисково',    x: 17, y: 14, color: '#7a6630', desc: 'Окраина, частный сектор. Своих не сдают.' },
+  { id: 'novotat',  name: 'Новотатарка', gang: 'Новотатарская', x: 4.5, y: 16.5, color: '#653f7a', desc: 'Старая слобода у Кабана. Здесь всё решают по-старому.', icon: 'mechet' },
+  { id: 'tyap',     name: 'Теплоконтроль', gang: 'Тяп-Ляп',    x: 9.5, y: 12.5, color: '#9a3030', desc: 'Тяп-Ляп. Самая известная моталка города.', icon: 'zavod' },
+  { id: 'universam', name: 'Универсам',  gang: 'Универсам',    x: 13.5, y: 11.5, color: '#2e5f96', desc: 'Дворы вокруг универсама. Дружные, своих не бросают.', icon: 'magazin' },
+  { id: 'taktash',  name: 'Хади Такташ', gang: 'Хади Такташ',  x: 10, y: 16, color: '#9a6230', desc: 'Улица Хади Такташа. Старые враги Тяп-Ляпа.' },
+  { id: 'pavluha',  name: 'Павлюха',     gang: 'Павлюхина',    x: 10.5, y: 20, color: '#2e7a66', desc: 'Улица Павлюхина. Хитрые, держат рынок.', icon: 'rynok' },
+  { id: 'perv',     name: 'Перваки',     gang: 'Перваки',      x: 15, y: 20, color: '#7a2e66', desc: 'Первые Горки. Спортсмены, качалки в каждом подвале.' },
+  { id: 'gryaz',    name: 'Грязь',       gang: 'Грязь',        x: 6, y: 23, color: '#5a5a30', desc: 'Низина у озера. Название говорит само за себя.' },
+  { id: 'mirny',    name: 'Мирный',      gang: 'Мирный',       x: 11, y: 27, color: '#45457a', desc: 'Посёлок на юге. Далеко, но если придут — придут все.' },
 ];
 const DIST = Object.fromEntries(DISTRICTS.map(d => [d.id, d]));
 
 // детерминированный «шум» — чтобы карта была одинаковой каждый раз
 const hash = (x, y) => { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); };
-const kazankaY = gx => 21 + Math.sin(gx * 0.3) * 1.8;            // гх, гу — клетки 40×60
+const kazankaY = gx => 23 - (gx - 6) * 0.2 + Math.sin(gx * 0.45) * 1.3;   // Казанка: с северо-востока к устью у Кремля
+const kazankaW = gx => gx < 14 ? 2.2 : gx < 22 ? 1.6 : 1.2;                // у устья — широкая (подпор Куйбышевского водохранилища)
+const volgaEdge = gy => 6 + Math.round(Math.sin(gy * 0.25)) + (gy > 30 ? (gy - 30) * 0.18 : 0) + (gy > 48 ? (gy - 48) * 0.5 : 0);   // Волга забирает юго-запад
 function isWater(gx, gy) {
-  if (gx <= 3 + (gy > 36 ? 2 : 0) + (gy > 50 ? 2 : 0) + Math.round(Math.sin(gy * 0.4))) return true;   // Волга
-  if (Math.abs(gy - kazankaY(gx)) < 1.4 && gx < 38) return true;                                        // Казанка
-  if ((gx - 12) ** 2 / 4 + (gy - 37) ** 2 / 20 < 1) return true;                                         // озеро Кабан
+  if (gx < volgaEdge(gy)) return true;                                                                    // Волга
+  if (Math.abs(gy - kazankaY(gx)) < kazankaW(gx)) return true;                                            // Казанка
+  if ((gx - 15) ** 2 / 2.6 + (gy - 31) ** 2 / 12 < 1) return true;                                         // Нижний Кабан
+  if ((gx - 14) ** 2 / 7 + (gy - 39) ** 2 / 10 < 1) return true;                                           // Средний Кабан
   return false;
 }
-const BRIDGES = [11, 19, 28];   // столбцы мостов через Казанку
-const isBridge = (gx, gy) => BRIDGES.includes(gx) && Math.abs(gy - kazankaY(gx)) < 1.6;
+const BRIDGES = [9, 18, 29];   // мосты через Казанку: дамба у устья, Ленинский, Ново-Савиновский
+const isBridge = (gx, gy) => BRIDGES.includes(gx) && Math.abs(gy - kazankaY(gx)) < kazankaW(gx) + 0.2;
 
 // Клетки → район: ближайший центр (с шумом для неровных границ) по ту же сторону Казанки
 const CELLS = [];
@@ -40,7 +44,7 @@ for (let gy = 0; gy < H; gy++) for (let gx = 0; gx < W; gx++) {
   const north = gy < kazankaY(gx);
   let best = null, bd = 1e9;
   for (const d of DISTRICTS) {
-    if ((d.y < 11) !== north) continue;
+    if ((d.y * 2 + 1 < kazankaY(d.x * 2 + 1)) !== north) continue;   // по свою сторону Казанки
     const dd = (d.x * 2 + 1 - gx) ** 2 + (d.y * 2 + 1 - gy) ** 2 + hash(gx, gy) * 9;
     if (dd < bd) { bd = dd; best = d.id; }
   }
@@ -415,6 +419,7 @@ function mapTraffic(svg) {
     ctx.fillStyle = '#2e6a4a'; rr(-1.4, 0, 2.8, 6, .6); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#d8e0e8'; ctx.fillRect(-1, .6, 2, 1.2);
     for (let i = 0; i < 6; i++) { ctx.fillStyle = ['#6a3a2a', '#3a4a5a', '#5a5a4a'][i % 3]; ctx.fillRect(-1.3, 6.6 + i * 5.6, 2.6, 5); ctx.strokeRect(-1.3, 6.6 + i * 5.6, 2.6, 5); }
     ctx.restore();
+    if (typeof mapExtra === 'function') mapExtra(ctx, t, { k, ox, oy, dpr, vb, cw, ch, svg });   // герой, ночь, дым, птицы (livemap.js)
   };
   // погода дня: зимой чаще снег, осенью и весной — дождь, летом изредка
   const ssn = typeof season === 'function' && S ? season() : 'summer', wr = ((S ? S.day : 1) * 7919 % 100) / 100;

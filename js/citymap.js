@@ -55,7 +55,7 @@ function cityImage(winter) {
 
   // ---------- 1. земля, лес, поля, дачи за городом ----------
   rect(X0, Y0, WU, HU, P.forest);
-  const volgaOut = (gx, gy) => gx < 4 && gx >= -3 + Math.round(Math.sin(gy * 0.3)) && !(gy < 0 && gx < -1);
+  const volgaOut = (gx, gy) => gx < volgaEdge(Math.max(0, Math.min(H - 1, gy))) + (gy >= H ? (gy - H) * 0.8 : 0) && gx >= -MG && !(gy < -2 && gx < 2);
   const water = (gx, gy) => (gx >= 0 && gy >= 0 && gx < W && gy < H) ? isWater(gx, gy) && !isBridge(gx, gy) : volgaOut(gx, gy);
   for (let gy = -MG; gy < H + MG; gy++) for (let gx = -MG; gx < W + MG; gx++) {
     if (gx >= 0 && gy >= 0 && gx < W && gy < H) continue;
@@ -168,7 +168,7 @@ function cityImage(winter) {
     }
   }
   // ---------- 4. Кремль на мысу у Казанки ----------
-  const [kx, ky] = CENTROID.center || [80, 150];
+  const [kx, ky] = [100, 230];   // мыс у устья Казанки
   const KX = kx - 18, KY = ky - 30;
   markOcc(KX - 3, KY - 12, 32, 36);
   // ---------- 3б. дозастройка: в городе не должно быть пустырей ----------
@@ -219,8 +219,8 @@ function shade(hex, k) { return '#' + [1, 3, 5].map(i => Math.max(0, Math.min(25
 
 // Названия улиц — видны при приближении
 const STREETS = [
-  { x: 6, y: 14, v: true, n: 'ул. Баумана' }, { x: 12, y: 28, v: true, n: 'ул. Декабристов' }, { x: 18, y: 35, v: false, n: 'ул. Гвардейская' },
-  { x: 24, y: 42, v: true, n: 'ул. Хади Такташа' }, { x: 30, y: 49, v: false, n: 'ул. Павлюхина' }, { x: 12, y: 56, v: false, n: 'Оренбургский тракт' },
-  { x: 24, y: 7, v: false, n: 'пр. Ибрагимова' }, { x: 30, y: 21, v: true, n: 'Сибирский тракт' }, { x: 18, y: 7, v: true, n: 'ул. Копылова' },
-  { x: 6, y: 35, v: false, n: 'ул. Тукая' }, { x: 36, y: 28, v: false, n: 'ул. Николая Ершова' },
+  { x: 12, y: 27, v: true, n: 'ул. Баумана' }, { x: 18, y: 12, v: true, n: 'ул. Декабристов' }, { x: 26, y: 28, v: false, n: 'ул. Гвардейская' },
+  { x: 18, y: 34, v: true, n: 'ул. Хади Такташа' }, { x: 22, y: 42, v: false, n: 'ул. Павлюхина' }, { x: 26, y: 49, v: false, n: 'Оренбургский тракт' },
+  { x: 24, y: 7, v: false, n: 'пр. Ибрагимова' }, { x: 36, y: 24, v: true, n: 'Сибирский тракт' }, { x: 18, y: 3, v: true, n: 'ул. Копылова' },
+  { x: 10, y: 35, v: false, n: 'ул. Тукая' }, { x: 32, y: 21, v: false, n: 'ул. Николая Ершова' },
 ];

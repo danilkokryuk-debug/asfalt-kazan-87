@@ -204,5 +204,6 @@ const MINI = (() => {
       });
     },
   };
-  return { run };
+  // новые мини-игры из других файлов: MINI.add(вид, название, подсказка, (body, p, finish, loop) => {…})
+  return { run, add(kind, name, hint, fn) { NAMES[kind] = name; HINT[kind] = hint; GAMES[kind] = fn; } };
 })();

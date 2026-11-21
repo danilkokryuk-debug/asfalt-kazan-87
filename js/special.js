@@ -71,7 +71,7 @@ SPECIAL.forEach(t => { const def0 = { min: 0, special: true, gen: S => { const f
 // Крайне редко: шанс ~0.4% в игровой час (примерно раз в 2–3 игровые недели), одно особое за раз, висит сутки
 function specialHour() {
   if (!S) return;
-  if ((S.jobs || []).some(j => TPL[j.id] && TPL[j.id].special) || Math.random() > 0.004) return;
+  if ((S.jobs || []).some(j => TPL[j.id] && TPL[j.id].special) || Math.random() > 0.0045) return;   // ~раз в 1–2 игровые недели
   const t = pick(SPECIAL), p = TPL[t.id].gen(S); if (!p) return;
   const d = pick([S.home, 'center', ...[...NEIGHBORS[S.home]]].filter(x => DIST[x]));
   S.jobs.push({ uid: Date.now() % 1e9 + rnd(1000), id: t.id, p: { ...p, d }, d, until: now() + 1440, special: true });

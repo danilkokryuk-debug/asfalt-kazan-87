@@ -223,8 +223,8 @@ if (typeof TASKS !== 'undefined') JOBS_EXTRA.forEach(t => { TASKS.push(t); TPL[t
 // Каждый игровой час: шанс нового маячка (до 4), у каждого свой срок жизни
 function jobsHour() {
   S.jobs = (S.jobs || []).filter(jobStillOk);   // продал машину — задания «с машиной» пропадают
+  if (typeof specialHour === 'function') specialHour();   // особое задание — редко, но не зависит от остальных маячков
   if (S.jobs.length >= 4 || Math.random() > 0.35) return;
-  if (typeof specialHour === 'function') specialHour();   // особое задание — крайне редко
   const pool = TASKS.filter(t => !t.special && (!t.veh || (typeof vehOk === 'function' && vehOk(S, t.veh))) && (!t.rare || Math.random() < t.rare) && S.rank >= (t.min || 0) && S.rank <= (t.max ?? 9) && !S.jobs.some(j => j.id === t.id) && jobEraOk(S, t) && !(S.jobLast && S.day - (S.jobLast[t.id] ?? -99) < 14)
     && (t.id.startsWith('j_') || (t.id === 'prish' ? S.mode === 'career' && !S.gang : S.gang && S.mode !== 'surv')));
   // в Карьере без моталки — сначала приглашение пришиться

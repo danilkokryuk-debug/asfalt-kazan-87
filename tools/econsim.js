@@ -26,6 +26,7 @@ function __econ(until) {
   const marks = {}; let label = '';
   const end = dayNum(until, 1, 1);
   for (let i = 0; i < 400000 && S.day < end; i++) {
+    if (S.case) S.case.items = [];   // бот «не садится»: дело не копится
     S.ended = false; S.over = null; S.ending = null; if (S.st.zdor < 30) S.st.zdor = 80; if (S.st.mil > 60) S.st.mil = 20;   // без тюрьмы и смертей
     const y = new Date(1987, 8, S.day).getFullYear(); if (!marks[y]) marks[y] = { worth: worth(), rank: S.rank, vl: S.vl || 0 };
     const m0 = S.st.dengi + (S.st.dol || 0) * 4;
