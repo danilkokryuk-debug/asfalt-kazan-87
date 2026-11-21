@@ -59,6 +59,7 @@ function applyFx(fx) {
     else if (k === 'join') { S.gang = v === true ? S.home : v; log(`Пришился к моталке «${DIST[S.gang].gang}».`); out.push(`<b>Ты теперь в «${DIST[S.gang].gang}»</b>`); }
     else if (k === 'leave') { log(`Отшился от «${DIST[S.gang].gang}».`); S.gang = null; S.rank = 0; }
     else if (k === 'rank') { if (v > S.rank && typeof toast === 'function') setTimeout(() => toast(`${RANKS[v]}: открылись новые задания`), 1200); S.rank = v; log(`Новый ранг: ${RANKS[v]}.`); out.push(`<b>Ранг: ${RANKS[v]}</b>`); AUDIO.ok(); }
+    else if (k === 'limit') { const it = typeof limGive === 'function' && limGive(S, v); if (it) { out.push(`<b>Лимитированная вещь: «${it.name}»</b>`); AUDIO.ok(); } }
     else if (k === 'nick') { S.nick = v; log(`Теперь тебя зовут «${v}».`); out.push(`Погоняло: «${v}»`); }
     else if (k === 'ctrl') for (const [d, o] of Object.entries(v)) { S.ctrl[d] = o; out.push(`${DIST[d].name} теперь под «${DIST[o].gang}»`); }
     else if (k === 'ap') S.ap = Math.max(0, S.ap + v);
@@ -450,7 +451,7 @@ function renderHero() {
 let wardSlot = 'outer', tryOn = null;
 function renderWardrobe() {
   syncRewards();
-  const list = [...SHOP, ...rewardItems()].filter(i => i.slot === wardSlot).sort((a, b) => (a.rank || 0) - (b.rank || 0) || (a.cur === '$') - (b.cur === '$') || a.price - b.price);
+  const list = [...SHOP, ...rewardItems(), ...ITEMS.filter(i => i.limited && S.owned.includes(i.id))].filter(i => i.slot === wardSlot).sort((a, b) => (a.rank || 0) - (b.rank || 0) || (a.cur === '$') - (b.cur === '$') || a.price - b.price);
   const worn = id => wardSlot === 'acc' ? S.wear.acc.includes(id) : S.wear[wardSlot] === id;
   const bon = i => i.bonus ? Object.entries(i.bonus).map(([k, v]) => `${NAMES[k]} +${v}`).join(', ') : '';
   // примерка: показать вещь на герое, даже если она ещё не куплена

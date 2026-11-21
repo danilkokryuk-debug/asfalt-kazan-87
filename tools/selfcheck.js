@@ -11,7 +11,7 @@ const ctx = {
   localStorage: { getItem: k => store[k] ?? null, setItem: (k, v) => store[k] = v },
 };
 vm.createContext(ctx);
-const src = ['js/map.js', 'js/citymap.js', 'js/sprite.js', 'js/audio.js', 'js/settings.js', 'js/game.js', 'js/story.js', 'js/career.js', 'js/mini.js', 'js/world.js', 'js/economy.js', 'js/mechanics.js', 'js/atmos.js', 'js/story2.js', 'js/street.js', 'js/scenes.js', 'js/menu.js', 'js/time.js', 'js/places.js', 'js/ranks.js', 'js/fame.js', 'js/slang.js', 'js/natasha.js', 'js/prison.js', 'js/eggs.js', 'js/songs.js', 'js/stats.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
+const src = ['js/map.js', 'js/citymap.js', 'js/sprite.js', 'js/audio.js', 'js/settings.js', 'js/game.js', 'js/story.js', 'js/career.js', 'js/mini.js', 'js/world.js', 'js/economy.js', 'js/mechanics.js', 'js/atmos.js', 'js/story2.js', 'js/street.js', 'js/scenes.js', 'js/menu.js', 'js/time.js', 'js/places.js', 'js/ranks.js', 'js/fame.js', 'js/slang.js', 'js/natasha.js', 'js/special.js', 'js/prison.js', 'js/eggs.js', 'js/songs.js', 'js/stats.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
 vm.runInContext(src + `
 ;globalThis.EV = EV; globalThis.DISTRICTS = DISTRICTS; save = () => {};
 function __run(seedHome, steps) {

@@ -225,9 +225,11 @@ function drawMapSvg(svg, control, homeId, selectedId, onTap, atId, jobs) {
     const k = seenD[j.d] = (seenD[j.d] || 0) + 1;
     const [cx, cy] = CENTROID[j.d], x = cx + 14 + (k - 1) * 9, y = cy - 16;
     const jg = svgEl('g', { class: 'ov' }); svg.appendChild(jg);
-    jg.appendChild(svgEl('circle', { cx: x, cy: y, r: 7, fill: '#f0c040', opacity: 0.4, class: 'youpulse' }));
-    jg.appendChild(svgEl('circle', { cx: x, cy: y, r: 4.5, fill: '#f0c040', stroke: '#000', 'stroke-width': 1 }));
-    const t = svgEl('text', { x: x - 1.5, y: y + 0.5, class: 'jobmark' }); t.textContent = '!'; jg.appendChild(t);
+    const sp = j.special, col = sp ? '#b04cff' : '#f0c040';   // особое задание — фиолетовое, со звездой
+    if (sp) jg.appendChild(svgEl('circle', { cx: x, cy: y, r: 11, fill: col, opacity: 0.35, class: 'youpulse' }));
+    jg.appendChild(svgEl('circle', { cx: x, cy: y, r: 7, fill: col, opacity: 0.4, class: 'youpulse' }));
+    jg.appendChild(svgEl('circle', { cx: x, cy: y, r: sp ? 5.5 : 4.5, fill: col, stroke: sp ? '#fff' : '#000', 'stroke-width': 1 }));
+    const t = svgEl('text', { x: x - (sp ? 2.4 : 1.5), y: y + 0.5, class: 'jobmark' + (sp ? ' sp' : '') }); t.textContent = sp ? '★' : '!'; jg.appendChild(t);
   }
 
   for (const [, [x, y]] of Object.entries(EGG_POS)) svg.appendChild(svgEl('circle', { cx: x, cy: y, r: 1.6, class: 'eggspot' }));
