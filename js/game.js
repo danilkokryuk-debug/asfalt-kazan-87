@@ -618,31 +618,17 @@ function migrate(s) {
 
 // Выбор режима (главное меню — titleScreen в menu.js)
 function playScreen() {
-  const auto = migrate(loadRaw('auto', 'campaign')), car = migrate(loadRaw('auto', 'career')), sv = migrate(loadRaw('auto', 'surv'));
+  // только Кампания: режимы «Карьера» и «Выживание чушпана» убраны (их код остаётся, но в меню их нет)
+  const auto = migrate(loadRaw('auto', 'campaign'));
   AUDIO.track('theme');
   $('#top').classList.add('hidden'); $('#nav').classList.add('hidden');
-  $('#main').innerHTML = `<div class="scene in"><h2>Выбери режим</h2><div class="choices">
+  $('#main').innerHTML = `<div class="scene in"><h2>Кампания</h2><div class="choices">
       ${auto && !auto.ending ? `<button class="btn main" id="cont">Продолжить кампанию (${dateStr(auto.day)})</button>` : ''}
-      <button class="btn mode" id="new"><b>Кампания${auto && !auto.ending ? ' · заново' : ''}</b><span class="sub">Сюжет. Путь от чушпана до автора</span></button>
-      ${car ? `<button class="btn main" id="ccont">Продолжить карьеру: ${car.name}, ${RANKS[car.rank].toLowerCase()} (${dateStr(car.day)})</button>` : ''}
-      <button class="btn mode" id="car"><b>Карьера${car ? ' · новая судьба' : ''}</b><span class="sub">Случайная судьба и цель. Сам выбираешь задания. Смерть — конец</span></button>
-      ${sv ? `<button class="btn main" id="scont">Продолжить выживание: ${sv.name} (${dateStr(sv.day)})</button>` : ''}
-      <button class="btn mode" id="surv"><b>Выживание чушпана${sv ? ' · заново' : ''}</b><span class="sub">Ничей. Трясут каждый день. Дожить до Нового года</span></button>
+      <button class="btn mode" id="new"><b>${auto && !auto.ending ? 'Начать заново' : 'Новая игра'}</b><span class="sub">Казань, 1987. Путь от чушпана до автора — и дальше</span></button>
       <button class="btn" id="back">Назад</button></div></div>`;
   $('#back').onclick = () => { AUDIO.click(); titleScreen(); };
   if ($('#cont')) $('#cont').onclick = () => { AUDIO.start(); S = auto; view = 'map'; S.cur || S.res ? render() : toMap(); };
-  $('#new').onclick = () => { AUDIO.start(); createHero(); };
-  if ($('#ccont')) $('#ccont').onclick = () => { AUDIO.start(); S = car; view = 'map'; S.cur || S.res ? render() : toMap(); };
-  $('#car').onclick = () => {
-    if (car && !confirm('Текущая судьба будет брошена и попадёт в летопись. Начать новую?')) return;
-    if (car) { S = car; return endCareer(false, 'Бросил всё и уехал'); }
-    AUDIO.start(); careerNew();
-  };
-  if ($('#scont')) $('#scont').onclick = () => { AUDIO.start(); S = sv; view = 'map'; S.cur || S.res ? render() : toMap(); };
-  $('#surv').onclick = () => {
-    if (sv) { if (!confirm('Бросить текущее выживание?')) return; S = sv; return endCareer(false, 'Бросил всё и уехал'); }
-    AUDIO.start(); careerNew('surv');
-  };
+  $('#new').onclick = () => { if (auto && !auto.ending && !confirm('Начать кампанию заново? Текущее прохождение сотрётся.')) return; AUDIO.start(); createHero(); };
 }
 
 // Создание героя: только внешность, одежда из стартовых вещей, район и семья.

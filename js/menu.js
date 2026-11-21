@@ -28,7 +28,7 @@ function playIntro(done) {
 function titleScreen(epic) {
   AUDIO.track('theme'); if (AUDIO.ambience) AUDIO.ambience(null);
   $('#top').classList.add('hidden'); $('#nav').classList.add('hidden');
-  const saves = ['campaign', 'career', 'surv'].map(m => migrate(loadRaw('auto', m))).filter(s => s && !s.ending && !s.ended)
+  const saves = ['campaign'].map(m => migrate(loadRaw('auto', m))).filter(s => s && !s.ending && !s.ended)
     .sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
   const last = saves[0];
   const MODE = { campaign: 'Кампания', career: 'Карьера', surv: 'Выживание' };
