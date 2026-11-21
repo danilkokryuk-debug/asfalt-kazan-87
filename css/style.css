@@ -521,3 +521,10 @@ label.btn { display: flex; justify-content: center; cursor: pointer; }
 @keyframes spGlow { to { box-shadow: 0 0 22px rgba(176, 76, 255, .75); } }
 #map .jobmark.sp { fill: #fff; font-size: 7px; }
 .item.lim { border-color: #b04cff; }
+
+/* транспорт на экране героя */
+.veh { position: relative; display: flex; flex-direction: column; gap: 3px; margin: 0 0 12px; padding: 10px 12px 12px; border-radius: 8px; overflow: hidden;
+  background: linear-gradient(180deg, rgba(22, 40, 44, .9), rgba(14, 22, 26, .9)); border: 1px solid rgba(64, 208, 192, .3); }
+.veh span { color: #7ae0d0; font-size: 12px; letter-spacing: 1px; }
+.veh em { font-style: normal; color: #d8d0c0; font-size: 13px; }
+.veh i { position: absolute; left: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, #f07a30, #40d0c0); }

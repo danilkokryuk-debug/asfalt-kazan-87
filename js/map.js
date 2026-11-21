@@ -205,13 +205,13 @@ function drawMapSvg(svg, control, homeId, selectedId, onTap, atId, jobs) {
   }
 
   // Места (здания): цветной значок с пиксельной иконкой
-  const OFF = [[-24, 12], [24, 12], [-24, -12], [24, -14], [0, 24], [0, -26]];
+  const OFF = [[-24, 12], [24, 12], [-24, -12], [24, -14], [0, 24], [0, -26], [-40, 0], [40, 0], [-14, 34]];
   const slot = {};
   PLACE_POS = {};
   for (const p of (typeof PLACES !== 'undefined' ? PLACES : [])) {
     if (!CENTROID[p.d]) continue;
     const k = slot[p.d] = (slot[p.d] || 0); slot[p.d]++;
-    const [cx, cy] = CENTROID[p.d], x = cx + OFF[k % 6][0], y = cy + OFF[k % 6][1];
+    const [cx, cy] = CENTROID[p.d], x = cx + OFF[k % OFF.length][0], y = cy + OFF[k % OFF.length][1];
     PLACE_POS[p.id] = [x, y];
     const pg = svgEl('g', { class: 'ov' }); svg.appendChild(pg);
     pg.appendChild(svgEl('rect', { x: x - 6, y: y - 6, width: 12, height: 12, rx: 2, fill: '#120e0b', stroke: PLACE_COL[p.k], 'stroke-width': 1.2 }));

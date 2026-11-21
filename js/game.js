@@ -415,7 +415,7 @@ function renderHero() {
   $('#main').innerHTML = `<div class="scene"><div class="herohead"><canvas class="sprite" id="spr"></canvas><div>
     <h2>${S.name}${S.nick ? ' «' + S.nick + '»' : ''}</h2>
     <div class="sub">${lookText(S.app)}.<br>Район: ${DIST[S.home].name}.<br>Моталка: ${g}.<br>Ранг: <b>${RANKS[S.rank]}</b></div></div></div>
-    ${typeof fameHtml === 'function' ? fameHtml(S) : ''}${typeof natHtml === 'function' ? natHtml(S) : ''}
+    ${typeof fameHtml === 'function' ? fameHtml(S) : ''}${typeof natHtml === 'function' ? natHtml(S) : ''}${typeof vehHtml === 'function' ? vehHtml(S) : ''}
     ${walletHtml()}
     <div class="grid">
       ${Object.keys(STATS).map(k => `<div class="stat">${NAMES[k]}<span class="v">${S.st[k]}${gear(k) ? ' +' + gear(k) : ''}</span>${bar(S.st[k], 10)}</div>`).join('')}
@@ -603,6 +603,8 @@ function migrate(s) {
     s.points = s.flags.income ? [{ name: 'Старые точки', amt: s.flags.income }] : []; delete s.flags.income;
     s.torn = []; s.st.dol = s.st.dol || 0;
   }
+  if (s && s.car && typeof CAR !== 'undefined' && !CAR[s.car.id]) s.car = null;
+  if (s && s.car && s.car.fuel == null) s.car.fuel = 100;
   if (s && s.wear && !s.wear.wpn) { s.wear.wpn = 'w_none'; if (s.owned && !s.owned.includes('w_none')) s.owned.push('w_none'); }   // вкладка «Оружие»
   if (s && !s.app) {
     s.app = { ...DEFAULT_APP }; s.wear = { ...DEFAULT_WEAR, acc: [...DEFAULT_WEAR.acc] };

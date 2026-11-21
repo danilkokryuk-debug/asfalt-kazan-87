@@ -21,13 +21,24 @@ Object.assign(NPCS, {
 });
 
 // ===================== МАШИНЫ ======================================================================
+// t: moped / moto / car. age — с какого возраста продадут (права), use — расход бака в день (%), tank — полный бак в рублях
 const CARS = [
-  { id: 'zapor', name: '«Запорожец»', price: 300, rank: 1, speed: 0.85, yaz: 0, desc: 'Ушастый. Едет, если толкнуть.' },
-  { id: 'kopeyka', name: 'ВАЗ-2101 «Копейка»', price: 700, rank: 2, speed: 0.75, yaz: 1, desc: 'Белая, с занавесками на заднем стекле.' },
-  { id: 'devyatka', name: 'ВАЗ-2109 «Девятка»', price: 1500, rank: 3, speed: 0.65, yaz: 1, desc: 'Мокрый асфальт, тонировка в ноль. Мечта района.' },
-  { id: 'volga', name: 'ГАЗ-24 «Волга»', price: 2500, rank: 4, speed: 0.6, yaz: 2, desc: 'Чёрная. На такой ездят серьёзные люди.' },
-  { id: 'mers', name: 'Мерседес-«шестисотый»', price: 800, cur: '$', rank: 5, speed: 0.5, yaz: 3, desc: 'Девяносто первый. Весь город оборачивается.' },
+  { id: 'riga', t: 'moped', name: 'Мопед «Рига-13»', price: 80, rank: 0, age: 14, speed: 0.9, yaz: 0, use: 6, tank: 2, desc: 'Тарахтит на весь район. Первая свобода.' },
+  { id: 'voshod', t: 'moto', name: 'Мотоцикл «Восход-3М»', price: 250, rank: 1, age: 16, speed: 0.8, yaz: 1, use: 9, tank: 4, desc: 'Красный бак, хромированный глушитель. Девчонки оборачиваются.' },
+  { id: 'izh', t: 'moto', name: 'Мотоцикл «ИЖ Планета-5»', price: 420, rank: 2, age: 16, speed: 0.75, yaz: 1, use: 10, tank: 5, desc: 'Тяжёлый, надёжный, рычит как зверь.' },
+  { id: 'ural', t: 'moto', name: '«Урал» с коляской', price: 600, rank: 2, age: 16, speed: 0.78, yaz: 1, use: 12, tank: 6, seats: 2, desc: 'В коляску влезает двое пацанов. Или ящик чего угодно.' },
+  { id: 'java', t: 'moto', name: '«Ява-350»', price: 950, rank: 3, age: 16, speed: 0.65, yaz: 2, use: 10, tank: 5, desc: 'Чехословацкая. Мечта любого пацана Союза.' },
+  { id: 'zapor', t: 'car', name: '«Запорожец»', price: 650, rank: 1, age: 18, speed: 0.8, yaz: 0, use: 12, tank: 8, desc: 'Ушастый. Едет, если толкнуть.' },
+  { id: 'moskvich', t: 'car', name: '«Москвич-412»', price: 1000, rank: 2, age: 18, speed: 0.72, yaz: 1, use: 13, tank: 9, desc: 'Зелёный, с багажником на крыше.' },
+  { id: 'kopeyka', t: 'car', name: 'ВАЗ-2101 «Копейка»', price: 1300, rank: 2, age: 18, speed: 0.7, yaz: 1, use: 12, tank: 9, desc: 'Белая, с занавесками на заднем стекле.' },
+  { id: 'devyatka', t: 'car', name: 'ВАЗ-2109 «Девятка»', price: 2500, rank: 3, age: 18, speed: 0.62, yaz: 2, use: 12, tank: 10, desc: 'Мокрый асфальт, тонировка в ноль. Мечта района.' },
+  { id: 'volga', t: 'car', name: 'ГАЗ-24 «Волга»', price: 4000, rank: 4, age: 18, speed: 0.6, yaz: 2, use: 15, tank: 12, seats: 4, desc: 'Чёрная. На такой ездят серьёзные люди.' },
+  { id: 'bmw', t: 'car', name: 'BMW «пятёрка»', price: 600, cur: '$', rank: 4, age: 18, speed: 0.5, yaz: 3, use: 14, tank: 14, desc: 'Пригнана из Германии. Акула на асфальте.' },
+  { id: 'mers', t: 'car', name: 'Мерседес-«шестисотый»', price: 1200, cur: '$', rank: 5, age: 18, speed: 0.45, yaz: 3, use: 16, tank: 16, seats: 4, desc: 'Девяносто первый. Весь город оборачивается.' },
 ];
+const VTYPE = { moped: 'мопед', moto: 'мотоцикл', car: 'машина' };
+// Возраст героя: в сентябре 1987-го ему 15, дальше — по календарю
+const heroAge = S => 15 + Math.floor(((S.day || 1) - 1) / 365.25);
 const CAR = Object.fromEntries(CARS.map(c => [c.id, c]));
 const carTxt = c => c.cur === '$' ? `$${c.price}` : `${c.price} р.`;
 
@@ -50,6 +61,44 @@ const PLACES = [
   { id: 'video', name: 'Видеосалон в подвале', d: 'center', k: 'video', bg: 'pl_kino', npc: 'kinomeh' },
   { id: 'dk', name: 'ДК «Строитель»', d: 'center', k: 'dk', bg: 'dk', npc: 'bacha' },
   { id: 'kino', name: 'Кинотеатр «Родина»', d: 'universam', k: 'video', bg: 'pl_kino', npc: 'kinomeh' },
+  // автомагазины, заправки, мастерские
+  { id: 'avto1', name: 'Магазин «Автомобили»', d: 'center', k: 'auto', bg: 't_v_salon', npc: 'zhora' },
+  { id: 'avto2', name: 'Мотосалон «Восход»', d: 'socgorod', k: 'auto', bg: 't_v_salon', npc: 'mehanik' },
+  { id: 'avto3', name: 'Комиссионка подержанных машин', d: 'borisk', k: 'auto', bg: 't_v_salon', npc: 'zhora' },
+  { id: 'azs1', name: 'АЗС на Сибирском тракте', d: 'borisk', k: 'azs', bg: 't_v_azs', npc: 'muzhik' },
+  { id: 'azs2', name: 'АЗС у Ленинградского моста', d: 'kinoplenka', k: 'azs', bg: 't_v_azs', npc: 'muzhik' },
+  { id: 'azs3', name: 'АЗС на Оренбургском тракте', d: 'mirny', k: 'azs', bg: 't_v_azs', npc: 'muzhik' },
+  { id: 'azs4', name: 'Заправка «Интурист»', d: 'savinovo', k: 'azs', bg: 't_v_azs', npc: 'muzhik' },
+  { id: 'azs5', name: 'Колонка у гаражей', d: 'gryaz', k: 'azs', bg: 't_v_azs', npc: 'muzhik' },
+  { id: 'sto3', name: 'Автосервис на Гвардейской', d: 'tyap', k: 'sto', bg: 'pl_sto', npc: 'mehanik' },
+  { id: 'sto4', name: 'Гаражный кооператив «Мотор»', d: 'gryaz', k: 'sto', bg: 't_v_garazh', npc: 'mehanik' },
+  { id: 'sto5', name: 'СТО «Жигули»', d: 'perv', k: 'sto', bg: 'pl_sto', npc: 'mehanik' },
+  { id: 'sto6', name: 'Мастерская мотоциклов', d: 'novotat', k: 'sto', bg: 't_v_garazh', npc: 'mehanik' },
+  // остальное — чтобы в каждом районе было куда зайти
+  { id: 'bar4', name: 'Пивнушка «Под мостом»', d: 'novotat', k: 'bar', bg: 'pl_bar', npc: 'barmen' },
+  { id: 'bar5', name: 'Чебуречная', d: 'taktash', k: 'bar', bg: 'pl_bar', npc: 'barmen' },
+  { id: 'bar6', name: 'Пивбар «Три медведя»', d: 'mirny', k: 'bar', bg: 'pl_bar', npc: 'barmen' },
+  { id: 'bar7', name: 'Закусочная «Минутка»', d: 'kinoplenka', k: 'bar', bg: 'pl_bar', npc: 'barmen' },
+  { id: 'barber3', name: 'Парикмахерская «Локон»', d: 'savinovo', k: 'barber', bg: 'pl_barber', npc: 'parikm' },
+  { id: 'barber4', name: 'Цирюльня в слободе', d: 'novotat', k: 'barber', bg: 'pl_barber', npc: 'parikm' },
+  { id: 'barber5', name: 'Парикмахерская «Улыбка»', d: 'pavluha', k: 'barber', bg: 'pl_barber', npc: 'parikm' },
+  { id: 'video2', name: 'Видеосалон «Плаза»', d: 'perv', k: 'video', bg: 'pl_kino', npc: 'kinomeh' },
+  { id: 'kino2', name: 'Кинотеатр «Комсомолец»', d: 'socgorod', k: 'video', bg: 'pl_kino', npc: 'kinomeh' },
+  { id: 'video3', name: 'Видеосалон в общаге', d: 'gryaz', k: 'video', bg: 'pl_kino', npc: 'kinomeh' },
+  { id: 'dk2', name: 'ДК Химиков', d: 'zhilka', k: 'dk', bg: 'dk', npc: 'bacha' },
+  { id: 'dk3', name: 'ДК им. Ленина', d: 'mirny', k: 'dk', bg: 'dk', npc: 'bacha' },
+  { id: 'dk4', name: 'Клуб «Юность»', d: 'taktash', k: 'dk', bg: 'dk', npc: 'bacha' },
+  { id: 'hosp2', name: 'Травмпункт', d: 'gryaz', k: 'hosp', bg: 'pl_hosp', npc: 'vrach' },
+  { id: 'hosp3', name: 'Поликлиника № 4', d: 'savinovo', k: 'hosp', bg: 'pl_hosp', npc: 'vrach' },
+  { id: 'rynok2', name: 'Барахолка у железной дороги', d: 'borisk', k: 'market', bg: 'rynok', npc: 'zhora' },
+  { id: 'rynok3', name: 'Рынок на Тукая', d: 'tyap', k: 'market', bg: 'rynok', npc: 'zhora' },
+  { id: 'bank2', name: 'Сберкасса № 4', d: 'socgorod', k: 'bank', bg: 'pl_bank', npc: 'kassir' },
+  { id: 'bank3', name: 'Сберкасса на Павлюхина', d: 'pavluha', k: 'bank', bg: 'pl_bank', npc: 'kassir' },
+  { id: 'menty3', name: 'Опорный пункт на Перваках', d: 'perv', k: 'police', bg: 'otdel', npc: 'militsioner' },
+  { id: 'menty4', name: 'Отдел милиции Ленинского района', d: 'zhilka', k: 'police', bg: 'otdel', npc: 'militsioner' },
+  { id: 'resto2', name: 'Кафе «Сказка»', d: 'universam', k: 'resto', bg: 'pl_resto', npc: 'oficiant' },
+  { id: 'resto3', name: 'Ресторан «Татарстан»', d: 'kinoplenka', k: 'resto', bg: 'pl_resto', npc: 'oficiant' },
+  { id: 'resto4', name: 'Кафе «Чайка»', d: 'borisk', k: 'resto', bg: 'pl_resto', npc: 'oficiant' },
 ];
 const PLACE = Object.fromEntries(PLACES.map(p => [p.id, p]));
 const placesIn = d => PLACES.filter(p => p.d === d);
@@ -65,6 +114,8 @@ const GREET = {
   market: () => V('Джинсы, кассеты, жвачка, доллары — всё есть, всё дорого.', 'Тсс… Чего надо?', 'Для тебя — по особой цене.'),
   video: () => V('Сеанс через пять минут. Рубль.', 'Сегодня «Терминатор»! Мест нет… для тебя найдём.', 'Только тихо: у нас тут проверка была.'),
   dk: () => V('Танцы по субботам, бокс по вторникам.', 'Ты на танцы или на бокс?', 'Опять скорлупа набилась…'),
+  azs: () => V('Бензин — по талонам. Талонов нет? Договоримся.', 'Девяносто третьего нет, есть семьдесят шестой.', 'Очередь видишь? Вставай в конец.'),
+  auto: () => V('Очередь на «Жигули» — на пять лет. Но для тебя…', 'Права есть? А деньги есть?', 'Что берём? Мотоцикл или машину?'),
 };
 
 // Действия заведения. cost: доля «дела» по времени (1 = 4 часа)
@@ -93,9 +144,7 @@ function placeActions(S, p) {
       a.push({ t: 'Сцепиться с пьяным', cost: 0.5, go: 'f_random' });
       break;
     case 'sto':
-      if (!S.car) CARS.forEach(c => a.push({ t: `Купить ${c.name} — ${carTxt(c)}`, req: c.cur === '$' ? { dol: c.price } : { dengi: c.price }, if: () => S.rank >= c.rank, cost: 0.5,
-        fx: s => { s.car = { id: c.id, cond: 100 }; log(`Купил машину: ${c.name}.`); return c.cur === '$' ? { dol: -c.price } : { dengi: -c.price }; },
-        txt: `${c.name}! ${c.desc} Теперь по городу быстрее, и все видят, кто едет.` }));
+      if (!S.car) a.push({ t: 'Купить транспорт — в автомагазине или мотосалоне', cost: 0, txt: 'Михалыч машет рукой: «Я чиню, а не продаю. Иди в «Автомобили» в центре или в мотосалон на Соцгороде».' });
       if (S.car) {
         const c = CAR[S.car.id], fix = Math.ceil((100 - S.car.cond) * c.price / 400) || 0;
         a.push({ t: `Ремонт (${fix} р.) — состояние ${S.car.cond}%`, if: () => S.car.cond < 100, req: { dengi: fix }, cost: 0.5,
@@ -106,6 +155,26 @@ function placeActions(S, p) {
       }
       a.push({ t: 'Подработать в мастерской', cost: 1, chk: ['um', 4], ok: { txt: 'Перебрал карбюратор. Михалыч доволен и платит.', fx: { dengi: 5, um: 0 } }, no: { txt: 'Уронил ключ в двигатель. Михалыч выгоняет тебя.' } });
       break;
+    case 'auto': {
+      const age = heroAge(S);
+      if (S.car) a.push({ t: `У тебя уже есть: ${CAR[S.car.id].name}. Продать можно в СТО`, cost: 0, txt: 'Две машины — это уже кооператив, — смеётся продавец.' });
+      else CARS.forEach(c => a.push({ t: `${c.name} — ${carTxt(c)}${age < c.age ? ` · с ${c.age} лет` : S.rank < c.rank ? ` · с ранга «${RANKS[c.rank]}»` : ''}`,
+        req: c.cur === '$' ? { dol: c.price } : { dengi: c.price }, if: () => age >= c.age && S.rank >= c.rank, cost: 0.5,
+        fx: s => { s.car = { id: c.id, cond: 100, fuel: 100 }; log(`Купил: ${c.name}.`); setTimeout(() => toast(`${VTYPE[c.t][0].toUpperCase() + VTYPE[c.t].slice(1)} твой! Открылись новые задания`), 900); return c.cur === '$' ? { dol: -c.price } : { dengi: -c.price }; },
+        txt: `${c.name}! ${c.desc} Теперь по городу быстрее, и все видят, кто едет.` }));
+      if (!S.car && age < 18) a.push({ t: age < 16 ? `Тебе ${age}. Мотоцикл — с 16, машина — с 18` : `Тебе ${age}. Машину продадут с 18 — пока мотоциклы`, cost: 0, txt: 'Продавец смотрит на тебя поверх очков: «Права покажи, юноша».' });
+      break;
+    }
+    case 'azs': {
+      if (!S.car) { a.push({ t: 'Купить канистру и продать водителям (3 р.)', req: { dengi: 3 }, cost: 0.5, chk: ['yaz', 4], fx: { dengi: -3 }, ok: { txt: 'Очередь на три часа — канистры уходят влёт.', fx: { dengi: 8 } }, no: { txt: 'Заправщик прогнал: «Тут я торгую».' } }); break; }
+      const c = CAR[S.car.id], need = Math.ceil((100 - (S.car.fuel ?? 100)) * c.tank / 100);
+      a.push({ t: `Залить полный бак (${need} р.) — сейчас ${S.car.fuel ?? 100}%`, if: () => (S.car.fuel ?? 100) < 100, req: { dengi: need }, cost: 0.25,
+        fx: s => { s.car.fuel = 100; return { dengi: -need }; }, txt: () => V('Пахнет бензином и свободой. Бак полный.', 'Заправщик недолил литр, но спорить некогда.') });
+      a.push({ t: 'Залить без очереди (+5 р. заправщику)', if: () => (S.car.fuel ?? 100) < 100, req: { dengi: need + 5 }, cost: 0.1,
+        fx: s => { s.car.fuel = 100; return { dengi: -need - 5 }; }, txt: 'Очередь ворчит. Ты уже уезжаешь.' });
+      a.push({ t: 'Слить бензин у чужих «Жигулей» на стоянке', cost: 0.5, chk: ['lovk', 5], ok: { txt: 'Шланг, канистра, пять минут. Бак полный.', fx: s => { s.car.fuel = 100; return { sovest: -4, mil: 3 }; } }, no: { txt: 'Хозяин вышел из подъезда с монтировкой.', go: 'f_random' } });
+      break;
+    }
     case 'bank': {
       const pct = Math.max(1, Math.round((S.bank || 0) * 0.01));
       a.push({ t: 'Положить на книжку 10 р.', req: { dengi: 10 }, cost: 0.25, fx: s => { s.bank = (s.bank || 0) + 10; return { dengi: -10 }; }, txt: 'Кассирша ставит штамп. На книжке деньги не отберёт шпана.' });
@@ -198,15 +267,21 @@ function hairDay(S) {
   S.hairDays = (S.hairDays || 0) + 1;
   if (S.hairDays === 25 && S.app.hair !== 'nol') { S.app.overgrown = true; log('Ты оброс. Пора в парикмахерскую.'); toast('Ты оброс — пора в парикмахерскую'); }
 }
-const looksBonus = k => k === 'yaz' ? ((S.fresh || 0) >= S.day ? 1 : 0) - (S.app.overgrown ? 1 : 0) + (S.car ? CAR[S.car.id].yaz : 0) : 0;
+const looksBonus = k => k === 'yaz' ? ((S.fresh || 0) >= S.day ? 1 : 0) - (S.app.overgrown ? 1 : 0) + (S.car && CAR[S.car.id] ? CAR[S.car.id].yaz : 0) : 0;
 
-// Машина: раз в неделю бензин и износ
+// Транспорт: раз в неделю износ, каждый день расход бензина
 function carWeek(S) {
-  if (!S.car) return;
-  S.st.dengi = Math.max(0, S.st.dengi - 5); S.car.cond = Math.max(0, S.car.cond - 8 - rnd(8));
-  if (S.car.cond < 20) toast('Машина еле едет — в СТО!');
+  if (!S.car || !CAR[S.car.id]) return;
+  S.car.cond = Math.max(0, S.car.cond - 6 - rnd(8));
+  if (S.car.cond < 20) toast('Транспорт еле едет — в СТО!');
 }
-const carSpeed = () => S.car && S.car.cond >= 20 ? CAR[S.car.id].speed : 1;
+function carDay(S) {
+  if (!S.car || !CAR[S.car.id]) return;
+  const f = S.car.fuel ?? 100; S.car.fuel = Math.max(0, f - CAR[S.car.id].use);
+  if (f > 0 && S.car.fuel === 0) toast('Бак пустой — на заправку');
+}
+const carGo = () => S.car && CAR[S.car.id] && S.car.cond >= 20 && (S.car.fuel ?? 100) > 0;
+const carSpeed = () => carGo() ? CAR[S.car.id].speed : 1;
 
 // Значки мест (5×5) для карты
 const PLACE_ICONS = {
@@ -215,5 +290,6 @@ const PLACE_ICONS = {
   bank: ['..#..', '.####', '..#..', '####.', '..#..'], police: ['..#..', '#####', '.###.', '.#.#.', '#...#'],
   hosp: ['.....', '..#..', '.###.', '..#..', '.....'], market: ['#####', '#.#.#', '#####', '.#.#.', '.#.#.'],
   video: ['#####', '#.#.#', '#####', '#.#.#', '#####'], dk: ['.###.', '#####', '#.#.#', '#.#.#', '#####'],
+  azs: ['###..', '#.#.#', '###.#', '###.#', '###..'], auto: ['.###.', '#...#', '#####', '#####', '.#.#.'],
 };
-const PLACE_COL = { barber: '#e07aa8', resto: '#e5c04a', bar: '#d8902a', sto: '#7ab0e0', bank: '#6fc06f', police: '#4a7ae0', hosp: '#f0f0f0', market: '#c8a070', video: '#b07ae0', dk: '#e0605a' };
+const PLACE_COL = { barber: '#e07aa8', resto: '#e5c04a', bar: '#d8902a', sto: '#7ab0e0', bank: '#6fc06f', police: '#4a7ae0', hosp: '#f0f0f0', market: '#c8a070', video: '#b07ae0', dk: '#e0605a', azs: '#f07a30', auto: '#40d0c0' };
