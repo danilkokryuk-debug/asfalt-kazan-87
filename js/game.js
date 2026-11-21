@@ -579,6 +579,7 @@ function ending() {
   if (S.mode !== 'campaign') return endCareer(false, e.title);
   noteEnding(e.title);
   $('#nav').classList.add('hidden');
+  if (S.ending === 'strelka' && typeof creditsRoll === 'function' && !S.flags.credits_done) { S.flags.credits_done = 1; save('auto'); return creditsRoll(); }   // выстрел и финальные титры
   $('#main').innerHTML = `<div class="scene"><div class="when">${dateStr()} · концовка</div><h2>${e.title}</h2>
     <div class="txt">${T(e.text)}</div>
     <div class="result">Ранг: ${RANKS[S.rank]} · Авторитет ${S.st.avt} · Совесть ${S.st.sovest} · Семья ${S.st.semya}</div>

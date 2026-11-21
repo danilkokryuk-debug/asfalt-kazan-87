@@ -567,3 +567,24 @@ label.btn { display: flex; justify-content: center; cursor: pointer; }
 .item.biz { align-items: center; }
 .item.biz .bimg { flex: none; width: 70px; height: 44px; border-radius: 4px; background: #111 center / cover no-repeat; image-rendering: pixelated; }
 .item.biz .btn { width: auto; flex: none; padding: 8px 10px; font-size: 12px; }
+
+/* ---- финальные титры ---- */
+.credits { position: fixed; inset: 0; z-index: 200; background: #000; color: #f4ecdc; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+.cr-flash { position: absolute; inset: 0; background: #fff; animation: crFlash 1.8s ease-out forwards; pointer-events: none; z-index: 3; }
+@keyframes crFlash { 0% { opacity: 1; } 8% { opacity: .9; background: #ffe8c0; } 30% { opacity: .5; background: #6a1010; } 100% { opacity: 0; background: #000; } }
+.cr-slide { display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 0 22px; }
+.cr-img { width: 100%; max-width: 560px; aspect-ratio: 16 / 9; background: #111 center / cover no-repeat; image-rendering: pixelated; border-radius: 4px;
+  box-shadow: 0 0 60px rgba(0, 0, 0, .9); filter: sepia(.25) contrast(1.05); }
+.cr-img.kb { animation: crKb 5.2s ease-in-out forwards; }
+@keyframes crKb { 0% { opacity: 0; transform: scale(1.08); } 15% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; transform: scale(1); } }
+.cr-txt { max-width: 520px; text-align: center; font-size: 16px; line-height: 1.6; color: #e8dcc0; opacity: 0; min-height: 5em; }
+.cr-txt.in { animation: crTxt 5.2s ease-in-out forwards; }
+@keyframes crTxt { 0% { opacity: 0; transform: translateY(8px); } 18% { opacity: 1; transform: none; } 82% { opacity: 1; } 100% { opacity: 0; } }
+.cr-roll { position: absolute; inset: 0; overflow: hidden; }
+.cr-in { position: absolute; left: 0; right: 0; top: 100%; text-align: center; animation: crRoll 42s linear forwards; padding: 0 20px; }
+@keyframes crRoll { to { transform: translateY(calc(-100% - 100vh)); } }
+.cr-in h1 { font-size: 40px; letter-spacing: 10px; color: #c8402f; margin: 0; }
+.cr-in .s { letter-spacing: 6px; color: #e8c878; margin-bottom: 50px; }
+.cr-in p { margin: 6px 0; font-size: 16px; } .cr-in .cr-h { margin-top: 34px; color: #9b8f78; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; }
+.cr-in .cr-note { margin-top: 50px; color: #9b8f78; font-size: 13px; font-style: italic; } .cr-in .cr-end { margin: 80px 0 40vh; font-size: 22px; letter-spacing: 12px; color: #c8402f; }
+.cr-skip { position: absolute; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom)); width: auto; padding: 8px 14px; z-index: 4; opacity: .7; }
