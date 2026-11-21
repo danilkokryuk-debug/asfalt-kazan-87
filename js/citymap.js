@@ -18,14 +18,19 @@ function cityImage(winter) {
     ? { forest: '#2a3a30', tree: '#30483a', treeHi: '#e8eef2', field: '#d8dee4', field2: '#cdd4da', ground: '#c9d0d6', yard: '#d6dce2', road: '#5a5a60', walk: '#9aa0a6', roof: ['#e4e9ee', '#dfe5ea', '#d2d8de'], water: '#3c566e', ice: '#9fb4c6' }
     : { forest: '#1f2e1c', tree: '#2c4a28', treeHi: '#4f7a3e', field: '#5a6a3c', field2: '#66743f', ground: '#4a4a42', yard: '#53573f', road: '#2c2c30', walk: '#6a665c', roof: ['#7a6e62', '#6a6058', '#8a5a48', '#5e6670'], water: '#23384c', ice: '#2e4a62' };
   const rect = (x, y, w, h, col) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
+  // карта занятости города (1 ячейка = 1 единица): чтобы дома не налезали друг на друга и не оставалось пустот
+  const OW = W * U, OH = H * U, occ = new Uint8Array(OW * OH);
+  const markOcc = (x, y, w, d) => { for (let yy = Math.max(0, Math.floor(y)); yy < Math.min(OH, Math.ceil(y + d)); yy++) for (let xx = Math.max(0, Math.floor(x)); xx < Math.min(OW, Math.ceil(x + w)); xx++) occ[yy * OW + xx] = 1; };
+  const freeA = (x, y, w, d) => { for (let yy = Math.max(0, Math.floor(y)); yy < Math.min(OH, Math.ceil(y + d)); yy++) for (let xx = Math.max(0, Math.floor(x)); xx < Math.min(OW, Math.ceil(x + w)); xx++) if (occ[yy * OW + xx]) return false; return true; };
   const tree = (x, y, r) => {
+    markOcc(x - r * 0.6, y - r * 0.6, r * 1.2, r * 1.2);
     c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.arc(x + r * 0.5, y + r * 0.5, r, 0, 7); c.fill();
     c.fillStyle = P.tree; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
     c.fillStyle = P.treeHi; c.beginPath(); c.arc(x - r * 0.3, y - r * 0.3, r * 0.5, 0, 7); c.fill();
   };
   // Дом «в 3D»: тень → стена (юг) → крыша. h — высота в единицах карты.
   const boxes = [];
-  const box = (x, y, w, d, h, roof, opt = {}) => boxes.push({ x, y, w, d, h, roof, ...opt });
+  const box = (x, y, w, d, h, roof, opt = {}) => { boxes.push({ x, y, w, d, h, roof, ...opt }); markOcc(x - 0.4, y - h * 0.42 - 0.4, w + 0.8, d + h * 0.42 + 0.8); };
   const drawBox = b => {
     const k = 0.42, lift = b.h * k;
     c.fillStyle = 'rgba(0,0,0,.32)';                                             // тень вправо-вниз
@@ -56,6 +61,7 @@ function cityImage(winter) {
     if (gx >= 0 && gy >= 0 && gx < W && gy < H) continue;
     if (water(gx, gy)) continue;
     const x = gx * U, y = gy * U;
+    if (onExtCell(gx, gy) || gx === W + 3) { rect(x, y, U, U, winter ? P.field : '#3a4a30'); continue; }   // полоса отвода у трассы и железки
     const field = (gx > W + 1 || gy > H + 1) && hash(gx >> 2, gy >> 2) > 0.55;
     const dacha = gy < 0 && gx > 10 && gx < 30 && hash(gx >> 1, gy) > 0.7;
     if (field) { rect(x, y, U, U, hash(gx >> 2, gy >> 2) > 0.75 ? P.field2 : P.field); c.fillStyle = 'rgba(0,0,0,.12)'; for (let i = 0; i < U; i += 1.6) c.fillRect(x, y + i, U, 0.4); }
@@ -72,6 +78,24 @@ function cityImage(winter) {
       if (dx) c.fillRect(gx * U + (dx > 0 ? U - 0.6 : 0), gy * U, 0.6, U); else c.fillRect(gx * U, gy * U + (dy > 0 ? U - 0.6 : 0), U, 0.6);
     }
   }
+  // ---------- 2б. трассы на выезд, мост через Волгу, железная дорога ----------
+  const extH = (x0, x1, y) => { for (let x = Math.min(x0, x1); x < Math.max(x0, x1); x += U) { const gx = Math.floor(x / U), br = water(gx, Math.floor(y / U));
+      rect(x, y - 2.5, U + 0.05, 5, br ? '#6a6258' : P.walk); rect(x, y - 1.8, U + 0.05, 3.6, br ? '#5a5650' : P.road);
+      c.fillStyle = winter ? '#9a9aa0' : '#d8c880'; c.fillRect(x + 1, y - 0.08, 3, 0.16);
+      if (br) { rect(x, y - 2.6, U + 0.05, 0.35, '#c8c0a8'); rect(x, y + 2.3, U + 0.05, 0.35, '#c8c0a8'); if (gx % 2 === 0) rect(x + 3.5, y + 2.6, 1, 2.5, '#4a4640'); } } };
+  const extV = (x, y0, y1) => { for (let y = Math.min(y0, y1); y < Math.max(y0, y1); y += U) {
+      rect(x - 2.5, y, 5, U + 0.05, P.walk); rect(x - 1.8, y, 3.6, U + 0.05, P.road); c.fillStyle = winter ? '#9a9aa0' : '#d8c880'; c.fillRect(x - 0.08, y + 1, 0.16, 3); } };
+  // железная дорога: насыпь, шпалы, рельсы
+  rect(RAIL_X - 2, -MG * U, 4, (H + MG * 2) * U, winter ? '#8a8a8a' : '#5a5048');
+  for (let y = -MG * U; y < (H + MG) * U; y += 1.2) rect(RAIL_X - 1.6, y, 3.2, 0.45, '#3a2a20');
+  rect(RAIL_X - 1.05, -MG * U, 0.3, (H + MG * 2) * U, '#a8a8b0'); rect(RAIL_X + 0.75, -MG * U, 0.3, (H + MG * 2) * U, '#a8a8b0');
+  extH(W * U, (W + MG) * U, EXT.east.line * U + 4);
+  extV(EXT.north.line * U + 4, -MG * U, 0);
+  extV(EXT.south.line * U + 4, H * U, (H + MG) * U);
+  extH(-MG * U, westLand(EXT.west.line) * U, EXT.west.line * U + 4);
+  // переезд: шлагбаумы у железки на оренбургской трассе
+  { const y = EXT.east.line * U + 4; rect(RAIL_X - 3.5, y - 3.2, 0.5, 0.5, '#c8402f'); rect(RAIL_X + 3, y + 2.7, 0.5, 0.5, '#c8402f');
+    for (let i = 0; i < 4; i++) rect(RAIL_X - 4 + i * 1.2, y - 3.4, 0.6, 0.3, i % 2 ? '#f0f0f0' : '#c8402f'); }
   // ---------- 3. город: земля, дороги, кварталы ----------
   const isRoadCol = gx => gx % 6 === 0, isRoadRow = gy => gy % 7 === 0;
   for (let gy = 0; gy < H; gy++) for (let gx = 0; gx < W; gx++) {
@@ -87,6 +111,8 @@ function cityImage(winter) {
   for (let gy = 0; gy < H; gy++) for (let gx = 0; gx < W; gx++) {
     if (!cellAt(gx, gy) || isWater(gx, gy)) continue;
     const x = gx * U, y = gy * U;
+    if (isRoadCol(gx)) markOcc(x + 1.2, y, 5.6, U);
+    if (isRoadRow(gy)) markOcc(x, y + 1.2, U, 5.6);
     if (isRoadCol(gx)) { rect(x + 1.5, y, 5, U + 0.05, P.walk); rect(x + 2.2, y, 3.6, U + 0.05, P.road); if (!isRoadRow(gy)) { c.fillStyle = winter ? '#8a8a90' : '#c8b878'; c.fillRect(x + 3.95, y + 1, 0.15, 3); } }
     if (isRoadRow(gy)) { rect(x, y + 1.5, U + 0.05, 5, P.walk); rect(x, y + 2.2, U + 0.05, 3.6, P.road); if (!isRoadCol(gx)) { c.fillStyle = winter ? '#8a8a90' : '#c8b878'; c.fillRect(x + 1, y + 3.95, 3, 0.15); } }
   }
@@ -144,6 +170,33 @@ function cityImage(winter) {
   // ---------- 4. Кремль на мысу у Казанки ----------
   const [kx, ky] = CENTROID.center || [80, 150];
   const KX = kx - 18, KY = ky - 30;
+  markOcc(KX - 3, KY - 12, 32, 36);
+  // ---------- 3б. дозастройка: в городе не должно быть пустырей ----------
+  const landP = (x, y) => { const gx = Math.floor(x / U), gy = Math.floor(y / U); return cellAt(gx, gy) && !isWater(gx, gy); };
+  const okP = (x, y, w, d) => landP(x, y) && landP(x + w, y) && landP(x, y + d) && landP(x + w, y + d) && freeA(x - 0.3, y - 1.5, w + 0.6, d + 1.8);
+  const roofR = () => P.roof[Math.floor(R() * P.roof.length)];
+  const FILL = {
+    garazhi: (x, y) => { if (!okP(x, y, 7.2, 3)) return false; const col = winter ? '#d8dde2' : R() < 0.5 ? '#5e5a56' : '#6a5a4a';
+      for (let i = 0; i < 3; i++) { box(x + i * 2.4, y, 2.2, 3, 1.3, col); rect(x + i * 2.4 + 0.4, y + 3 - 0.1, 1.4, 0.15, ['#3a5a7a', '#6a3a2a', '#3a5a3a'][i % 3]); } return true; },
+    korobka: (x, y) => { if (!okP(x, y, 7, 4.5)) return false; rect(x, y, 7, 4.5, winter ? '#eef2f6' : '#7a8a6a'); c.strokeStyle = '#8a6a3a'; c.lineWidth = 0.45; c.strokeRect(x, y, 7, 4.5);
+      rect(x + 0.2, y + 2.15, 0.6, 0.2, '#c8402f'); rect(x + 6.2, y + 2.15, 0.6, 0.2, '#c8402f'); markOcc(x, y, 7, 4.5); return true; },
+    magazin: (x, y) => { if (!okP(x, y, 6.5, 3.6)) return false; box(x, y, 6.5, 3.6, 2.1, winter ? '#e0e5ea' : '#7a7a80'); rect(x + 0.5, y + 3.6 - 0.95, 5.5, 0.25, '#c8402f'); return true; },
+    sad: (x, y) => { if (!okP(x, y, 6, 5)) return false; box(x, y, 3, 2.4, 1.6, '#c88a4a'); box(x + 3.4, y + 1, 2.6, 2.4, 1.6, '#c88a4a');
+      rect(x, y + 3.6, 6, 1.4, winter ? '#e8ecf0' : '#8a7a4a'); rect(x + 0.6, y + 3.9, 0.8, 0.8, '#d8a441'); rect(x + 2.6, y + 3.9, 1.2, 0.5, '#3a8ac8'); return true; },
+    kiosk: (x, y) => { if (!okP(x, y, 1.8, 1.4)) return false; box(x, y, 1.8, 1.4, 1, R() < 0.5 ? '#2e6a5a' : '#a84030'); return true; },
+    dom: (x, y) => { if (!okP(x, y, 4.2, 4)) return false; box(x, y, 4.2, 4, 2.4 + R(), roofR()); return true; },
+    sklad: (x, y) => { if (!okP(x, y, 6.5, 4)) return false; box(x, y, 6.5, 4, 2.6, winter ? '#d8dde2' : '#6a6a6e', { saw: R() < 0.5 }); return true; },
+    saray: (x, y) => { if (!okP(x, y, 2.2, 1.8)) return false; box(x, y, 2.2, 1.8, 1, '#6a4a3a'); return true; },
+    derevya: (x, y) => { let n = 0; for (let i = 0; i < 5; i++) { const tx = x + R() * 6, ty = y + R() * 6; if (landP(tx, ty) && freeA(tx - 0.8, ty - 0.8, 1.6, 1.6)) { tree(tx, ty, 0.8 + R() * 0.6); n++; } } return n > 0; },
+  };
+  const FILL_BY = { micro: ['garazhi', 'garazhi', 'korobka', 'magazin', 'sad', 'kiosk', 'derevya', 'dom'], center: ['dom', 'dom', 'magazin', 'kiosk', 'derevya', 'garazhi'],
+    zavod: ['sklad', 'sklad', 'garazhi', 'saray', 'derevya'], chastny: ['saray', 'dom', 'derevya', 'saray'], sloboda: ['saray', 'dom', 'derevya'] };
+  for (let pass = 0; pass < 3; pass++) for (let gy = 0; gy < H; gy++) for (let gx = 0; gx < W; gx++) {
+    const id = cellAt(gx, gy); if (!id || isWater(gx, gy)) continue;
+    const list = FILL_BY[DTYPE[id] || 'micro'];
+    for (let k = 0; k < 4; k++) { const f = list[Math.floor(R() * list.length)]; if (FILL[f](gx * U + R() * 4, gy * U + R() * 4)) break; }
+  }
+  for (let i = 0; i < 2600; i++) { const x = R() * OW, y = R() * OH; if (landP(x, y) && freeA(x - 0.7, y - 0.7, 1.4, 1.4)) tree(x, y, 0.6 + R() * 0.5); }   // остатки — деревья и кусты
   c.fillStyle = winter ? '#e8e4dc' : '#d8d0c0'; c.strokeStyle = '#e8e2d4'; c.lineWidth = 1.1;
   c.beginPath(); c.moveTo(KX, KY + 6); c.lineTo(KX + 14, KY); c.lineTo(KX + 26, KY + 4); c.lineTo(KX + 24, KY + 18); c.lineTo(KX + 4, KY + 20); c.closePath();
   c.fillStyle = winter ? '#dfe4e8' : '#5a6a48'; c.fill(); c.stroke();

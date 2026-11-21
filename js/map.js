@@ -83,6 +83,17 @@ const lighten = (hex, k) => '#' + [1, 3, 5].map(i => Math.max(0, Math.min(255, M
 // control: {districtId: владелец}; home — твой район; sel — выбранный; at — где ты сейчас
 // Внешний мир вокруг города (недоступен, но виден): Волга дальше, леса, поля, дачи, дороги на выезд
 const MG = 6;   // ширина каймы в клетках
+// Трассы на выезд продолжают городские улицы: колонка (v) или ряд дорожной сетки. Москва — через мост над Волгой.
+const pickLine = (cands, ok) => cands.find(ok) ?? cands[0];
+const EXT = {
+  east: { v: false, line: pickLine([28, 21, 35, 14, 42], r => cellAt(W - 1, r) && !isWater(W - 1, r)), label: 'Оренбург →' },
+  north: { v: true, line: pickLine([24, 18, 30, 12], c => cellAt(c, 0) && !isWater(c, 0)), label: '↑ Арск' },
+  south: { v: true, line: pickLine([18, 24, 12, 30], c => cellAt(c, H - 1) && !isWater(c, H - 1)), label: '↓ Ульяновск' },
+  west: { v: false, line: 14, label: '← Москва' },
+};
+const westLand = r => { for (let x = 0; x < W; x++) if (cellAt(x, r) && !isWater(x, r)) return x; return 0; };
+const RAIL_X = (W + 3) * CELL + 4;   // железная дорога за восточной окраиной
+const onExtCell = (gx, gy) => (gy < 0 && gx === EXT.north.line) || (gy >= H && gx === EXT.south.line) || (gx >= W && gy === EXT.east.line) || (gx < westLand(EXT.west.line) && gy === EXT.west.line);
 const ROADS = [   // [выход из клетки города, направление, подпись]
   { from: [33, 26], to: [W + MG, 22], label: '→ Оренбург' },
   { from: [22, 2], to: [24, -MG], label: '↑ Арск' },
@@ -105,7 +116,15 @@ function drawOutskirts(svg) {
   for (const c in paths) svg.appendChild(svgEl('path', { d: paths[c].join(''), fill: c, opacity: 0.95 }));
   drawRoadsOut(svg);
 }
-function drawRoadsOut(svg) {
+function drawRoadsOut(svg, city) {
+  if (city) {   // трассы нарисованы на картинке города — здесь только подписи у края карты
+    const L = (x, y, t) => { const e = svgEl('text', { x, y, class: 'roadlabel' }); e.textContent = t; svg.appendChild(e); };
+    L(W * CELL + 4, EXT.east.line * CELL - 1, EXT.east.label);
+    L(EXT.north.line * CELL + 7, -MG * CELL + 10, EXT.north.label);
+    L(EXT.south.line * CELL + 7, (H + MG) * CELL - 4, EXT.south.label);
+    L(-MG * CELL + 3, EXT.west.line * CELL - 1, EXT.west.label);
+    return;
+  }
   // дороги на выезд + подписи
   for (const r of ROADS) {
     const [x0, y0] = r.from, [x1, y1] = r.to;
@@ -129,7 +148,7 @@ function drawMapSvg(svg, control, homeId, selectedId, onTap, atId, jobs) {
   svg.appendChild(svgEl('rect', { x: -MG * CELL, y: -MG * CELL, width: (W + MG * 2) * CELL, height: (H + MG * 2) * CELL, fill: 'url(#waves)' }));
   // подробный город одной картинкой (citymap.js); без него — простая клеточная карта
   const city = typeof cityImage === 'function' && cityImage(typeof season === 'function' && season() === 'winter');
-  if (city) { svg.appendChild(svgEl('image', { href: city, x: -MG * CELL, y: -MG * CELL, width: (W + MG * 2) * CELL, height: (H + MG * 2) * CELL, preserveAspectRatio: 'none' })); drawRoadsOut(svg); }
+  if (city) { svg.appendChild(svgEl('image', { href: city, x: -MG * CELL, y: -MG * CELL, width: (W + MG * 2) * CELL, height: (H + MG * 2) * CELL, preserveAspectRatio: 'none' })); drawRoadsOut(svg, true); }
   else drawOutskirts(svg);
 
   // Суша: один path на цвет (быстро даже на телефоне)
@@ -317,45 +336,89 @@ function applyView(svg) {
   svg.classList && svg.classList.toggle('z2', mapView.s >= 2.2); }   // ближе — видны названия улиц
 function zoomBy(k) { mapView.s *= k; if (k === 0) mapView = { s: 1, x: 0, y: 0 }; mapView.s = Math.max(1, Math.min(6, mapView.s || 1)); const svg = document.getElementById('map'); if (svg) applyView(svg); }
 
-// Живой город: машины ездят по улицам, по Волге идут теплоходы. Ночью у машин горят фары.
+// Живой город: машины ездят по улицам и по трассам за город (въезжают и уезжают), по тротуарам ходят люди,
+// по Волге идут теплоходы, по железке за окраиной — поезд. Ночью у машин фары и стоп-огни.
 function mapTraffic(svg) {
   if (typeof __TEST !== 'undefined' || !svg.appendChild) return;
   const g = svgEl('g', { class: 'traffic', 'pointer-events': 'none' }); svg.appendChild(g);
   const night = S && (S.min >= 20 * 60 || S.min < 7 * 60);
   const COLS = ['#e8e4d8', '#c8402f', '#2e5f96', '#d8a441', '#3a6a3a', '#202020', '#9aa4ae', '#f07a30'];
-  const land = (x, y) => { const gx = Math.floor(x / CELL), gy = Math.floor(y / CELL); return cellAt(gx, gy) && !isWater(gx, gy) || isBridge(gx, gy); };
-  const spawn = c => {
-    for (let k = 0; k < 30; k++) {
-      c.v = Math.random() < 0.5; c.dir = Math.random() < 0.5 ? 1 : -1;
-      const line = c.v ? 6 * (1 + Math.floor(Math.random() * 6)) : 7 * (1 + Math.floor(Math.random() * 8));
-      const lane = c.dir > 0 ? 4.6 : 2.6;
-      c.x = c.v ? line * CELL + lane : Math.random() * W * CELL; c.y = c.v ? Math.random() * H * CELL : line * CELL + lane;
-      if (land(c.x, c.y)) return;
+  const CW = W * CELL, CH = H * CELL, X0 = -MG * CELL, X1 = (W + MG) * CELL, Y1 = (H + MG) * CELL, wl = westLand(EXT.west.line) * CELL;
+  const land = (x, y) => { const gx = Math.floor(x / CELL), gy = Math.floor(y / CELL); return (cellAt(gx, gy) && !isWater(gx, gy)) || isBridge(gx, gy); };
+  const VL = [6, 12, 18, 24, 30, 36], HL = [7, 14, 21, 28, 35, 42, 49, 56];
+  // можно ли быть в этой точке: в городе — на суше (или на мосту), за городом — только на трассе своей линии
+  const ok = c => {
+    if (c.x >= 0 && c.y >= 0 && c.x < CW && c.y < CH) return land(c.x, c.y) || (!c.v && c.line === EXT.west.line && c.x < wl);
+    if (c.v) return (c.line === EXT.north.line && c.y < 0 && c.y > X0) || (c.line === EXT.south.line && c.y >= CH && c.y < Y1);
+    return (c.line === EXT.east.line && c.x >= CW && c.x < X1) || (c.line === EXT.west.line && c.x < 0 && c.x > X0);
+  };
+  const place = (c, off) => { if (c.v) c.x = c.line * CELL + off; else c.y = c.line * CELL + off; };
+  const spawnCar = c => {
+    for (let k = 0; k < 40; k++) {
+      c.dir = Math.random() < 0.5 ? 1 : -1;
+      const ext = Math.random() < 0.35 ? ['east', 'west', 'north', 'south'][Math.floor(Math.random() * 4)] : null;
+      if (ext) {   // въезжает в город с трассы
+        const e = EXT[ext]; c.v = e.v; c.line = e.line;
+        if (ext === 'east') { c.x = X1 - 1; c.dir = -1; } if (ext === 'west') { c.x = X0 + 1; c.dir = 1; }
+        if (ext === 'north') { c.y = X0 + 1; c.dir = 1; } if (ext === 'south') { c.y = Y1 - 1; c.dir = -1; }
+      } else { c.v = Math.random() < 0.5; c.line = c.v ? VL[Math.floor(Math.random() * VL.length)] : HL[Math.floor(Math.random() * HL.length)];
+        if (c.v) c.y = Math.random() * CH; else c.x = Math.random() * CW; }
+      place(c, c.dir > 0 ? 4.9 : 3.1);
+      if (ok(c)) return;
     }
   };
-  const cars = Array.from({ length: 34 }, () => {
-    const c = { sp: 0.06 + Math.random() * 0.08 }; spawn(c);
+  const cars = Array.from({ length: 40 }, () => {
+    const c = { sp: 0.06 + Math.random() * 0.08 }; spawnCar(c);
     c.el = svgEl('g', {}); const col = COLS[Math.floor(Math.random() * COLS.length)];
     c.el.innerHTML = (night ? `<path d="M-0.6 -1.4 L-1.6 -5 L1.6 -5 L0.6 -1.4Z" fill="rgba(255,230,150,.28)"/>` : '') +
       `<rect x="-0.85" y="-1.5" width="1.7" height="3" rx=".45" fill="${col}" stroke="rgba(0,0,0,.6)" stroke-width=".25"/><rect x="-0.6" y="-0.75" width="1.2" height=".8" fill="rgba(20,30,40,.85)"/>` +
       (night ? `<rect x="-0.7" y="1.25" width="1.4" height=".25" fill="#ff4030"/>` : '');
     g.appendChild(c.el); return c;
   });
+  // прохожие на тротуарах
+  const PCOL = ['#3a3a44', '#6a3a2a', '#2a3a5a', '#7a6a4a', '#5a2a3a', '#2a4a3a', '#8a8a90'];
+  const spawnMan = m => {
+    for (let k = 0; k < 40; k++) {
+      m.v = Math.random() < 0.5; m.line = m.v ? VL[Math.floor(Math.random() * VL.length)] : HL[Math.floor(Math.random() * HL.length)];
+      m.dir = Math.random() < 0.5 ? 1 : -1; if (m.v) m.y = Math.random() * CH; else m.x = Math.random() * CW;
+      place(m, Math.random() < 0.5 ? 1.85 : 6.15);
+      if (m.x >= 0 && m.y >= 0 && m.x < CW && m.y < CH && land(m.x, m.y)) return;
+    }
+  };
+  const men = Array.from({ length: 140 }, () => {
+    const m = { sp: 0.008 + Math.random() * 0.01, ph: Math.random() * 6 }; spawnMan(m);
+    m.el = svgEl('g', {}); m.el.innerHTML = `<ellipse cx=".25" cy=".55" rx=".7" ry=".3" fill="rgba(0,0,0,.3)"/><circle r=".7" fill="${PCOL[Math.floor(Math.random() * PCOL.length)]}" stroke="rgba(0,0,0,.55)" stroke-width=".18"/><circle cy="-.45" r=".36" fill="#e0b890"/>`;
+    g.appendChild(m.el); return m;
+  });
   // теплоходы на Волге
   const boats = Array.from({ length: 3 }, (_, i) => { const b = { y: 40 + i * 150, x: -22 + i * 6, sp: 0.03 + i * 0.01 };
     b.el = svgEl('g', {}); b.el.innerHTML = '<rect x="-1.3" y="-3.5" width="2.6" height="7" rx="1.2" fill="#e8e4dc"/><rect x="-0.8" y="-1.5" width="1.6" height="2.5" fill="#c8402f"/><path d="M0 3.5 L-1.6 8 M0 3.5 L1.6 8" stroke="rgba(200,220,235,.35)" stroke-width=".4"/>';
     g.appendChild(b.el); return b; });
-  let last = performance.now();
+  // поезд: тепловоз и вагоны
+  const train = { y: X0 - 60, sp: 0.22, wait: 0 };
+  train.el = svgEl('g', {});
+  train.el.innerHTML = '<rect x="-1.4" y="0" width="2.8" height="6" rx=".6" fill="#2e6a4a" stroke="#111" stroke-width=".2"/><rect x="-1" y=".6" width="2" height="1.2" fill="#d8e0e8"/>' +
+    Array.from({ length: 6 }, (_, i) => `<rect x="-1.3" y="${6.6 + i * 5.6}" width="2.6" height="5" fill="${['#6a3a2a', '#3a4a5a', '#5a5a4a'][i % 3]}" stroke="#111" stroke-width=".2"/>`).join('') +
+    (night ? '<path d="M-0.8 0 L-2.5 -7 L2.5 -7 L0.8 0Z" fill="rgba(255,230,150,.3)"/>' : '');
+  g.appendChild(train.el);
+  let last = performance.now(), frame = 0;
   const step = t => {
     if (!document.body.contains(svg)) return;
     const dt = Math.min(50, t - last) / 16.7; last = t;
     if (!document.hidden) {
       for (const c of cars) {
         if (c.v) c.y += c.dir * c.sp * dt * 3; else c.x += c.dir * c.sp * dt * 3;
-        if (!land(c.x, c.y) || c.x < 0 || c.y < 0 || c.x > W * CELL || c.y > H * CELL) spawn(c);
+        if (!ok(c)) spawnCar(c);
         c.el.setAttribute('transform', `translate(${c.x.toFixed(2)} ${c.y.toFixed(2)}) rotate(${c.v ? (c.dir > 0 ? 180 : 0) : (c.dir > 0 ? 90 : -90)})`);
       }
+      if ((frame = (frame + 1) % 2) === 0) for (const m of men) {   // прохожие обновляются через кадр — экономим батарею
+        if (m.v) m.y += m.dir * m.sp * dt * 6; else m.x += m.dir * m.sp * dt * 6;
+        if (!(m.x >= 0 && m.y >= 0 && m.x < CW && m.y < CH && land(m.x, m.y)) || Math.random() < 0.0008 * dt) spawnMan(m);
+        m.el.setAttribute('transform', `translate(${m.x.toFixed(2)} ${(m.y + Math.sin(t / 180 + m.ph) * 0.12).toFixed(2)})`);
+      }
       for (const b of boats) { b.y -= b.sp * dt * 3; if (b.y < -40) b.y = H * CELL + 30; b.el.setAttribute('transform', `translate(${b.x} ${b.y.toFixed(2)})`); }
+      if (train.wait > 0) train.wait -= dt; else { train.y += train.sp * dt * 3; if (train.y > Y1 + 10) { train.y = X0 - 60; train.wait = 600; } }
+      train.el.setAttribute("transform", `translate(${RAIL_X} ${train.y.toFixed(2)}) rotate(180)`);   // тепловоз впереди
     }
     requestAnimationFrame(step);
   };
