@@ -1,4 +1,4 @@
-const APP_VER = '1.10.0';   // версия игры: меняется с каждым обновлением (и VERSION в sw.js)
+const APP_VER = '1.11.0';   // версия игры: меняется с каждым обновлением (и VERSION в sw.js)
 // Настройки игрока: хранятся отдельно от сохранений и действуют во всех режимах.
 const SET_DEF = { tspeed: 'normal', speed: 'normal', vol: 0.8, music: 0.5, font: 'normal', skipMini: false, theme: 'classic', tutorial: true, vibro: true };
 const SET = (() => { try { return { ...SET_DEF, ...JSON.parse(localStorage.getItem('asfalt_settings') || '{}') }; } catch (e) { return { ...SET_DEF }; } })();

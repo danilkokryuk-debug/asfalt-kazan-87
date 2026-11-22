@@ -1,0 +1,10 @@
+{
+  "appId": "io.github.danilkokryukdebug.asfalt",
+  "appName": "Асфальт",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#1b1814",
+    "allowMixedContent": false,
+    "captureInput": true
+  }
+}

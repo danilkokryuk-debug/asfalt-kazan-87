@@ -18,7 +18,11 @@
     const inGame = typeof S !== 'undefined' && S && nav && !nav.classList.contains('hidden');
     if (inGame && typeof view !== 'undefined' && view !== 'map') { view = 'map'; render(); return arm(); }
     if (typeof S !== 'undefined' && S && (S.cur || S.res) && !inGame) return arm();   // идёт сцена — «Назад» её не пропускает
-    if (Date.now() - exitAt < 2200) { history.back(); return; }   // второе нажатие — выход из приложения
+    if (Date.now() - exitAt < 2200) {   // второе нажатие — выход из приложения
+      const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+      if (App && App.exitApp) App.exitApp(); else history.back();
+      return;
+    }
     exitAt = Date.now(); if (typeof toast === 'function') toast('Нажми «Назад» ещё раз, чтобы выйти'); arm();
   });
 

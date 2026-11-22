@@ -1,0 +1,22 @@
+{
+  "name": "asfalt-android",
+  "private": true,
+  "version": "1.11.0",
+  "description": "Android-версия «Асфальт. Казань-87» (Capacitor). Игра берётся из корня проекта: npm run sync",
+  "scripts": {
+    "www": "node build-www.mjs",
+    "sync": "node build-www.mjs && npx cap sync android",
+    "icons": "npx @capacitor/assets generate --android --assetPath assets"
+  },
+  "dependencies": {
+    "@capacitor-community/admob": "^8.4.2",
+    "@capacitor/android": "8.6.2",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.6.2",
+    "@capgo/native-purchases": "^8.9.17"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "4.0.0",
+    "@capacitor/cli": "8.6.2"
+  }
+}

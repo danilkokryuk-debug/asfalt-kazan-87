@@ -24,7 +24,9 @@ function statusParts(S) {
   const crew = Math.min(10, (typeof brigAlive === 'function' && typeof era90 === 'function' && era90(S) ? brigAlive(S).length * 2 : 0) + Math.round((S.squad || []).length * 1.5));
   return { clothes, food, car, deals, money, crew };
 }
-const statusScore = S => { const p = statusParts(S); return Math.min(100, p.clothes + p.food + p.car + p.deals + p.money + p.crew); };
+// премиальные вещи из «Берёзки» (shop.js): своя часть статуса; без них выше 84 — «Хозяин жизни» — не подняться, «Король» только с ними
+const statusScore = S => { const p = statusParts(S), pr = typeof premStatus === 'function' ? premStatus(S) : 0;
+  return Math.min(pr ? 100 : 84, p.clothes + p.food + p.car + p.deals + p.money + p.crew + pr); };
 const statusTitle = S => ST_TIERS.reduce((a, t) => statusScore(S) >= t[0] ? t[1] : a, ST_TIERS[0][1]);
 const statusNeed = S => S.rank * 14;   // чего ждут от твоего звания
 
