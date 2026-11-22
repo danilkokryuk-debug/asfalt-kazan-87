@@ -13,3 +13,5 @@ android-app/signing/
 *.keystore
 *.jks
 android-app/out/
+yandex/www/
+yandex/*.zip
