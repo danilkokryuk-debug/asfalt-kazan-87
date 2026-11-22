@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<base href="../">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Асфальт">
+<meta name="theme-color" content="#1b1814">
+<title>Асфальт. Казань-87 · iOS</title>
+<link rel="manifest" href="ios/manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="top" class="hidden"></div>
+<div id="main"></div>
+<nav id="nav" class="hidden">
+  <button data-v="map">Карта</button>
+  <button data-v="hero">Герой</button>
+  <button data-v="ward">Гардероб</button>
+  <button data-v="log">Журнал</button>
+  <button data-v="menu">Меню</button>
+</nav>
+<script src="js/map.js"></script>
+<script src="js/citymap.js"></script>
+<script src="js/sprite.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/game.js"></script>
+<script src="js/story.js"></script>
+<script src="js/career.js"></script>
+<script src="js/mini.js"></script>
+<script src="js/world.js"></script>
+<script src="js/economy.js"></script>
+<script src="js/mechanics.js"></script>
+<script src="js/atmos.js"></script>
+<script src="js/story2.js"></script>
+<script src="js/street.js"></script>
+<script src="js/scenes.js"></script>
+<script src="js/menu.js"></script>
+<script src="js/time.js"></script>
+<script src="js/places.js"></script>
+<script src="js/ranks.js"></script>
+<script src="js/fame.js"></script>
+<script src="js/slang.js"></script>
+<script src="js/natasha.js"></script>
+<script src="js/special.js"></script>
+<script src="js/vehicles.js"></script>
+<script src="js/business.js"></script>
+<script src="js/social.js"></script>
+<script src="js/arcs.js"></script>
+<script src="js/calendar.js"></script>
+<script src="js/goals.js"></script>
+<script src="js/story3.js"></script>
+<script src="js/prison.js"></script>
+<script src="js/eggs.js"></script>
+<script src="js/nineties.js"></script>
+<script src="js/family.js"></script>
+<script src="js/cars.js"></script>
+<script src="js/clans.js"></script>
+<script src="js/epilog90.js"></script>
+<script src="js/pager.js"></script>
+<script src="js/brigade.js"></script>
+<script src="js/people.js"></script>
+<script src="js/strangers.js"></script>
+<script src="js/body.js"></script>
+<script src="js/livemap.js"></script>
+<script src="js/fightfx.js"></script>
+<script src="js/depth.js"></script>
+<script src="js/shocks.js"></script>
+<script src="js/case.js"></script>
+<script src="js/brigstory.js"></script>
+<script src="js/minis2.js"></script>
+<script src="js/jobtune.js"></script>
+<script src="js/exchange.js"></script>
+<script src="js/status.js"></script>
+<script src="js/cities.js"></script>
+<script src="js/ladders.js"></script>
+<script src="js/fate.js"></script>
+<script src="js/moscow.js"></script>
+<script src="js/shop.js"></script>
+<script src="js/yandex.js"></script>
+<script src="js/songs.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/accounts.js"></script>
+<script src="js/android.js"></script>
+<script>
+  if (typeof CITY !== 'undefined' && CITY !== 'kazan') location.replace('ios/');   // в этой версии только Казань
+  if (typeof CITIES !== 'undefined') { for (let i = CITIES.length - 1; i >= 0; i--) if (CITIES[i].id === 'moscow') CITIES.splice(i, 1);
+    const kv = CITIES.find(c => c.id === 'kiev'); if (kv) Object.assign(kv, { need: 'kazanDone', needName: 'кампании Казани', desc: 'Следующий город. Откроется после прохождения Казани. Пока в разработке.' }); }
+  window.ASF_IOS_LITE = true;
+</script>
+<script>
+  // iPhone, игра на экране «Домой»: окно короче экрана на высоту зоны часов → снизу полоса.
+  // Ставим высоту игры ровно по экрану телефона.
+  function fitScreen() {
+    const app = navigator.standalone || matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches;
+    if (!app) return;
+    const h = Math.max(innerHeight, matchMedia('(orientation: portrait)').matches ? Math.max(screen.height, screen.width) : Math.min(screen.height, screen.width));
+    document.documentElement.style.height = h + 'px';
+    Object.assign(document.body.style, { bottom: 'auto', height: h + 'px' });
+  }
+  fitScreen(); addEventListener('resize', fitScreen); addEventListener('orientationchange', () => setTimeout(fitScreen, 300));
+  boot();
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    const had = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register('sw.js');
+    // скачалась новая версия: на заставке — перезапуск сразу, в игре — подсказка (сохранение не теряется)
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (!had) return;
+      if (typeof splashDone !== 'undefined' && !splashDone) location.reload(); else if (typeof toast === 'function') toast('Скачано обновление — перезапусти игру'); });
+  }
+</script>
+</body>
+</html>
