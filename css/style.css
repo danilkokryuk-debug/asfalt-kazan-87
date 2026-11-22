@@ -874,3 +874,13 @@ body:has(#top.hidden) #pager, body:has(.card) #pager { display: none; }
 .kl-intro.on .kl-glow { animation: klGlow 1.4s .85s ease-in-out both; }
 @keyframes klGlow { 0%, 100% { opacity: 0; } 45% { opacity: .9; } }
 .kl-glint { background-image: linear-gradient(115deg, transparent 38%, rgba(140,190,255,.0) 44%, rgba(170,215,255,1) 50%, rgba(255,255,255,1) 52%, rgba(140,190,255,.7) 56%, transparent 64%); }
+/* ===== картинки во весь экран на любом устройстве ===== */
+/* заставки-карточки: картинка закрывает весь экран без полос (лишнее обрезается по краям) */
+.cardart, .card.art .cardart { position: absolute; inset: 0; top: 0; left: 0; margin: 0; width: 100%; height: 100%; aspect-ratio: auto; transform: none; object-fit: cover; }
+@media (min-aspect-ratio: 1/1) { .cardart { top: 0; left: 0; margin: 0; width: 100%; height: 100%; transform: none; } }
+.cardart.photo-art { background-size: cover; background-position: center; }
+/* сцена с героями: от края до края экрана, даже на планшете и компьютере */
+#main > .scene > .stage { margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); }
+.menuart, .intro .shotart { object-fit: cover; background-size: cover; }
+.mskintro video { object-fit: cover; width: 100%; height: 100%; }
+@media (max-aspect-ratio: 1/1) { .mskintro video { width: 100%; height: 100%; } }

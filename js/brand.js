@@ -11,7 +11,16 @@
     el.innerHTML = '<div class="kl-logo"><img src="img/kryuk_labs.jpg" alt="Kryuk Labs"><div class="kl-glow"></div><div class="kl-glint"></div></div>';
     document.body.appendChild(el);
     let done = false;
-    const end = () => { if (done) return; done = true; el.classList.add('out'); setTimeout(() => { el.remove(); }, 600); ts(...a); credit(); };
+    // сразу за логотипом — заставка самой игры (Казань: погоня; Москва: ролик), затем меню с кнопками. Без лишних касаний.
+    const end = () => { if (done) return; done = true; el.classList.add('out'); setTimeout(() => { el.remove(); }, 600);
+      if (typeof splashDone === 'undefined' || splashDone) { ts(...a); credit(); return; }
+      splashDone = true;
+      const toMenu = () => titleScreen(true);
+      if (typeof CITY !== 'undefined' && CITY === 'moscow' && typeof mskIntro === 'function' && typeof kazanDone === 'function' && kazanDone()) mskIntro(toMenu);
+      else if (typeof playIntro === 'function') playIntro(toMenu); else toMenu();
+    };
+    // звук на телефонах включается только после касания — первое касание где угодно его включает
+    addEventListener('pointerdown', () => { try { AUDIO.start(); } catch (e) {} }, { once: true });
     el.onclick = end;
     const img = el.querySelector('img');
     const go = () => { el.classList.add('on'); setTimeout(end, 2600); };
