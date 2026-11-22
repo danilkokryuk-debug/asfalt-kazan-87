@@ -71,12 +71,21 @@ function nickScreen(done) {
 }; }
 statsHtml = () => `${accNick() ? `👤 ${escH(accNick())} · ` : ''}Версия ${APP_VER} · <u>что нового</u>`;
 
+// этап сюжета для статистики: «Казань · глава 4», «Москва · 7/18», «Финал: …»
+function accStage(S) {
+  if (S.ending && typeof ENDINGS !== 'undefined' && ENDINGS[S.ending]) return 'Финал: ' + ENDINGS[S.ending].title;
+  if (CITY === 'moscow') return 'Москва · ' + Object.keys(S.done || {}).filter(k => /^mk_(?!r_)/.test(k)).length + '/18';
+  const ch = Math.max(1, ...Object.keys(S.done || {}).map(k => +((k.match(/^c(\d)_/) || [])[1] || 0)));
+  return 'Казань · глава ' + ch;
+}
+const accPlat = () => window.ASF_YA ? 'Яндекс' : window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() ? 'Android' : window.ASF_IOS_LITE ? 'iOS (сайт)' : 'Сайт';
 // прогресс — на сервер не чаще раза в 5 минут (смотреть: Google Таблица «Асфальт — игроки», лист «Игроки»)
 { const sv = save; let last = 0; save = (slot, ...r) => { sv(slot, ...r);
   if (!ACC_ON || !S || Date.now() - last < 300000) return; last = Date.now();
   let m = {}; try { m = metaGet(); } catch (e) {}
   accRpc('save_progress', { p_secret: accSecret(), p_progress: { v: APP_VER, city: CITY, date: dateStr(), rank: S.rank, gang: S.gang, ending: S.ending || null,
-    kazan: !!m.kazanDone, moscow: !!m.mskDone, ends: (m.ends || []).length } });
+    kazan: !!m.kazanDone, moscow: !!m.mskDone, ends: (m.ends || []).length,
+    stage: accStage(S), status: typeof statusTitle === 'function' ? statusTitle(S) : '', cheki: m.cheki || 0, prem: (m.prem || []).length, plat: accPlat() } });
 }; }
 
 // ---------------- «Что нового» и «Что будет дальше» ----------------

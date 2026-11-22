@@ -7,9 +7,10 @@ const SS = () => SpreadsheetApp.openById('15-OQw0166iTl2CTkJ1lPQeLkfmQpgMItT4LXI
 function sheet(name, head) {
   let s = SS().getSheetByName(name);
   if (!s) { s = SS().insertSheet(name); s.appendRow(head); s.setFrozenRows(1); s.getRange(1, 1, 1, head.length).setFontWeight('bold'); }
+  else if (s.getLastColumn() < head.length) s.getRange(1, 1, 1, head.length).setValues([head]).setFontWeight('bold');   // новые столбцы
   return s;
 }
-const PL = () => sheet('Игроки', ['Ник', 'Создан', 'Последний вход', 'Версия', 'Город', 'Дата в игре', 'Ранг', 'Казань пройдена', 'Москва пройдена', 'Концовок', 'Код (хэш)']);
+const PL = () => sheet('Игроки', ['Ник', 'Создан', 'Последний вход', 'Версия', 'Город', 'Дата в игре', 'Ранг', 'Казань пройдена', 'Москва пройдена', 'Концовок', 'Код (хэш)', 'Этап', 'Статус', 'Чеки', 'Премиум вещей', 'Платформа']);
 const WS = () => sheet('Пожелания', ['Когда', 'Ник', 'Пожелание', 'Код (хэш)']);
 const hash = s => Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, 'asfalt:' + s, Utilities.Charset.UTF_8));
 const safe = s => /^[=+\-@]/.test(s) ? "'" + s : s;   // текст игрока не должен стать формулой
@@ -20,7 +21,31 @@ function rowOf(sh, col, val, ci) {
   return null;
 }
 
-function setup() { PL(); WS(); const l = SS().getSheetByName('Лист1'); if (l && SS().getSheets().length > 2) SS().deleteSheet(l); }
+// лист «Статистика»: формулы, которые сами пересчитываются по листам «Игроки» и «Пожелания»
+function statsSheet() {
+  if (SS().getSheetByName('Статистика')) return;
+  const st = SS().insertSheet('Статистика', 0), P = "'Игроки'!";
+  const q = (cols, label) => `=IFERROR(QUERY(${P}A2:P, "select ${cols}, count(A) where A is not null group by ${cols} order by count(A) desc label count(A) '${label}'", 0), "—")`;
+  const rows = [
+    ['Всего игроков', `=COUNTA(${P}A2:A)`],
+    ['Заходили сегодня', `=COUNTIF(${P}C2:C, ">="&TODAY())`],
+    ['Заходили за 7 дней', `=COUNTIF(${P}C2:C, ">="&TODAY()-7)`],
+    ['Новых за 7 дней', `=COUNTIF(${P}B2:B, ">="&TODAY()-7)`],
+    ['Прошли Казань', `=COUNTIF(${P}H2:H, "да")`],
+    ['Прошли Москву', `=COUNTIF(${P}I2:I, "да")`],
+    ['Средний ранг', `=IFERROR(ROUND(AVERAGE(${P}G2:G), 1), 0)`],
+    ['Купили хоть одну премиум-вещь', `=COUNTIF(${P}O2:O, ">0")`],
+    ['Чеков на руках у всех', `=SUM(${P}N2:N)`],
+    ['Пожеланий', `=COUNTA('Пожелания'!A2:A)`],
+  ];
+  st.getRange(1, 1).setValue('Общее').setFontWeight('bold');
+  rows.forEach((r, i) => { st.getRange(i + 2, 1).setValue(r[0]); st.getRange(i + 2, 2).setFormula(r[1]); });
+  const blocks = [['D', 'L', 'Этап сюжета'], ['G', 'P', 'Платформа'], ['J', 'E', 'Город'], ['M', 'D', 'Версия игры'], ['P', 'M', 'Статус']];
+  blocks.forEach(([at, col, title]) => { st.getRange(at + '1').setValue(title).setFontWeight('bold'); st.getRange(at + '2').setFormula(q(col, 'Игроков')); });
+  st.setColumnWidth(1, 240); st.setFrozenRows(1);
+}
+
+function setup() { statsSheet(); PL(); WS(); const l = SS().getSheetByName('Лист1'); if (l && SS().getSheets().length > 2) SS().deleteSheet(l); }
 
 function doGet(e) {
   const p = (e && e.parameter) || {};
@@ -53,6 +78,8 @@ function doPost(e) {
       if (!me) return out(false);
       const g = b.p || {};
       pl.getRange(me.row, 3, 1, 8).setValues([[new Date(), String(g.v || ''), String(g.city || ''), String(g.date || ''), Number(g.rank) || 0, g.kazan ? 'да' : '', g.moscow ? 'да' : '', Number(g.ends) || 0]]);
+      pl.getRange(me.row, 12, 1, 5).setValues([[safe(String(g.stage || '')), safe(String(g.status || '')), Number(g.cheki) || 0, Number(g.prem) || 0, String(g.plat || '')]]);
+      statsSheet();
       return out(true);
     }
     if (b.a === 'wish') {
