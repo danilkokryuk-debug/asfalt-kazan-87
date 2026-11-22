@@ -63,7 +63,7 @@ function titleScreen(epic) {
 
 // ===================== СЛОТЫ СОХРАНЕНИЙ ==============================================================
 // 5 слотов на все режимы. Из игры можно сохранить, из меню — загрузить или удалить.
-const SLOTS_N = 5;
+const SLOTS_N = 8;
 const slotKey = i => 'asfalt_' + (CITY === 'moscow' ? 'm_' : '') + 'slot_' + i;   // у Москвы свои слоты
 function slotGet(i) { try { return migrate(JSON.parse(localStorage.getItem(slotKey(i)))); } catch (e) { return null; } }
 function slotsScreen(back) {

@@ -508,7 +508,7 @@ function renderLog() {
 }
 function renderMenu() {
   $('#main').innerHTML = `<div class="scene"><h2>Меню</h2><div class="choices">
-    <button class="btn" id="sv">Сохранения (5 слотов)</button>
+    <button class="btn" id="sv">Сохранения (8 ячеек)</button>
     <button class="btn" id="st">Настройки</button>
     <button class="btn" id="snd">Музыка: ${AUDIO.musicOn() ? 'вкл' : 'выкл'}</button>
     <button class="btn" id="mag">📼 Магнитофон</button>
