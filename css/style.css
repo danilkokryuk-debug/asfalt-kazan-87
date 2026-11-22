@@ -850,3 +850,27 @@ body:has(#top.hidden) #pager, body:has(.card) #pager { display: none; }
 .sh-pics { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: none; }
 .sh-icon { width: 84px; height: 84px; border-radius: 6px; background-size: cover; background-position: center; image-rendering: pixelated; box-shadow: 0 0 0 1px rgba(229,192,74,.4); }
 .sh-pics .sh-spr { width: 40px; height: 60px; }
+/* заставка Kryuk Labs */
+.kl-intro { position: fixed; inset: 0; z-index: 9500; background: #000; display: flex; align-items: center; justify-content: center; transition: opacity .6s; cursor: pointer; }
+.kl-intro.out { opacity: 0; pointer-events: none; }
+.kl-logo { position: relative; width: min(78vw, 78vh, 460px); aspect-ratio: 1; opacity: 0; transform: scale(.94); filter: blur(6px); }
+.kl-logo img { width: 100%; height: 100%; display: block; }
+.kl-intro.on .kl-logo { animation: klIn 1.1s cubic-bezier(.2,.8,.2,1) forwards; }
+@keyframes klIn { to { opacity: 1; transform: scale(1); filter: blur(0); } }
+/* блик бежит только по светлым линиям логотипа (кольцо, K, надпись) */
+.kl-glint { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
+  -webkit-mask: url(../img/kryuk_labs_mask.png) center / 100% 100% no-repeat; mask: url(../img/kryuk_labs_mask.png) center / 100% 100% no-repeat;
+  background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,0) 42%, rgba(255,255,255,.95) 50%, rgba(170,210,255,.6) 54%, transparent 62%) 0 0 / 300% 100% no-repeat;
+  background-position: 120% 0; }
+.kl-intro.on .kl-glint { animation: klGlint 1.2s .9s ease-in-out forwards; }
+@keyframes klGlint { from { background-position: 120% 0; } to { background-position: -20% 0; } }
+.kl-credit { text-align: center; font-size: 11px; letter-spacing: .25em; color: #8a8478; margin-top: 4px; }
+/* в момент блика логотип вспыхивает холодным свечением */
+.kl-intro.on .kl-logo img { animation: klFlash 1.4s .85s ease-in-out both; }
+@keyframes klFlash { 0%, 100% { filter: none; } 45% { filter: brightness(1.2); } }
+/* свечение — по форме линий логотипа (та же маска), размытое */
+.kl-glow { position: absolute; inset: 0; pointer-events: none; opacity: 0; mix-blend-mode: screen; background: #9cc8ff; filter: blur(10px);
+  -webkit-mask: url(../img/kryuk_labs_mask.png) center / 100% 100% no-repeat; mask: url(../img/kryuk_labs_mask.png) center / 100% 100% no-repeat; }
+.kl-intro.on .kl-glow { animation: klGlow 1.4s .85s ease-in-out both; }
+@keyframes klGlow { 0%, 100% { opacity: 0; } 45% { opacity: .9; } }
+.kl-glint { background-image: linear-gradient(115deg, transparent 38%, rgba(140,190,255,.0) 44%, rgba(170,215,255,1) 50%, rgba(255,255,255,1) 52%, rgba(140,190,255,.7) 56%, transparent 64%); }
