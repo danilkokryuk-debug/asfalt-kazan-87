@@ -23,18 +23,21 @@ function rowOf(sh, col, val, ci) {
 
 // лист «Статистика»: формулы, которые сами пересчитываются по листам «Игроки» и «Пожелания»
 function statsSheet() {
-  if (SS().getSheetByName('Статистика')) return;
+  const old = SS().getSheetByName('Статистика');
+  if (old && old.getRange('Z1').getValue() === 'v2') return;
+  if (old) SS().deleteSheet(old);   // старая версия листа — пересоздать
+  // таблица на русском: аргументы формул разделяются «;»
   const st = SS().insertSheet('Статистика', 0), P = "'Игроки'!";
-  const q = (cols, label) => `=IFERROR(QUERY(${P}A2:P, "select ${cols}, count(A) where A is not null group by ${cols} order by count(A) desc label count(A) '${label}'", 0), "—")`;
+  const q = (cols, label) => `=IFERROR(QUERY(${P}A2:P; "select ${cols}, count(A) where A is not null group by ${cols} order by count(A) desc label count(A) '${label}'"; 0); "—")`;
   const rows = [
     ['Всего игроков', `=COUNTA(${P}A2:A)`],
-    ['Заходили сегодня', `=COUNTIF(${P}C2:C, ">="&TODAY())`],
-    ['Заходили за 7 дней', `=COUNTIF(${P}C2:C, ">="&TODAY()-7)`],
-    ['Новых за 7 дней', `=COUNTIF(${P}B2:B, ">="&TODAY()-7)`],
-    ['Прошли Казань', `=COUNTIF(${P}H2:H, "да")`],
-    ['Прошли Москву', `=COUNTIF(${P}I2:I, "да")`],
-    ['Средний ранг', `=IFERROR(ROUND(AVERAGE(${P}G2:G), 1), 0)`],
-    ['Купили хоть одну премиум-вещь', `=COUNTIF(${P}O2:O, ">0")`],
+    ['Заходили сегодня', `=COUNTIF(${P}C2:C; ">="&TODAY())`],
+    ['Заходили за 7 дней', `=COUNTIF(${P}C2:C; ">="&TODAY()-7)`],
+    ['Новых за 7 дней', `=COUNTIF(${P}B2:B; ">="&TODAY()-7)`],
+    ['Прошли Казань', `=COUNTIF(${P}H2:H; "да")`],
+    ['Прошли Москву', `=COUNTIF(${P}I2:I; "да")`],
+    ['Средний ранг', `=IFERROR(ROUND(AVERAGE(${P}G2:G); 1); 0)`],
+    ['Купили хоть одну премиум-вещь', `=COUNTIF(${P}O2:O; ">0")`],
     ['Чеков на руках у всех', `=SUM(${P}N2:N)`],
     ['Пожеланий', `=COUNTA('Пожелания'!A2:A)`],
   ];
@@ -42,7 +45,7 @@ function statsSheet() {
   rows.forEach((r, i) => { st.getRange(i + 2, 1).setValue(r[0]); st.getRange(i + 2, 2).setFormula(r[1]); });
   const blocks = [['D', 'L', 'Этап сюжета'], ['G', 'P', 'Платформа'], ['J', 'E', 'Город'], ['M', 'D', 'Версия игры'], ['P', 'M', 'Статус']];
   blocks.forEach(([at, col, title]) => { st.getRange(at + '1').setValue(title).setFontWeight('bold'); st.getRange(at + '2').setFormula(q(col, 'Игроков')); });
-  st.setColumnWidth(1, 240); st.setFrozenRows(1);
+  st.setColumnWidth(1, 240); st.setFrozenRows(1); st.getRange('Z1').setValue('v2').setFontColor('#ffffff');
 }
 
 function setup() { statsSheet(); PL(); WS(); const l = SS().getSheetByName('Лист1'); if (l && SS().getSheets().length > 2) SS().deleteSheet(l); }
